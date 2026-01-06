@@ -1,0 +1,8 @@
+{
+  "common": {
+    "welcome": "Welcome to the Admin Dashboard",
+    "dashboard": "Dashboard",
+    "settings": "Settings",
+    "profile": "Profile"
+  }
+}
