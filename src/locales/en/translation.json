@@ -4,5 +4,46 @@
     "dashboard": "Dashboard",
     "settings": "Settings",
     "profile": "Profile"
+  },
+  "landing": {
+    "nav": {
+      "howItWorks": "How it Works",
+      "benefits": "Benefits",
+      "pricing": "Pricing",
+      "support": "Support",
+      "languageToggle": "English / Hindi"
+    },
+    "hero": {
+      "badge": "JOIN THE REVOLUTION",
+      "title": "Grow Your <br/> Restaurant Business <br/> with <highlight>USTART</highlight>",
+      "description": "Join thousands of restaurants expanding their reach and boosting revenue. We provide the technology and logistics so you can focus on the food.",
+      "benefits": {
+        "zeroFees": "Zero setup fees",
+        "onboarding": "24 hour onboarding",
+        "payouts": "Weekly payouts"
+      }
+    }
+  },
+  "auth": {
+    "login": {
+      "title": "Login/ Partner with us",
+      "subtitle": "Login or create your account to start growing your business.",
+      "mobileLabel": "Mobile Number",
+      "submitButton": "Send OTP",
+      "sending": "Sending...",
+      "placeholder": "Enter your Mobile Number"
+    },
+    "otp": {
+      "title": "Verify OTP",
+      "subtitle": "Enter the OTP sent to +91 {{mobile}}",
+      "label": "Enter OTP",
+      "resend": "Resend OTP",
+      "resendTimer": "Resend OTP in {{time}}s",
+      "notReceived": "Didn't receive code?",
+      "verifyButton": "Verify & Proceed",
+      "verifying": "Verifying...",
+      "edit": "Edit"
+    },
+    "terms": "By clicking, you agree to USTART <1>terms and conditions</1>."
   }
 }
