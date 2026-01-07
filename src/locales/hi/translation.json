@@ -94,6 +94,55 @@
     "completeButton": "ऑनबोर्डिंग पूरा करें",
     "logout": "लॉग आउट"
   },
+  "onboarding": {
+    "steps": {
+      "personal": {
+        "title": "व्यक्तिगत जानकारी",
+        "subtitle": "संपर्क विवरण और पहचान"
+      },
+      "restaurant": {
+        "title": "रेस्टोरेंट की जानकारी",
+        "subtitle": "स्थान और व्यंजन"
+      },
+      "documents": {
+        "title": "दस्तावेज़",
+        "subtitle": "FSSAI, PAN और GST"
+      },
+      "menu": {
+        "title": "मेन्यू सेटअप",
+        "subtitle": "व्यंजन और मूल्य"
+      }
+    },
+    "header": {
+      "help": "सहायता केंद्र",
+      "logout": "लॉग आउट"
+    },
+    "personal": {
+      "title": "आइए आपको जानते हैं",
+      "subtitle": "हमें आपके पार्टनर खाते को सुरक्षित रूप से सेट करने के लिए कुछ विवरणों की आवश्यकता है।",
+      "fullNameLabel": "मालिक का पूरा नाम",
+      "fullNamePlaceholder": "उदा. जॉन डो",
+      "pocMobileLabel": "POC मोबाइल",
+      "verified": "सत्यापित",
+      "emailLabel": "ईमेल पता",
+      "emailPlaceholder": "उदा. name@restaurant.com",
+      "whatsappLabel": "व्हाट्सएप नंबर",
+      "whatsappPlaceholder": "व्हाट्सएप नंबर दर्ज करें",
+      "sameAsMobile": "प्राथमिक नंबर के समान",
+      "sameAsMobileHint": "हम इसका उपयोग महत्वपूर्ण अपडेट के लिए करेंगे",
+      "continueButton": "जारी रखें",
+      "emailValidation": {
+        "title": "उपयोगकर्ता सत्यापित करें",
+        "subtitle": "हमने 6 अंकों का कोड भेजा है",
+        "label": "ईमेल ओटीपी दर्ज करें",
+        "placeholder": "000000",
+        "verifyButton": "सत्यापित करें और जारी रखें",
+        "resend": "कोड पुनः भेजें",
+        "success": "ईमेल सफलतापूर्वक सत्यापित!"
+      },
+      "secureText": "आपकी जानकारी हमारे पास सुरक्षित है।"
+    }
+  },
   "auth": {
     "login": {
       "title": "हमारे साथ भागीदार बनें",

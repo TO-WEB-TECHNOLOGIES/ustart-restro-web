@@ -11,7 +11,7 @@
       "benefits": "Benefits",
       "pricing": "Pricing",
       "support": "Support",
-      "languageToggle": "English / Hindi"
+      "languageToggle": "English / हिंदी"
     },
     "hero": {
       "badge": "JOIN THE REVOLUTION",
@@ -93,6 +93,55 @@
     "description": "Your profile is incomplete or pending approval. Please complete your onboarding to access the dashboard.",
     "completeButton": "Complete Onboarding",
     "logout": "Logout"
+  },
+  "onboarding": {
+    "steps": {
+      "personal": {
+        "title": "Personal Info",
+        "subtitle": "Contact details & identity"
+      },
+      "restaurant": {
+        "title": "Restaurant Info",
+        "subtitle": "Location & cuisine"
+      },
+      "documents": {
+        "title": "Documents",
+        "subtitle": "FSSAI, PAN & GST"
+      },
+      "menu": {
+        "title": "Menu Setup",
+        "subtitle": "Dishes & pricing"
+      }
+    },
+    "header": {
+      "help": "Help Center",
+      "logout": "Logout"
+    },
+    "personal": {
+      "title": "Let's get to know you",
+      "subtitle": "We need a few details to set up your partner account securely.",
+      "fullNameLabel": "Owner Full Name",
+      "fullNamePlaceholder": "e.g. John Doe",
+      "pocMobileLabel": "POC Mobile",
+      "verified": "VERIFIED",
+      "emailLabel": "Email Address",
+      "emailPlaceholder": "e.g. name@restaurant.com",
+      "whatsappLabel": "WhatsApp Number",
+      "whatsappPlaceholder": "Enter WhatsApp number",
+      "sameAsMobile": "Same as primary Number",
+      "sameAsMobileHint": "We'll use this for important updates",
+      "continueButton": "Continue",
+      "secureText": "Your information is securely saved with us.",
+      "emailValidation": {
+        "title": "Verify User",
+        "subtitle": "We've sent a 6-digit code to",
+        "label": "Enter Email OTP",
+        "placeholder": "000000",
+        "verifyButton": "Verify & Continue",
+        "resend": "Resend Code",
+        "success": "Email verified successfully!"
+      }
+    }
   },
   "auth": {
     "login": {

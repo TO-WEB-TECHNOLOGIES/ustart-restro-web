@@ -41,4 +41,24 @@ export const mockAuthService = {
         }
         throw new Error('Invalid OTP');
     },
+
+    sendEmailOtp: async (email: string): Promise<{ message: string }> => {
+        await delay(1000);
+        console.log(`Email OTP for ${email}: 123456`);
+        return { message: 'OTP sent to email successfully' };
+    },
+
+    verifyEmailOtp: async (email: string, otp: string, token: string): Promise<{ success: boolean }> => {
+        await delay(1000);
+        console.log(`Verifying OTP for ${email}`);
+        // Verify simulated Bearer token
+        if (!token.startsWith('Bearer ')) {
+            throw new Error('Unauthorized');
+        }
+
+        if (otp === '123456') {
+            return { success: true };
+        }
+        throw new Error('Invalid Email OTP');
+    }
 };

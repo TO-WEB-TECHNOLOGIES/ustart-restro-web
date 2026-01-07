@@ -2,8 +2,10 @@ import { createBrowserRouter } from 'react-router-dom';
 import { LandingPage } from '@/features/landing/LandingPage';
 import { Dashboard } from '@/features/dashboard/components/Dashboard';
 import { AppLayout } from '@/layouts/AppLayout';
-import { JoinUstartPage } from '@/pages/JoinUstartPage';
 import { RequireAuth, RequireOnboarding, RequirePending, PublicOnlyRoute } from './ProtectedRoute';
+import { OnboardingLayout } from '@/features/onboarding/layouts/OnboardingLayout';
+import { PersonalInfo } from '@/features/onboarding/components/PersonalInfo';
+import { Navigate } from 'react-router-dom';
 
 export const router = createBrowserRouter([
     {
@@ -23,7 +25,17 @@ export const router = createBrowserRouter([
                 children: [
                     {
                         path: '/grow-with-ustart',
-                        element: <JoinUstartPage />,
+                        element: <OnboardingLayout />,
+                        children: [
+                            {
+                                index: true,
+                                element: <Navigate to="personal-info" replace />
+                            },
+                            {
+                                path: 'personal-info',
+                                element: <PersonalInfo />
+                            }
+                        ]
                     }
                 ]
             },

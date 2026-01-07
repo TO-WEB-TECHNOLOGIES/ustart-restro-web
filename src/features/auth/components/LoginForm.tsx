@@ -113,7 +113,7 @@ export const LoginForm = () => {
     };
 
     return (
-        <Card className="w-full max-w-md shadow-2xl border-none bg-third-cream rounded-xl">
+        <Card className="w-full max-w-md shadow-2xl border-none bg-third-cream rounded-4xl">
             <CardHeader>
                 <CardTitle className="text-2xl font-bold text-slate-900 mb-4">
                     {step === 'mobile' ? t('auth.login.title') : t('auth.otp.title')}
@@ -136,7 +136,7 @@ export const LoginForm = () => {
                         <div className="">
                             <Label htmlFor="mobile" className="text-xs font-bold text-slate-500 uppercase mb-4">{t('auth.login.mobileLabel')}</Label>
                             <div className="flex">
-                                <div className="flex h-10 w-16 items-center justify-center border border-slate-200 bg-slate-50 text-sm text-slate-500 rounded-lg rounded-r-none">
+                                <div className="flex h-10 w-16 items-center justify-center border border-slate-200 bg-slate-50 text-sm text-slate-500 rounded-4xl rounded-r-none">
                                     +91
                                 </div>
                                 <Input
@@ -144,12 +144,12 @@ export const LoginForm = () => {
                                     placeholder={t('auth.login.placeholder')}
                                     type="tel"
                                     {...registerMobile('mobile')}
-                                    className="flex-1 rounded-lg rounded-l-none "
+                                    className="flex-1 rounded-4xl rounded-l-none "
                                 />
                             </div>
                             {mobileErrors.mobile && <p className="text-red-500 text-xs ">{mobileErrors.mobile.message}</p>}
                         </div>
-                        <Button type="submit" className="w-full bg-secondary-orange hover:bg-secondary-orange/90 text-white font-bold h-12 rounded-lg" disabled={loading}>
+                        <Button type="submit" className="w-full bg-secondary-orange hover:bg-secondary-orange/90 text-white font-bold h-12 rounded-4xl" disabled={loading}>
                             {loading ? t('auth.login.sending') : t('auth.login.submitButton')}
                         </Button>
                     </form>
@@ -174,7 +174,7 @@ export const LoginForm = () => {
                                 )}
                             </div>
                         </div>
-                        <Button onClick={onVerifyOtp} className="w-full bg-secondary-orange hover:bg-secondary-orange/90 text-white font-bold h-12 rounded-lg" disabled={loading}>
+                        <Button onClick={onVerifyOtp} className="w-full bg-secondary-orange hover:bg-secondary-orange/90 text-white font-bold h-12 rounded-4xl" disabled={loading}>
                             {loading ? t('auth.otp.verifying') : t('auth.otp.verifyButton')}
                         </Button>
                     </div>
