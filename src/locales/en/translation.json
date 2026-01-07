@@ -22,6 +22,24 @@
         "onboarding": "24 hour onboarding",
         "payouts": "Weekly payouts"
       }
+    },
+    "whyPartner": {
+      "title": "Why Partner with USTART?",
+      "subtitle": "We provide the tools and support you need to succeed in the highly competitive food industry.",
+      "cards": {
+        "reach": {
+          "title": "Expand Your Reach",
+          "description": "Access thousands of new customers in your city instantly. Our platform puts your menu in front of hungry diners near you."
+        },
+        "delivery": {
+          "title": "Hassle-Free Delivery",
+          "description": "Our fleet handles the logistics so you can focus on cooking. We ensure hot, fresh food reaches your customers on time."
+        },
+        "support": {
+          "title": "Dedicated Support",
+          "description": "24/7 partner support to help your business thrive. Get real-time analytics and marketing tools to grow faster."
+        }
+      }
     }
   },
   "auth": {
