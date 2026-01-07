@@ -1,8 +1,8 @@
 import { useTranslation } from 'react-i18next';
-import { Mail, MapPin, Instagram, Linkedin, Twitter, Facebook } from 'lucide-react';
+import { Mail, MapPin, Instagram, Linkedin, Facebook } from 'lucide-react';
 import { Logo } from '@/components/ui/logo';
 import { GooglePlayButton } from '@/components/ui/googlePlayButton';
-import { AppStoreButton } from '@/components/ui/AppStoreButton';
+import { AppStoreButton } from '@/components/ui/appStoreButton';
 
 export const Footer = () => {
     const { t } = useTranslation();

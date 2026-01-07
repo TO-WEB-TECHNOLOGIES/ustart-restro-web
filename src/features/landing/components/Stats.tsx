@@ -3,23 +3,23 @@ import { useTranslation } from 'react-i18next';
 export const Stats = () => {
     const { t } = useTranslation();
 
-    const stats = [
-        {
-            key: 'partners',
-            value: t('landing.stats.partners.value'),
-            label: t('landing.stats.partners.label')
-        },
-        {
-            key: 'cities',
-            value: t('landing.stats.cities.value'),
-            label: t('landing.stats.cities.label')
-        },
-        {
-            key: 'orders',
-            value: t('landing.stats.orders.value'),
-            label: t('landing.stats.orders.label')
-        }
-    ];
+    // const stats = [
+    //     {
+    //         key: 'partners',
+    //         value: t('landing.stats.partners.value'),
+    //         label: t('landing.stats.partners.label')
+    //     },
+    //     {
+    //         key: 'cities',
+    //         value: t('landing.stats.cities.value'),
+    //         label: t('landing.stats.cities.label')
+    //     },
+    //     {
+    //         key: 'orders',
+    //         value: t('landing.stats.orders.value'),
+    //         label: t('landing.stats.orders.label')
+    //     }
+    // ];
 
     return (
         <section className="bg-[#1A202C] py-20 text-white">
