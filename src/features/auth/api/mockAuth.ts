@@ -1,23 +1,42 @@
 // Simulating API latency
 const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
+// AuthResponse removed as verifyOtp now returns only { token: string }
+
 export const mockAuthService = {
-    sendOtp: async (mobile: string): Promise<{ message: string; otp: string }> => {
+    sendOtp: async (mobile: string): Promise<{ message: string }> => {
         await delay(1000); // Simulate network delay
         console.log(`OTP for ${mobile}: 123456`); // For debugging
-        // In a real scenario, the backend would send the OTP
         return {
             message: 'OTP sent successfully',
-            otp: '123456', // Mock OTP
         };
     },
 
-    verifyOtp: async (_mobile: string, otp: string): Promise<{ token: string; user: { name: string } }> => {
+    verifyOtp: async (mobile: string, otp: string): Promise<{ token: string }> => {
         await delay(1000);
         if (otp === '123456') {
+
+            const isNewUser = mobile.endsWith('0');
+            const isPending = mobile.endsWith('1');
+
+            const payload = {
+                user: {
+                    id: 'user-123',
+                    name: 'Demo Partner',
+                    mobile
+                },
+                isOnboardingComplete: !isNewUser,
+                status: isNewUser ? 'PENDING' : (isPending ? 'UPDATE_APPROVAL_PENDING' : 'APPROVED'),
+                exp: Date.now() + (24 * 60 * 60 * 1000) // 24 hours
+            };
+
+            // Simple mock JWT generation (Header.Payload.Signature)
+            const header = btoa(JSON.stringify({ alg: "HS256", typ: "JWT" }));
+            const encodedPayload = btoa(JSON.stringify(payload));
+            const signature = btoa("mock-signature");
+
             return {
-                token: 'mock-jwt-token',
-                user: { name: 'Demo User' },
+                token: `${header}.${encodedPayload}.${signature}`
             };
         }
         throw new Error('Invalid OTP');

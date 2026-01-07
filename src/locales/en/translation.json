@@ -88,6 +88,12 @@
       }
     }
   },
+  "join": {
+    "title": "Complete Your Registration",
+    "description": "Your profile is incomplete or pending approval. Please complete your onboarding to access the dashboard.",
+    "completeButton": "Complete Onboarding",
+    "logout": "Logout"
+  },
   "auth": {
     "login": {
       "title": "Login/ Partner with us",
