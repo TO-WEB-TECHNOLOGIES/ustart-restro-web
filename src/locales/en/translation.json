@@ -55,6 +55,37 @@
         "label": "MONTHLY ORDERS"
       },
       "comingSoon": "We will see you soon."
+    },
+    "footer": {
+      "brand": {
+        "description": "Bringing delicious food to your doorstep with care and convenience. Experience the best culinary partnerships with USTART - your trusted growth partner."
+      },
+      "address": {
+        "title": "Our Address",
+        "line1": "2 FLR Gateway B Building,",
+        "line2": "67th Milestone NH8,",
+        "line3": "Bhorakalan, 122413"
+      },
+      "contact": {
+        "title": "Contact Us",
+        "emailLabel": "EMAIL US",
+        "emailValue": "contact@ustart.in"
+      },
+      "links": {
+        "title": "Links",
+        "support": "Support",
+        "privacy": "Privacy Policy",
+        "terms": "Terms of Service",
+        "refund": "Refund Policy"
+      },
+      "download": {
+        "title": "Download Our App"
+      },
+      "copyright": "USTART. All rights reserved. Designed for growth.",
+      "legal": {
+        "sitemap": "Sitemap",
+        "security": "Security"
+      }
     }
   },
   "auth": {

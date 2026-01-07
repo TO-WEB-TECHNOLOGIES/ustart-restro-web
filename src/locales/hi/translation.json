@@ -55,6 +55,37 @@
         "label": "मासिक ऑर्डर"
       },
       "comingSoon": "हम आपसे जल्द ही मिलेंगे।"
+    },
+    "footer": {
+      "brand": {
+        "description": "देखभाल और सुविधा के साथ अपने दरवाजे पर स्वादिष्ट भोजन लाएं। USTART के साथ सर्वोत्तम पाक साझेदारी का अनुभव करें - आपका विश्वसनीय विकास भागीदार।"
+      },
+      "address": {
+        "title": "हमारा पता",
+        "line1": "2 FLR Gateway B Building,",
+        "line2": "67th Milestone NH8,",
+        "line3": "Bhorakalan, 122413"
+      },
+      "contact": {
+        "title": "सम्पर्क करे",
+        "emailLabel": "EMAIL US",
+        "emailValue": "contact@ustart.in"
+      },
+      "links": {
+        "title": "लिंक",
+        "support": "समर्थन",
+        "privacy": "गोपनीयता नीति",
+        "terms": "सेवा की शर्तें",
+        "refund": "वापसी नीति"
+      },
+      "download": {
+        "title": "हमारा ऐप डाउनलोड करें"
+      },
+      "copyright": "USTART. सर्वाधिकार सुरक्षित। विकास के लिए डिज़ाइन किया गया।",
+      "legal": {
+        "sitemap": "साइटमैप",
+        "security": "सुरक्षा"
+      }
     }
   },
   "auth": {
