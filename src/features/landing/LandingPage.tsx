@@ -2,6 +2,7 @@ import { CheckCircle2 } from 'lucide-react';
 import { useTranslation, Trans } from 'react-i18next';
 import { Header } from './components/Header';
 import { WhyPartner } from './components/WhyPartner';
+import { Stats } from './components/Stats';
 import { LoginForm } from '@/features/auth/components/LoginForm';
 
 export const LandingPage = () => {
@@ -60,6 +61,7 @@ export const LandingPage = () => {
             </div>
 
             <WhyPartner />
+            <Stats />
         </div>
     );
 };

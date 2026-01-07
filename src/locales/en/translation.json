@@ -40,6 +40,21 @@
           "description": "24/7 partner support to help your business thrive. Get real-time analytics and marketing tools to grow faster."
         }
       }
+    },
+    "stats": {
+      "partners": {
+        "value": "50k+",
+        "label": "RESTAURANT PARTNERS"
+      },
+      "cities": {
+        "value": "200+",
+        "label": "CITIES COVERED"
+      },
+      "orders": {
+        "value": "10M+",
+        "label": "MONTHLY ORDERS"
+      },
+      "comingSoon": "We will see you soon."
     }
   },
   "auth": {
