@@ -1,22 +1,39 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import type { PersonalInfoValues, RestaurantInfoValues } from '../schemas';
+import type { PersonalInfoValues } from '../schemas';
+
+export interface RestaurantInfoState {
+    hasCin?: boolean;
+    companyName?: string;
+    brandName?: string;
+    hasMultipleBranches?: boolean;
+    cinNumber?: string;
+    panNumber?: string;
+    gstNumber?: string;
+    registeredAddress?: string;
+    restaurantName?: string;
+    restaurantAddress?: string;
+    location?: string;
+    googleMapsLink?: string;
+}
 
 export interface OnboardingState {
     currentStep: number;
     personalInfo: PersonalInfoValues;
-    restaurantInfo: RestaurantInfoValues;
-    documents: any;
+    restaurantInfo: RestaurantInfoState;
+    isEmailVerified: boolean;
 
     // Actions
     setPersonalInfo: (data: PersonalInfoValues) => void;
-    setRestaurantInfo: (data: RestaurantInfoValues) => void;
+    setRestaurantInfo: (data: Partial<RestaurantInfoState>) => void;
+    setIsEmailVerified: (status: boolean) => void;
     setCurrentStep: (step: number) => void;
     reset: () => void;
 }
 
 const initialState = {
     currentStep: 1,
+    isEmailVerified: false,
     personalInfo: {
         fullName: '',
         email: '',
@@ -25,7 +42,19 @@ const initialState = {
         isSameAsMobile: false,
     },
     restaurantInfo: {
-        hasCin: undefined
+        hasCin: undefined,
+        // Initialize other fields as undefined or empty strings to avoid uncontrolled/controlled warnings if used directly
+        companyName: '',
+        brandName: '',
+        hasMultipleBranches: false,
+        cinNumber: '',
+        panNumber: '',
+        gstNumber: '',
+        registeredAddress: '',
+        restaurantName: '',
+        restaurantAddress: '',
+        location: '',
+        googleMapsLink: '',
     },
     documents: {},
 };
@@ -40,12 +69,17 @@ export const useOnboardingStore = create<OnboardingState>()(
             setRestaurantInfo: (data) => set((state) => ({
                 restaurantInfo: { ...state.restaurantInfo, ...data }
             })),
+            setIsEmailVerified: (status) => set({ isEmailVerified: status }),
             setCurrentStep: (step) => set({ currentStep: step }),
             reset: () => set(initialState),
         }),
         {
             name: 'onboarding-storage',
-            // Only persist necessary fields? For now persisting everything is fine.
+            partialize: (state) => ({
+                ...state,
+                // Exclude isEmailVerified from persistence
+                isEmailVerified: undefined,
+            }),
         }
     )
 );

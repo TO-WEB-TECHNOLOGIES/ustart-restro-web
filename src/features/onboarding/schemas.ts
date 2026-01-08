@@ -10,9 +10,37 @@ export const personalInfoSchema = z.object({
 
 export type PersonalInfoValues = z.infer<typeof personalInfoSchema>;
 
-export const restaurantInfoSchema = z.object({
-    hasCin: z.boolean().optional(),
-    // Logic for other fields will be added later
+// Base schema for common fields or shared logic if any
+const baseRestaurantSchema = z.object({
+    hasCin: z.boolean(),
 });
+
+// Schema when user has CIN
+const cinTrueSchema = baseRestaurantSchema.extend({
+    hasCin: z.literal(true),
+    companyName: z.string().min(3, 'Company Name is required'),
+    brandName: z.string().min(3, 'Brand Name is required'),
+    hasMultipleBranches: z.boolean().default(false),
+    cinNumber: z.string().regex(/^([LUu]{1})([0-9]{5})([A-Za-z]{2})([0-9]{4})([A-Za-z]{3})([0-9]{6})$/, 'Invalid CIN format'),
+    panNumber: z.string().regex(/^[A-Z]{5}[0-9]{4}[A-Z]{1}$/, 'Invalid PAN format'),
+    gstNumber: z.string().regex(/^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/, 'Invalid GST format'),
+    registeredAddress: z.string().min(10, 'Address must be at least 10 characters'),
+});
+
+// Schema when user does not have CIN
+const cinFalseSchema = baseRestaurantSchema.extend({
+    hasCin: z.literal(false),
+    restaurantName: z.string().min(3, 'Restaurant Name is required'),
+    panNumber: z.string().regex(/^[A-Z]{5}[0-9]{4}[A-Z]{1}$/, 'Invalid PAN format'),
+    gstNumber: z.string().optional().refine((val) => !val || /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/.test(val), 'Invalid GST format'),
+    restaurantAddress: z.string().min(10, 'Address must be at least 10 characters'),
+    location: z.string().min(1, 'Location is required'), // lat:long
+    googleMapsLink: z.string().url('Invalid URL').optional().or(z.literal('')),
+});
+
+export const restaurantInfoSchema = z.discriminatedUnion('hasCin', [
+    cinTrueSchema,
+    cinFalseSchema,
+]);
 
 export type RestaurantInfoValues = z.infer<typeof restaurantInfoSchema>;

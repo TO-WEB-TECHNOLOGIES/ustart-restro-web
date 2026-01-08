@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { useAuth } from '@/context/AuthContext';
 import { useLanguage } from '@/hooks/useLanguage';
 import { useOnboardingStore } from '../store/useOnboardingStore';
-import { Outlet, useNavigate } from 'react-router-dom';
+import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import {
     HelpCircle,
     LogOut,
@@ -22,9 +22,24 @@ export const OnboardingLayout = () => {
     const { logout } = useAuth();
     const { language, changeLanguage } = useLanguage();
     const navigate = useNavigate();
-    const { currentStep, personalInfo, reset } = useOnboardingStore();
+    const location = useLocation();
+    const { currentStep, setCurrentStep, personalInfo, reset } = useOnboardingStore();
     const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
     const { user } = useAuth(); // Destructure user
+
+    // Sync current step with browser URL
+    useEffect(() => {
+        const path = location.pathname;
+        if (path.includes('/personal-info')) {
+            setCurrentStep(1);
+        } else if (path.includes('/restaurant-info')) {
+            setCurrentStep(2);
+        } else if (path.includes('/documents')) {
+            setCurrentStep(3);
+        } else if (path.includes('/menu')) {
+            setCurrentStep(4);
+        }
+    }, [location.pathname, setCurrentStep]);
 
     // Reset onboarding if different user logs in
     useEffect(() => {

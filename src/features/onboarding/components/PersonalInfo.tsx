@@ -17,13 +17,25 @@ export const PersonalInfo = () => {
     const { t } = useTranslation();
     const navigate = useNavigate();
     const { user, token } = useAuth();
-    const { personalInfo, setPersonalInfo, setCurrentStep } = useOnboardingStore();
+    const { personalInfo, setPersonalInfo, setCurrentStep, isEmailVerified, setIsEmailVerified } = useOnboardingStore();
 
     // OTP State
     const [showOtpInput, setShowOtpInput] = useState(false);
     const [otp, setOtp] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const [otpError, setOtpError] = useState('');
+    const [resendTimer, setResendTimer] = useState(0);
+
+    // Resend Timer Logic
+    useEffect(() => {
+        let interval: any;
+        if (resendTimer > 0) {
+            interval = setInterval(() => {
+                setResendTimer((prev) => prev - 1);
+            }, 1000);
+        }
+        return () => clearInterval(interval);
+    }, [resendTimer]);
 
     const {
         register,
@@ -57,10 +69,18 @@ export const PersonalInfo = () => {
     // Step 1: Send OTP
     const onSendOtp = async (data: PersonalInfoValues) => {
         setPersonalInfo(data); // Save local state first
+
+        if (isEmailVerified) {
+            setCurrentStep(2);
+            navigate('/grow-with-ustart/restaurant-info');
+            return;
+        }
+
         setIsLoading(true);
         try {
             await mockAuthService.sendEmailOtp(data.email);
             setShowOtpInput(true);
+            setResendTimer(120); // Start 120s timer
         } catch (error) {
             console.error(error);
             // Handle error (toast etc)
@@ -81,6 +101,7 @@ export const PersonalInfo = () => {
             await mockAuthService.verifyEmailOtp(email, otp, `Bearer ${token || 'mock-token'}`);
 
             // Success
+            setIsEmailVerified(true);
             setCurrentStep(2);
             navigate('/grow-with-ustart/restaurant-info');
         } catch (error) {
@@ -148,8 +169,11 @@ export const PersonalInfo = () => {
                                     {...register('email')}
                                     className="pl-10 h-12 bg-white border-slate-200"
                                     placeholder={t('onboarding.personal.emailPlaceholder')}
-                                    disabled={showOtpInput}
+                                    disabled={showOtpInput || isEmailVerified}
                                 />
+                                {isEmailVerified && (
+                                    <CheckCircle2 className="absolute right-3 top-3.5 h-4 w-4 text-green-600" />
+                                )}
                             </div>
                             {errors.email && <p className="text-red-500 text-xs">{errors.email.message}</p>}
                         </div>
@@ -231,9 +255,13 @@ export const PersonalInfo = () => {
                             <button
                                 type="button"
                                 onClick={() => onSendOtp(getValues())}
-                                className="text-sm text-primary-blue font-medium hover:underline"
+                                disabled={resendTimer > 0 || isLoading}
+                                className={`text-sm font-medium hover:underline ${resendTimer > 0 ? 'text-slate-400 cursor-not-allowed no-underline' : 'text-primary-blue'}`}
                             >
-                                {t('onboarding.personal.emailValidation.resend')}
+                                {resendTimer > 0
+                                    ? t('auth.otp.resendTimer', { time: resendTimer })
+                                    : t('onboarding.personal.emailValidation.resend')
+                                }
                             </button>
                         </div>
                     </div>
