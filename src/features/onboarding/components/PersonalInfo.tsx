@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useTranslation } from 'react-i18next';
+import { useNavigate } from 'react-router-dom';
 import { useOnboardingStore } from '../store/useOnboardingStore';
 import { personalInfoSchema, type PersonalInfoValues } from '../schemas';
 import { Button } from '@/components/ui/button';
@@ -14,6 +15,7 @@ import { OtpInput } from '@/components/ui/otp-input';
 
 export const PersonalInfo = () => {
     const { t } = useTranslation();
+    const navigate = useNavigate();
     const { user, token } = useAuth();
     const { personalInfo, setPersonalInfo, setCurrentStep } = useOnboardingStore();
 
@@ -80,7 +82,7 @@ export const PersonalInfo = () => {
 
             // Success
             setCurrentStep(2);
-            window.history.pushState(null, '', '/grow-with-ustart/restaurant-info');
+            navigate('/grow-with-ustart/restaurant-info');
         } catch (error) {
             console.error(error);
             setOtpError('Invalid OTP. Please try again.');
@@ -247,10 +249,7 @@ export const PersonalInfo = () => {
                 )}
             </div>
 
-            <div className="flex justify-center items-center gap-2 text-xs text-slate-400">
-                <Lock className="w-3 h-3" />
-                {t('onboarding.personal.secureText')}
-            </div>
+
         </div>
     );
 };

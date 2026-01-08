@@ -139,8 +139,23 @@
         "verifyButton": "सत्यापित करें और जारी रखें",
         "resend": "कोड पुनः भेजें",
         "success": "ईमेल सफलतापूर्वक सत्यापित!"
-      },
-      "secureText": "आपकी जानकारी हमारे पास सुरक्षित है।"
+      }
+    },
+    "restaurant": {
+      "titleDefault": "रेस्टोरेंट की जानकारी",
+      "titleCin": "कंपनी का विवरण",
+      "titleNoCin": "रेस्टोरेंट का विवरण",
+      "subtitleDefault": "आइए आपकी व्यवसाय पंजीकरण स्थिति से शुरू करें।",
+      "subtitleCin": "सत्यापन के लिए कृपया अपनी पंजीकृत व्यावसायिक जानकारी प्रदान करें।",
+      "subtitleNoCin": "आगे बढ़ने के लिए अपने प्रतिष्ठान के बारे में थोड़ा और बताएं।",
+      "cinQuestion": {
+        "title": "क्या आपके पास CIN (Corporate Identification Number) है?",
+        "subtitle": "Corporate Identification Number",
+        "yes": "हाँ",
+        "no": "नहीं",
+        "continue": "जारी रखें",
+        "back":"पिछले चरण पर वापस जाएँ"
+      }
     }
   },
   "auth": {

@@ -11,7 +11,8 @@ import {
     User,
     FileText,
     Utensils,
-    Globe
+    Globe,
+    Lock
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Logo } from '@/components/ui/logo';
@@ -134,6 +135,10 @@ export const OnboardingLayout = () => {
                 {/* Content Area */}
                 <div className="p-8 max-w-4xl mx-auto flex flex-grow items-center">
                     <Outlet />
+                </div>
+                <div className="flex justify-center items-center gap-2 text-xs text-slate-400 mb-4">
+                    <Lock className="w-3 h-3" />
+                    {t('onboarding.personal.secureText')}
                 </div>
             </div>
 

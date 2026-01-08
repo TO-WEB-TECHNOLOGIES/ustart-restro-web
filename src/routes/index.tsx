@@ -6,6 +6,7 @@ import { RequireAuth, RequireOnboarding, RequirePending, PublicOnlyRoute } from 
 import { OnboardingLayout } from '@/features/onboarding/layouts/OnboardingLayout';
 import { PersonalInfo } from '@/features/onboarding/components/PersonalInfo';
 import { Navigate } from 'react-router-dom';
+import { RestaurantInfo } from '@/features/onboarding/components/RestaurantInfo';
 
 export const router = createBrowserRouter([
     {
@@ -34,6 +35,10 @@ export const router = createBrowserRouter([
                             {
                                 path: 'personal-info',
                                 element: <PersonalInfo />
+                            },
+                            {
+                                path: "restaurant-info",
+                                element: <RestaurantInfo />
                             }
                         ]
                     }

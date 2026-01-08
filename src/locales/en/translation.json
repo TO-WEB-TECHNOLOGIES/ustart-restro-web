@@ -141,6 +141,22 @@
         "resend": "Resend Code",
         "success": "Email verified successfully!"
       }
+    },
+    "restaurant": {
+      "titleDefault": "Restaurant Information",
+      "titleCin": "Company Details",
+      "titleNoCin": "Restaurant Details",
+      "subtitleDefault": "Let's start with your business registration status.",
+      "subtitleCin": "Please provide your registered business information for verification.",
+      "subtitleNoCin": "Tell us a bit more about your establishment to proceed.",
+      "cinQuestion": {
+        "title": "Do you have CIN (Corporate Identification Number) ?",
+        "subtitle": "Corporate Identification Number",
+        "yes": "Yes",
+        "no": "No",
+        "continue": "Continue",
+        "back":"Go back to the previous step"
+      }
     }
   },
   "auth": {

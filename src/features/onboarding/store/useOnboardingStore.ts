@@ -1,16 +1,16 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import type { PersonalInfoValues } from '../schemas';
+import type { PersonalInfoValues, RestaurantInfoValues } from '../schemas';
 
 export interface OnboardingState {
     currentStep: number;
     personalInfo: PersonalInfoValues;
-    // Placeholders for future steps
-    restaurantInfo: any;
+    restaurantInfo: RestaurantInfoValues;
     documents: any;
 
     // Actions
     setPersonalInfo: (data: PersonalInfoValues) => void;
+    setRestaurantInfo: (data: RestaurantInfoValues) => void;
     setCurrentStep: (step: number) => void;
     reset: () => void;
 }
@@ -24,7 +24,9 @@ const initialState = {
         whatsapp: '',
         isSameAsMobile: false,
     },
-    restaurantInfo: {},
+    restaurantInfo: {
+        hasCin: undefined
+    },
     documents: {},
 };
 
@@ -34,6 +36,9 @@ export const useOnboardingStore = create<OnboardingState>()(
             ...initialState,
             setPersonalInfo: (data) => set((state) => ({
                 personalInfo: { ...state.personalInfo, ...data }
+            })),
+            setRestaurantInfo: (data) => set((state) => ({
+                restaurantInfo: { ...state.restaurantInfo, ...data }
             })),
             setCurrentStep: (step) => set({ currentStep: step }),
             reset: () => set(initialState),

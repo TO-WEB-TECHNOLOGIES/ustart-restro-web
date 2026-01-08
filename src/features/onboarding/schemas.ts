@@ -9,3 +9,10 @@ export const personalInfoSchema = z.object({
 });
 
 export type PersonalInfoValues = z.infer<typeof personalInfoSchema>;
+
+export const restaurantInfoSchema = z.object({
+    hasCin: z.boolean().optional(),
+    // Logic for other fields will be added later
+});
+
+export type RestaurantInfoValues = z.infer<typeof restaurantInfoSchema>;
