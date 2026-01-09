@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import type { PersonalInfoValues } from '../schemas';
+import type { PersonalInfoValues, BankDetailsValues } from '../schemas';
 
 export interface RestaurantInfoState {
     hasCin?: boolean;
@@ -33,12 +33,14 @@ export interface OnboardingState {
     personalInfo: PersonalInfoValues;
     restaurantInfo: RestaurantInfoState;
     aboutRestaurant: AboutRestaurantState;
+    documents: Partial<BankDetailsValues>;
     isEmailVerified: boolean;
 
     // Actions
     setPersonalInfo: (data: PersonalInfoValues) => void;
     setRestaurantInfo: (data: Partial<RestaurantInfoState>) => void;
     setAboutRestaurant: (data: Partial<AboutRestaurantState>) => void;
+    setDocuments: (data: Partial<BankDetailsValues>) => void;
     setIsEmailVerified: (status: boolean) => void;
     setCurrentStep: (step: number) => void;
     reset: () => void;
@@ -79,7 +81,14 @@ const initialState = {
         menuImages: [],
         dishImage: undefined,
     },
-    documents: {},
+    documents: {
+        fssaiDocument: undefined,
+        accountNumber: '',
+        ifscCode: '',
+        accountHolderName: '',
+        bankName: '',
+        branchName: '',
+    },
 };
 
 export const useOnboardingStore = create<OnboardingState>()(
@@ -94,6 +103,9 @@ export const useOnboardingStore = create<OnboardingState>()(
             })),
             setAboutRestaurant: (data) => set((state) => ({
                 aboutRestaurant: { ...state.aboutRestaurant, ...data }
+            })),
+            setDocuments: (data) => set((state) => ({
+                documents: { ...state.documents, ...data }
             })),
             setIsEmailVerified: (status) => set({ isEmailVerified: status }),
             setCurrentStep: (step) => set({ currentStep: step }),

@@ -206,7 +206,35 @@
         "dishUploadText": "Click to upload dish photo",
         "dishUploadSubtext": "High Resolution Only",
         "imageSpecTitle": "Image Specifications:",
-        "imageSpecText": "Image should be high-resolution, well-lit, and showcase a single dish clearly. Max file size: 5MB. Ensure the background is not cluttered."
+        "imageSpecText": "Image should be high-resolution, well-lit, and showcase a single dish clearly. Max file size: 5MB. Ensure the background is not cluttered.",
+        "imageSelected": "Image Selected",
+        "changeImage": "Change"
+      },
+      "documents": {
+        "title": "Documents & Bank Details",
+        "subtitle": "Securely upload your business documents and payout information.",
+        "fssaiLabel": "FSSAI Document",
+        "mandatory": "Mandatory",
+        "fssaiUploadText": "Click to upload FSSAI Document",
+        "fssaiUploadSubtext": "PDF, JPG, PNG. Max file size: 10MB",
+        "received": "Received",
+        "changeFile": "Change",
+        "accountDetailsTitle": "Account Details",
+        "accountNumberLabel": "Account Number",
+        "accountNumberPlaceholder": "Enter account number",
+        "ifscLabel": "IFSC Code",
+        "ifscPlaceholder": "E.G. HDFC0001234",
+        "find": "Find",
+        "holderNameLabel": "Account Holder Name",
+        "holderNamePlaceholder": "As per bank records",
+        "bankNameLabel": "Bank Name",
+        "bankNamePlaceholder": "e.g. HDFC Bank",
+        "branchNameLabel": "Bank Branch",
+        "branchNamePlaceholder": "e.g. Koramangala",
+        "verificationTitle": "Bank Verification",
+        "verificationText": "We will deposit a small amount (₹1) to verify your bank account details instantly. Please ensure the information provided is correct to avoid payment delays.",
+        "verifyButton": "That's me, please verify",
+        "backToDetails": "Back to Restaurant Details"
       }
     }
   },

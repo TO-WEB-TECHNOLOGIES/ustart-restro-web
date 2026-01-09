@@ -205,7 +205,35 @@
         "dishUploadText": "व्यंजन की फोटो अपलोड करने के लिए क्लिक करें",
         "dishUploadSubtext": "केवल उच्च रिज़ॉल्यूशन",
         "imageSpecTitle": "छवि विनिर्देश:",
-        "imageSpecText": "छवि उच्च रिज़ॉल्यूशन, अच्छी तरह से प्रकाशित, और स्पष्ट रूप से एक ही व्यंजन प्रदर्शित करनी चाहिए। अधिकतम फ़ाइल आकार: 5MB. सुनिश्चित करें कि पृष्ठभूमि अव्यवस्थित नहीं है।"
+        "imageSpecText": "छवि उच्च रिज़ॉल्यूशन, अच्छी तरह से प्रकाशित, और स्पष्ट रूप से एक ही व्यंजन प्रदर्शित करनी चाहिए। अधिकतम फ़ाइल आकार: 5MB. सुनिश्चित करें कि पृष्ठभूमि अव्यवस्थित नहीं है।",
+        "imageSelected": "छवि चयनित",
+        "changeImage": "बदलें"
+      },
+      "documents": {
+        "title": "दस्तावेज़ और बैंक विवरण",
+        "subtitle": "सुरक्षित रूप से अपने व्यावसायिक दस्तावेज़ और भुगतान जानकारी अपलोड करें।",
+        "fssaiLabel": "FSSAI दस्तावेज़",
+        "mandatory": "अनिवार्य",
+        "fssaiUploadText": "FSSAI दस्तावेज़ अपलोड करने के लिए क्लिक करें",
+        "fssaiUploadSubtext": "PDF, JPG, PNG. अधिकतम फ़ाइल आकार: 10MB",
+        "received": "प्राप्त हुआ",
+        "changeFile": "बदलें",
+        "accountDetailsTitle": "खाता विवरण",
+        "accountNumberLabel": "खाता संख्या",
+        "accountNumberPlaceholder": "खाता संख्या दर्ज करें",
+        "ifscLabel": "IFSC कोड",
+        "ifscPlaceholder": "उदा. HDFC0001234",
+        "find": "खोजें",
+        "holderNameLabel": "खाता धारक का नाम",
+        "holderNamePlaceholder": "बैंक रिकॉर्ड के अनुसार",
+        "bankNameLabel": "बैंक का नाम",
+        "bankNamePlaceholder": "उदा. HDFC बैंक",
+        "branchNameLabel": "बैंक शाखा",
+        "branchNamePlaceholder": "उदा. कोरमंगला",
+        "verificationTitle": "बैंक सत्यापन",
+        "verificationText": "हम आपके बैंक खाता विवरण को तुरंत सत्यापित करने के लिए एक छोटी राशि (₹1) जमा करेंगे। कृपया सुनिश्चित करें कि भुगतान में देरी से बचने के लिए दी गई जानकारी सही है।",
+        "verifyButton": "वह मैं हूँ, कृपया सत्यापित करें",
+        "backToDetails": "रेस्टोरेंट विवरण पर वापस जाएं"
       }
     }
   },

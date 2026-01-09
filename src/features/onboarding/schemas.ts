@@ -60,3 +60,14 @@ export const aboutRestaurantSchema = z.object({
 });
 
 export type AboutRestaurantValues = z.infer<typeof aboutRestaurantSchema>;
+
+export const bankDetailsSchema = z.object({
+    fssaiDocument: z.instanceof(File, { message: 'FSSAI Document is required' }),
+    accountNumber: z.string().min(8, 'Invalid Account Number'),
+    ifscCode: z.string().regex(/^[A-Z]{4}0[A-Z0-9]{6}$/, 'Invalid IFSC Code'),
+    accountHolderName: z.string().min(3, 'Holder Name is required'),
+    bankName: z.string().min(3, 'Bank Name is required'),
+    branchName: z.string().min(3, 'Branch Name is required'),
+});
+
+export type BankDetailsValues = z.infer<typeof bankDetailsSchema>;
