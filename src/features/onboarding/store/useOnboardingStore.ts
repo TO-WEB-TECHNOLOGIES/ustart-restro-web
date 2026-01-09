@@ -17,15 +17,28 @@ export interface RestaurantInfoState {
     googleMapsLink?: string;
 }
 
+export interface AboutRestaurantState {
+    foodTypes: {
+        isVegAvailable: boolean;
+        isNonVegAvailable: boolean;
+        isEggAvailable: boolean;
+    };
+    cuisines: number[];
+    menuImages?: File[];
+    dishImage?: File;
+}
+
 export interface OnboardingState {
     currentStep: number;
     personalInfo: PersonalInfoValues;
     restaurantInfo: RestaurantInfoState;
+    aboutRestaurant: AboutRestaurantState;
     isEmailVerified: boolean;
 
     // Actions
     setPersonalInfo: (data: PersonalInfoValues) => void;
     setRestaurantInfo: (data: Partial<RestaurantInfoState>) => void;
+    setAboutRestaurant: (data: Partial<AboutRestaurantState>) => void;
     setIsEmailVerified: (status: boolean) => void;
     setCurrentStep: (step: number) => void;
     reset: () => void;
@@ -56,6 +69,16 @@ const initialState = {
         location: '',
         googleMapsLink: '',
     },
+    aboutRestaurant: {
+        foodTypes: {
+            isVegAvailable: false,
+            isNonVegAvailable: false,
+            isEggAvailable: false,
+        },
+        cuisines: [],
+        menuImages: [],
+        dishImage: undefined,
+    },
     documents: {},
 };
 
@@ -68,6 +91,9 @@ export const useOnboardingStore = create<OnboardingState>()(
             })),
             setRestaurantInfo: (data) => set((state) => ({
                 restaurantInfo: { ...state.restaurantInfo, ...data }
+            })),
+            setAboutRestaurant: (data) => set((state) => ({
+                aboutRestaurant: { ...state.aboutRestaurant, ...data }
             })),
             setIsEmailVerified: (status) => set({ isEmailVerified: status }),
             setCurrentStep: (step) => set({ currentStep: step }),

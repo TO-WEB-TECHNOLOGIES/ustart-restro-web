@@ -1,0 +1,329 @@
+import { useEffect, useState, useMemo } from 'react';
+import ReactSelect from 'react-select'; // Renamed to avoid conflicts if any
+import { useTranslation } from 'react-i18next';
+import { useForm, Controller } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { useOnboardingStore } from '../store/useOnboardingStore';
+import { aboutRestaurantSchema, type AboutRestaurantValues } from '../schemas';
+import { Button } from '@/components/ui/button';
+import { Label } from '@/components/ui/label';
+
+// Master Data API
+import { masterDataService, type Cuisine } from '../api/masterData';
+import { Info, BookOpen, Image as ImageIcon, X, Paperclip } from 'lucide-react';
+import { useRef } from 'react';
+
+export const AboutRestaurant = () => {
+    const { t } = useTranslation();
+    const { aboutRestaurant, setAboutRestaurant, setCurrentStep } = useOnboardingStore();
+    const [cuisines, setCuisines] = useState<Cuisine[]>([]);
+    const [isLoadingCuisines, setIsLoadingCuisines] = useState(false);
+
+    const {
+        control,
+        handleSubmit,
+        watch,
+        setValue,
+        formState: { errors, isValid }
+    } = useForm<AboutRestaurantValues>({
+        resolver: zodResolver(aboutRestaurantSchema),
+        defaultValues: aboutRestaurant,
+        mode: 'onChange'
+    });
+
+    useEffect(() => {
+        const fetchCuisines = async () => {
+            setIsLoadingCuisines(true);
+            try {
+                const data = await masterDataService.getCuisines();
+                setCuisines(data);
+            } catch (error) {
+                console.error("Failed to fetch cuisines", error);
+            } finally {
+                setIsLoadingCuisines(false);
+            }
+        };
+        fetchCuisines();
+    }, []);
+
+    const onSubmit = (data: AboutRestaurantValues) => {
+        setAboutRestaurant(data);
+        console.log("About Restaurant Submitted:", data);
+        // Move to next internal state (Documents) - for now just log or allow navigation
+        // In real app, this might navigate to 'documents' route or toggle local state
+        setCurrentStep(4); // Assuming Documents is next
+        // navigate('/grow-with-ustart/documents');
+    };
+
+    // Helper for Food Type Button
+    const FoodTypeButton = ({
+        label,
+        colorClass,
+        isSelected,
+        onClick
+    }: { label: string, colorClass: string, isSelected: boolean, onClick: () => void }) => (
+        <button
+            type="button"
+            onClick={onClick}
+            className={`flex items-center gap-2 px-4 py-2 rounded-xl border transition-all ${isSelected
+                ? 'bg-white border-slate-300 shadow-sm'
+                : 'bg-slate-50 border-slate-100 text-slate-500 hover:bg-slate-100'
+                }`}
+        >
+            <span className={`w-3 h-3 rounded-full ${colorClass}`}></span>
+            <span className={`font-medium ${isSelected ? 'text-slate-900' : 'text-slate-500'}`}>{label}</span>
+        </button>
+    );
+
+    // File Upload Refs
+    const menuInputRef = useRef<HTMLInputElement>(null);
+    const dishInputRef = useRef<HTMLInputElement>(null);
+
+    const menuImages = watch('menuImages');
+    const dishImage = watch('dishImage');
+
+    const handleMenuFiles = (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (e.target.files && e.target.files.length > 0) {
+            const newFiles = Array.from(e.target.files);
+            // Append or replace? Let's append for multi, or replace. User usually expects adding.
+            // But for simplicity let's replace or combine.
+            const currentFiles = (watch('menuImages') as File[]) || [];
+            setValue('menuImages', [...currentFiles, ...newFiles], { shouldValidate: true });
+        }
+    };
+
+    const handleDishFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (e.target.files && e.target.files[0]) {
+            setValue('dishImage', e.target.files[0], { shouldValidate: true });
+        }
+    };
+
+    const removeMenuFile = (index: number) => {
+        const currentFiles = (watch('menuImages') as File[]) || [];
+        const updated = currentFiles.filter((_, i) => i !== index);
+        setValue('menuImages', updated, { shouldValidate: true });
+    };
+
+    return (
+        <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500 h-full flex flex-col justify-between">
+            <div>
+                <h2 className="text-3xl md:text-5xl font-bold text-slate-900">{t('onboarding.restaurant.about.title')}</h2>
+                <p className="md:text-2xl text-slate-500 mt-2">{t('onboarding.restaurant.about.subtitle')}</p>
+            </div>
+
+            <div className="py-8 flex-grow overflow-y-auto px-1">
+                <form id="about-restaurant-form" onSubmit={handleSubmit(onSubmit)} className="space-y-8">
+
+                    {/* Food Type */}
+                    <div className="space-y-2">
+                        <Label className="font-semibold text-slate-700">{t('onboarding.restaurant.about.foodTypeLabel')}</Label>
+                        <Controller
+                            control={control}
+                            name="foodTypes"
+                            render={({ field }) => (
+                                <div className="flex gap-4 flex-wrap">
+                                    <FoodTypeButton
+                                        label={t('onboarding.restaurant.about.veg')}
+                                        colorClass="bg-green-500"
+                                        isSelected={field.value.isVegAvailable}
+                                        onClick={() => field.onChange({ ...field.value, isVegAvailable: !field.value.isVegAvailable })}
+                                    />
+                                    <FoodTypeButton
+                                        label={t('onboarding.restaurant.about.nonVeg')}
+                                        colorClass="bg-red-500"
+                                        isSelected={field.value.isNonVegAvailable}
+                                        onClick={() => field.onChange({ ...field.value, isNonVegAvailable: !field.value.isNonVegAvailable })}
+                                    />
+                                    <FoodTypeButton
+                                        label={t('onboarding.restaurant.about.egg')}
+                                        colorClass="bg-yellow-500"
+                                        isSelected={field.value.isEggAvailable}
+                                        onClick={() => field.onChange({ ...field.value, isEggAvailable: !field.value.isEggAvailable })}
+                                    />
+                                </div>
+                            )}
+                        />
+                        {errors.foodTypes?.root && <p className="text-red-500 text-xs">{errors.foodTypes.root.message}</p>}
+                    </div>
+
+                    {/* Cuisine Type */}
+                    <div className="space-y-2">
+                        <Label className="font-semibold text-slate-700">{t('onboarding.restaurant.about.cuisineLabel')}</Label>
+
+                        <div className="relative">
+                            <Controller
+                                control={control}
+                                name="cuisines"
+                                render={({ field }) => {
+                                    // Map cuisines to react-select options
+                                    const options = useMemo(() =>
+                                        cuisines.map(c => ({
+                                            value: c.cuisineId,
+                                            label: c.cuisineName
+                                        })),
+                                        [cuisines]);
+
+                                    // Map current selected IDs back to option objects
+                                    const selectedOptions = useMemo(() =>
+                                        options.filter(opt => field.value?.includes(opt.value)),
+                                        [field.value, options]);
+
+                                    return (
+                                        <ReactSelect
+                                            isMulti
+                                            isLoading={isLoadingCuisines}
+                                            options={options}
+                                            value={selectedOptions}
+                                            onChange={(newValue) => {
+                                                // Map selected options back to IDs
+                                                field.onChange(newValue.map(v => v.value));
+                                            }}
+                                            placeholder={t('onboarding.restaurant.about.cuisinePlaceholder')}
+                                            className="react-select-container"
+                                            classNamePrefix="react-select"
+                                            styles={{
+                                                control: (base, state) => ({
+                                                    ...base,
+                                                    borderRadius: '0.75rem', // rounded-xl
+                                                    borderColor: state.isFocused ? '#f97316' : '#e2e8f0', // secondary-orange or slate-200
+                                                    boxShadow: state.isFocused ? '0 0 0 1px #f97316' : 'none',
+                                                    '&:hover': {
+                                                        borderColor: '#f97316'
+                                                    },
+                                                    padding: '2px',
+                                                    minHeight: '48px'
+                                                }),
+                                                multiValue: (base) => ({
+                                                    ...base,
+                                                    backgroundColor: '#f1f5f9', // slate-100
+                                                    borderRadius: '0.5rem',
+                                                }),
+                                                multiValueLabel: (base) => ({
+                                                    ...base,
+                                                    color: '#334155', // slate-700
+                                                    fontWeight: 500,
+                                                }),
+                                                multiValueRemove: (base) => ({
+                                                    ...base,
+                                                    color: '#64748b', // slate-500
+                                                    ':hover': {
+                                                        backgroundColor: '#e2e8f0', // slate-200
+                                                        color: '#ef4444', // red-500
+                                                    },
+                                                })
+                                            }}
+                                        />
+                                    );
+                                }}
+                            />
+                        </div>
+                        {errors.cuisines && <p className="text-red-500 text-xs mt-1">{errors.cuisines.message}</p>}
+                    </div>
+
+                    {/* Upload Sections */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        {/* Delivery Menu */}
+                        <div className="space-y-2">
+                            <Label className="font-semibold text-slate-700">{t('onboarding.restaurant.about.menuLabel')}</Label>
+                            <div
+                                onClick={() => menuInputRef.current?.click()}
+                                className={`border-2 border-dashed rounded-2xl p-8 flex flex-col items-center justify-center text-center hover:bg-slate-50 transition-colors cursor-pointer min-h-[160px] ${errors.menuImages ? 'border-red-300 bg-red-50' : 'border-slate-200'}`}
+                            >
+                                <input
+                                    type="file"
+                                    multiple
+                                    className="hidden"
+                                    ref={menuInputRef}
+                                    accept="image/*" // Accepting images
+                                    onChange={handleMenuFiles}
+                                />
+                                <div className="w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center mb-3 text-secondary-orange">
+                                    <BookOpen className="w-6 h-6" />
+                                </div>
+                                <p className="text-sm font-medium text-secondary-orange">
+                                    {t('onboarding.restaurant.about.menuUploadText')}
+                                </p>
+                                <p className="text-xs text-slate-400 mt-1">
+                                    {t('onboarding.restaurant.about.menuUploadSubtext')}
+                                </p>
+                            </div>
+                            {/* Selected Menu Files */}
+                            {menuImages && Array.isArray(menuImages) && menuImages.length > 0 && (
+                                <div className="flex flex-wrap gap-2 mt-2">
+                                    {menuImages.map((file: File, idx: number) => (
+                                        <div key={idx} className="flex items-center gap-2 bg-slate-100 px-3 py-1.5 rounded-lg text-xs text-slate-700 max-w-full">
+                                            <Paperclip className="w-3 h-3 flex-shrink-0" />
+                                            <span className="truncate max-w-[120px]">{file.name}</span>
+                                            <button type="button" onClick={() => removeMenuFile(idx)} className="text-slate-400 hover:text-red-500">
+                                                <X className="w-3 h-3" />
+                                            </button>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                            {errors.menuImages && <p className="text-red-500 text-xs">{errors.menuImages.message as string}</p>}
+                        </div>
+
+                        {/* Dish Image */}
+                        <div className="space-y-2">
+                            <Label className="font-semibold text-slate-700">{t('onboarding.restaurant.about.dishLabel')}</Label>
+                            <div
+                                onClick={() => dishInputRef.current?.click()}
+                                className={`border-2 border-dashed rounded-2xl p-8 flex flex-col items-center justify-center text-center hover:bg-slate-50 transition-colors cursor-pointer min-h-[160px] ${errors.dishImage ? 'border-red-300 bg-red-50' : 'border-slate-200'}`}
+                            >
+                                <input
+                                    type="file"
+                                    className="hidden"
+                                    ref={dishInputRef}
+                                    accept="image/*"
+                                    onChange={handleDishFile}
+                                />
+                                <div className="w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center mb-3 text-secondary-orange">
+                                    <ImageIcon className="w-6 h-6" />
+                                </div>
+                                {dishImage ? (
+                                    <div className='flex flex-col items-center'>
+                                        <p className="text-sm font-medium text-green-600 mb-1">Image Selected</p>
+                                        <span className="text-xs text-slate-500 truncate max-w-[150px]">{dishImage.name}</span>
+                                        <button type="button" onClick={(e) => { e.stopPropagation(); setValue('dishImage', undefined as any); }} className="text-xs text-red-500 mt-2 hover:underline">Change</button>
+                                    </div>
+                                ) : (
+                                    <>
+                                        <p className="text-sm font-medium text-secondary-orange">
+                                            {t('onboarding.restaurant.about.dishUploadText')}
+                                        </p>
+                                        <p className="text-xs text-slate-400 mt-1">
+                                            {t('onboarding.restaurant.about.dishUploadSubtext')}
+                                        </p>
+                                    </>
+                                )}
+                            </div>
+                            {errors.dishImage && <p className="text-red-500 text-xs">{errors.dishImage.message as string}</p>}
+                        </div>
+                    </div>
+
+                    {/* Info Alert */}
+                    <div className="bg-blue-50 border border-blue-100 rounded-xl p-4 flex gap-3">
+                        <Info className="w-5 h-5 text-blue-500 flex-shrink-0" />
+                        <div>
+                            <p className="text-sm font-bold text-blue-700 mb-1">{t('onboarding.restaurant.about.imageSpecTitle')}</p>
+                            <p className="text-xs text-blue-600 leading-relaxed">
+                                {t('onboarding.restaurant.about.imageSpecText')}
+                            </p>
+                        </div>
+                    </div>
+
+                </form>
+            </div>
+
+            <Button
+                type="submit"
+                form="about-restaurant-form"
+                disabled={!isValid}
+                className="w-full h-12 bg-secondary-orange hover:bg-secondary-orange/90 text-white font-bold text-lg rounded-xl shadow-lg shadow-secondary-orange/20 transition-all"
+            >
+                {t('common.continue', 'Continue')} →
+            </Button>
+        </div>
+    );
+};

@@ -7,6 +7,7 @@ import { OnboardingLayout } from '@/features/onboarding/layouts/OnboardingLayout
 import { PersonalInfo } from '@/features/onboarding/components/PersonalInfo';
 import { Navigate } from 'react-router-dom';
 import { RestaurantInfo } from '@/features/onboarding/components/RestaurantInfo';
+import { AboutRestaurant } from '@/features/onboarding/components/AboutRestaurant';
 
 export const router = createBrowserRouter([
     {
@@ -39,6 +40,10 @@ export const router = createBrowserRouter([
                             {
                                 path: "restaurant-info",
                                 element: <RestaurantInfo />
+                            },
+                            {
+                                path: "documents",
+                                element: <AboutRestaurant />
                             }
                         ]
                     }

@@ -44,3 +44,19 @@ export const restaurantInfoSchema = z.discriminatedUnion('hasCin', [
 ]);
 
 export type RestaurantInfoValues = z.infer<typeof restaurantInfoSchema>;
+
+export const aboutRestaurantSchema = z.object({
+    foodTypes: z.object({
+        isVegAvailable: z.boolean(),
+        isNonVegAvailable: z.boolean(),
+        isEggAvailable: z.boolean(),
+    }).refine((data) => data.isVegAvailable || data.isNonVegAvailable || data.isEggAvailable, {
+        message: "Select at least one food type",
+        path: ["root"]
+    }),
+    cuisines: z.array(z.number()).min(1, 'Select at least one cuisine'),
+    menuImages: z.array(z.instanceof(File)).min(1, 'Upload at least one menu image'),
+    dishImage: z.instanceof(File, { message: 'Dish image is required' }),
+});
+
+export type AboutRestaurantValues = z.infer<typeof aboutRestaurantSchema>;

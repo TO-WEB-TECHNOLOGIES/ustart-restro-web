@@ -58,7 +58,7 @@ export const RestaurantInfo = () => {
         console.log('Restaurant Info Submitted:', data);
         // Move to next step (Documents - ID 3)
         setCurrentStep(3);
-        // navigate('/grow-with-ustart/documents'); // Uncomment when route exists
+        navigate('/grow-with-ustart/documents');
     };
 
     const handleBack = () => {

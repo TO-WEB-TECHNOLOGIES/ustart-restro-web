@@ -189,6 +189,24 @@
         "goBack": "Go back to previous step",
         "hasCin": "Do you have CIN?",
         "dontHaveCin": "Don't have CIN?"
+      },
+      "about": {
+        "title": "About Restaurant",
+        "subtitle": "Define your cuisine and upload menu details.",
+        "foodTypeLabel": "Food Type",
+        "veg": "Veg",
+        "nonVeg": "Non-Veg",
+        "egg": "Egg",
+        "cuisineLabel": "Cuisine Type",
+        "cuisinePlaceholder": "Search for cuisines (e.g. Punjabi, Italian)",
+        "menuLabel": "Delivery Menu",
+        "menuUploadText": "Click to upload menu",
+        "menuUploadSubtext": "SVG, PNG, JPG or GIF",
+        "dishLabel": "Image of 1 Dish",
+        "dishUploadText": "Click to upload dish photo",
+        "dishUploadSubtext": "High Resolution Only",
+        "imageSpecTitle": "Image Specifications:",
+        "imageSpecText": "Image should be high-resolution, well-lit, and showcase a single dish clearly. Max file size: 5MB. Ensure the background is not cluttered."
       }
     }
   },
