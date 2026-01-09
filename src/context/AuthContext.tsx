@@ -16,6 +16,7 @@ interface AuthContextType {
     status: string | null;
     login: (token: string) => void;
     logout: () => void;
+    updateStatus: (status: string) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -78,7 +79,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             isOnboardingComplete,
             status,
             login,
-            logout
+            logout,
+            updateStatus: setStatus,
         }}>
             {children}
         </AuthContext.Provider>

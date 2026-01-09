@@ -1,5 +1,6 @@
 import { useEffect, useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '@/context/AuthContext';
 import ReactSelect from 'react-select'; // Renamed to avoid conflicts if any
 import { useTranslation } from 'react-i18next';
 import { useForm, Controller } from 'react-hook-form';
@@ -12,14 +13,25 @@ import { Label } from '@/components/ui/label';
 
 // Master Data API
 import { masterDataService, type Cuisine } from '../api/masterData';
-import { Info, BookOpen, Image as ImageIcon, X, Paperclip, CloudUpload, ShieldCheck, CheckCircle2, User, Store, MapPin } from 'lucide-react';
+import { onboardingService } from '../api/onboardingService';
+import { Info, BookOpen, Image as ImageIcon, X, Paperclip, CloudUpload, CheckCircle2, User, Store, MapPin } from 'lucide-react';
 import { useRef } from 'react';
 
 export const AboutRestaurant = () => {
     const { t } = useTranslation();
     const navigate = useNavigate();
-    const { aboutRestaurant, setAboutRestaurant, setCurrentStep, documents, setDocuments } = useOnboardingStore();
+    const { login } = useAuth();
+    const {
+        aboutRestaurant,
+        setAboutRestaurant,
+        setCurrentStep,
+        documents,
+        setDocuments,
+        personalInfo,
+        restaurantInfo
+    } = useOnboardingStore();
     const [view, setView] = useState<'details' | 'documents'>('details'); // Manage internal view state
+    const [isSubmitting, setIsSubmitting] = useState(false);
 
     // --- VIEW 1: RESTAURANT DETAILS (Food, Cuisines, Menu) ---
     const [cuisines, setCuisines] = useState<Cuisine[]>([]);
@@ -81,11 +93,35 @@ export const AboutRestaurant = () => {
         window.scrollTo(0, 0);
     };
 
-    const onSubmitDocuments = (data: BankDetailsValues) => {
-        setDocuments(data);
-        console.log("Documents Submitted:", data);
-        // Finalize this step and move to Step 4 (Menu)
-        setCurrentStep(4);
+    const onSubmitDocuments = async (data: BankDetailsValues) => {
+        setIsSubmitting(true);
+        try {
+            setDocuments(data);
+
+            // Prepare full payload
+            const fullPayload = {
+                personalInfo,
+                restaurantInfo,
+                aboutRestaurant,
+                documents: data
+            };
+
+            // Call API
+            const response = await onboardingService.submitOnboarding(fullPayload);
+
+            // Update Auth State (persists to localStorage)
+            login(response.token);
+
+            console.log("Documents Submitted & Status Updated:", data);
+
+            // Finalize this step, move to Step 4 (Verification)
+            setCurrentStep(4);
+            navigate('/grow-with-ustart/verification');
+        } catch (error) {
+            console.error("Submission failed", error);
+        } finally {
+            setIsSubmitting(false);
+        }
     };
 
     // Helper for Food Type Button
@@ -507,11 +543,20 @@ export const AboutRestaurant = () => {
                     <Button
                         type="submit"
                         form="documents-form"
-                        disabled={!isValidDocs}
+                        disabled={!isValidDocs || isSubmitting}
                         className="w-full h-12 bg-secondary-orange hover:bg-secondary-orange/90 text-white font-bold text-lg rounded-xl shadow-lg shadow-secondary-orange/20 transition-all gap-2"
                     >
-                        {t('onboarding.restaurant.documents.verifyButton')}
-                        <CheckCircle2 className="w-5 h-5" />
+                        {isSubmitting ? (
+                            <>
+                                <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                                {t('Processing...')}
+                            </>
+                        ) : (
+                            <>
+                                {t('onboarding.restaurant.documents.verifyButton')}
+                                <CheckCircle2 className="w-5 h-5" />
+                            </>
+                        )}
                     </Button>
                     <Button
                         type="button"

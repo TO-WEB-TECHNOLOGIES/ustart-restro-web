@@ -16,8 +16,15 @@ export const mockAuthService = {
         await delay(1000);
         if (otp === '123456') {
 
-            const isNewUser = mobile.endsWith('0');
-            const isPending = mobile.endsWith('1');
+            const isNewUser = mobile.endsWith('2');
+            const isUpdatePending = mobile.endsWith('1');
+            const isApprovalPending = mobile.endsWith('0');
+
+            // Determine status
+            let status = 'ACTIVE';
+            if (isNewUser) status = 'PENDING';
+            else if (isUpdatePending) status = 'UPDATE_APPROVAL_PENDING';
+            else if (isApprovalPending) status = 'APPROVAL_PENDING';
 
             const payload = {
                 user: {
@@ -25,8 +32,8 @@ export const mockAuthService = {
                     name: 'Demo Partner',
                     mobile
                 },
-                isOnboardingComplete: !isNewUser,
-                status: isNewUser ? 'PENDING' : (isPending ? 'UPDATE_APPROVAL_PENDING' : 'APPROVED'),
+                isOnboardingComplete: !isNewUser, // Assuming established users are "complete" in sense of steps, but maybe dependent on status
+                status,
                 exp: Date.now() + (24 * 60 * 60 * 1000) // 24 hours
             };
 

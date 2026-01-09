@@ -12,7 +12,7 @@ export const RequireAuth = () => {
 export const RequireOnboarding = () => {
     const { isOnboardingComplete, status } = useAuth();
 
-    if (!isOnboardingComplete || status !== 'APPROVED') {
+    if (!isOnboardingComplete || status !== 'ACTIVE') {
         return <Navigate to="/grow-with-ustart" replace />;
     }
     return <Outlet />;
@@ -21,8 +21,8 @@ export const RequireOnboarding = () => {
 export const RequirePending = () => {
     const { isOnboardingComplete, status } = useAuth();
 
-    // If already approved, go to dashboard
-    if (isOnboardingComplete && status === 'APPROVED') {
+    // If already active, go to dashboard
+    if (isOnboardingComplete && status === 'ACTIVE') {
         return <Navigate to="/dashboard" replace />;
     }
     return <Outlet />;
@@ -32,7 +32,7 @@ export const PublicOnlyRoute = () => {
     const { isAuthenticated, isOnboardingComplete, status } = useAuth();
 
     if (isAuthenticated) {
-        if (isOnboardingComplete && status === 'APPROVED') {
+        if (isOnboardingComplete && status === 'ACTIVE') {
             return <Navigate to="/dashboard" replace />;
         } else {
             return <Navigate to="/grow-with-ustart" replace />;

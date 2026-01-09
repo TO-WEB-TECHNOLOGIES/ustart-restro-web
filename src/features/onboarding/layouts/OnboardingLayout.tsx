@@ -12,7 +12,8 @@ import {
     FileText,
     Utensils,
     Globe,
-    Lock
+    Lock,
+    Hourglass
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Logo } from '@/components/ui/logo';
@@ -25,9 +26,14 @@ export const OnboardingLayout = () => {
     const location = useLocation();
     const { currentStep, setCurrentStep, personalInfo, reset } = useOnboardingStore();
     const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
-    const { user } = useAuth(); // Destructure user
+    const { user, status } = useAuth(); // Destructure user and status
 
-    // Sync current step with browser URL
+    // Redirect to verification if status is APPROVAL_PENDING
+    useEffect(() => {
+        if (status === 'APPROVAL_PENDING' && !location.pathname.includes('/verification')) {
+            navigate('/grow-with-ustart/verification', { replace: true });
+        }
+    }, [status, location.pathname, navigate]);
     useEffect(() => {
         const path = location.pathname;
         if (path.includes('/personal-info')) {
@@ -36,8 +42,10 @@ export const OnboardingLayout = () => {
             setCurrentStep(2);
         } else if (path.includes('/documents')) {
             setCurrentStep(3);
-        } else if (path.includes('/menu')) {
+        } else if (path.includes('/verification')) {
             setCurrentStep(4);
+        } else if (path.includes('/menu')) {
+            setCurrentStep(5);
         }
     }, [location.pathname, setCurrentStep]);
 
@@ -57,7 +65,8 @@ export const OnboardingLayout = () => {
         { id: 1, icon: User, label: t('onboarding.steps.personal.title'), subLabel: t('onboarding.steps.personal.subtitle') },
         { id: 2, icon: Store, label: t('onboarding.steps.restaurant.title'), subLabel: t('onboarding.steps.restaurant.subtitle') },
         { id: 3, icon: FileText, label: t('onboarding.steps.documents.title'), subLabel: t('onboarding.steps.documents.subtitle') },
-        { id: 4, icon: Utensils, label: t('onboarding.steps.menu.title'), subLabel: t('onboarding.steps.menu.subtitle') },
+        { id: 4, icon: Hourglass, label: t('onboarding.steps.verification.title'), subLabel: t('onboarding.steps.verification.subtitle') },
+        { id: 5, icon: Utensils, label: t('onboarding.steps.menu.title'), subLabel: t('onboarding.steps.menu.subtitle') },
     ];
 
     const toggleLanguage = () => {

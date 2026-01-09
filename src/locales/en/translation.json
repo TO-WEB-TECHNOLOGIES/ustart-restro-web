@@ -108,6 +108,10 @@
         "title": "Documents",
         "subtitle": "FSSAI, PAN & GST"
       },
+      "verification": {
+        "title": "Under Verification",
+        "subtitle": "In Progress"
+      },
       "menu": {
         "title": "Menu Setup",
         "subtitle": "Dishes & pricing"
@@ -193,7 +197,7 @@
       "about": {
         "title": "About Restaurant",
         "subtitle": "Define your cuisine and upload menu details.",
-        "foodTypeLabel": "Food Type",
+        "foodTypeLabel": "Food Type (Select all that apply)",
         "veg": "Veg",
         "nonVeg": "Non-Veg",
         "egg": "Egg",
@@ -235,6 +239,19 @@
         "verificationText": "We will deposit a small amount (₹1) to verify your bank account details instantly. Please ensure the information provided is correct to avoid payment delays.",
         "verifyButton": "That's me, please verify",
         "backToDetails": "Back to Restaurant Details"
+      },
+      "verification": {
+        "title": "Restaurant Under Review",
+        "subtitle": "Thanks for submitting your documents. We're currently verifying your business details to ensure everything is perfect.",
+        "reviewTimeframe": "48-Hour Review Timeframe",
+        "reviewTimeframeDesc": "Our compliance team reviews applications in the order they are received. This process typically takes up to 48 hours (excluding weekends). You will receive an email and SMS notification once the verification is complete.",
+        "contactTitle": "We Might Contact You",
+        "contactDesc": "In case any clarification is needed regarding your documents or bank details, our support team will reach out to you on your registered phone number. Please keep your phone handy.",
+        "supportTitle": "Need Immediate Assistance?",
+        "supportDesc": "Our partner support team is available 24/7 to help you with your onboarding status.",
+        "emailSupport": "EMAIL SUPPORT",
+        "partnerHelpline": "PARTNER HELPLINE",
+        "referenceId": "Reference ID:"
       }
     }
   },

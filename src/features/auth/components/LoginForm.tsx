@@ -99,7 +99,9 @@ export const LoginForm = () => {
             // Decode token to check status for redirect
             const decoded = decodeToken(response.token);
 
-            if (decoded && decoded.isOnboardingComplete && decoded.status === 'APPROVED') {
+            if (decoded && decoded.status === 'APPROVAL_PENDING') {
+                navigate('/grow-with-ustart/verification');
+            } else if (decoded && decoded.isOnboardingComplete && decoded.status === 'ACTIVE') {
                 navigate('/dashboard');
             } else {
                 navigate('/grow-with-ustart');
