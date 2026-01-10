@@ -67,5 +67,14 @@ export const masterDataService = {
         }
 
         return freshData;
+    },
+
+    getContactSupport: async () => {
+        await delay(500);
+        return {
+            email: 'partners@ustart.com',
+            phone: '+91 7827234027',
+            supportId: 'UST-8829-XJ'
+        };
     }
 };

@@ -1,17 +1,53 @@
+import { useEffect, useState, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Mail, Phone, Clock } from 'lucide-react';
+import { Mail, Phone, Clock, ClipboardCheck } from 'lucide-react';
+import { masterDataService } from '../api/masterData';
 
 export const Verification = () => {
     const { t } = useTranslation();
+    const [contactData, setContactData] = useState<{ email: string; phone: string; supportId: string } | null>(null);
+
+    useEffect(() => {
+        masterDataService.getContactSupport().then(setContactData);
+    }, []);
+
+    const supportInfo = useMemo(() => {
+        return contactData || {
+            email: 'partners@ustart.com',
+            phone: '+91 7827234027',
+            supportId: 'UST-8829-XJ'
+        };
+    }, [contactData]);
 
     return (
         <div className="w-full animate-in fade-in slide-in-from-bottom-4 duration-500">
-            <h2 className="text-3xl md:text-5xl font-bold text-slate-900 mb-2">
-                {t('onboarding.steps.verification.title')}
-            </h2>
-            <p className="md:text-xl text-slate-500 mb-12 max-w-2xl">
-                {t('onboarding.steps.verification.subtitle')}
-            </p>
+            <div className="flex flex-col md:flex-row justify-between items-start gap-8 mb-12 relative">
+                <div className="max-w-2xl pt-4">
+                    <h2 className="text-3xl md:text-5xl font-bold text-slate-900 mb-4">
+                        {t('onboarding.restaurant.verification.title')}
+                    </h2>
+                    <p className="text-lg md:text-xl text-slate-500 leading-relaxed">
+                        {t('onboarding.restaurant.verification.subtitle')}
+                    </p>
+                </div>
+
+                {/* Icon Component */}
+                <div className="hidden md:block relative shrink-0 mr-4 lg:mr-12">
+                    <div className="absolute inset-0 bg-secondary-orange/5 blur-3xl rounded-full" />
+                    <div className="relative">
+                        <div className="w-32 h-32 bg-white rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] -rotate-3 flex items-center justify-center border border-slate-50">
+                            <div className="w-16 h-16 bg-gradient-to-br from-secondary-orange to-[#ff8c24] rounded-2xl flex items-center justify-center shadow-inner">
+                                <ClipboardCheck className="w-9 h-9 text-white" />
+                            </div>
+                        </div>
+
+                        {/* Notification Badge */}
+                        <div className="absolute -top-3 -right-3 w-12 h-12 bg-primary-blue rounded-full border-[3px] border-white flex items-center justify-center shadow-lg z-10">
+                            <span className="text-white font-bold text-xl">!</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
 
             <div className="flex flex-col lg:flex-row gap-8">
                 {/* Left Column - Cards */}
@@ -30,8 +66,8 @@ export const Verification = () => {
                     </div>
 
                     {/* Contact Card */}
-                    <div className="bg-orange-50/50 rounded-2xl p-6 flex gap-4 border border-orange-100/50">
-                        <div className="w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center shrink-0">
+                    <div className="bg-secondary-orange/5 rounded-2xl p-6 flex gap-4 border border-secondary-orange/20">
+                        <div className="w-12 h-12 bg-secondary-orange/10 rounded-full flex items-center justify-center shrink-0">
                             <Phone className="w-6 h-6 text-secondary-orange" />
                         </div>
                         <div>
@@ -52,34 +88,34 @@ export const Verification = () => {
                         </p>
 
                         <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-4 space-y-4">
-                            <div className="flex items-center gap-4 p-2 hover:bg-slate-50 rounded-xl transition-colors cursor-pointer group">
+                            <a href={`mailto:${supportInfo.email}`} className="flex items-center gap-4 p-2 hover:bg-slate-50 rounded-xl transition-colors cursor-pointer group">
                                 <div className="w-10 h-10 bg-slate-100 rounded-full flex items-center justify-center group-hover:bg-primary-blue/10 transition-colors">
                                     <Mail className="w-5 h-5 text-slate-600 group-hover:text-primary-blue" />
                                 </div>
                                 <div>
                                     <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">{t('onboarding.restaurant.verification.emailSupport')}</p>
-                                    <p className="font-semibold text-slate-900">partners@ustart.com</p>
+                                    <p className="font-semibold text-slate-900">{supportInfo.email}</p>
                                 </div>
                                 <div className="ml-auto text-slate-300">→</div>
-                            </div>
+                            </a>
 
                             <div className="h-px bg-slate-100 mx-2"></div>
 
-                            <div className="flex items-center gap-4 p-2 hover:bg-slate-50 rounded-xl transition-colors cursor-pointer group">
+                            <a href={`tel:${supportInfo.phone}`} className="flex items-center gap-4 p-2 hover:bg-slate-50 rounded-xl transition-colors cursor-pointer group">
                                 <div className="w-10 h-10 bg-slate-100 rounded-full flex items-center justify-center group-hover:bg-primary-blue/10 transition-colors">
                                     <Phone className="w-5 h-5 text-slate-600 group-hover:text-primary-blue" />
                                 </div>
                                 <div>
                                     <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">{t('onboarding.restaurant.verification.partnerHelpline')}</p>
-                                    <p className="font-semibold text-slate-900">+91 7827234027</p>
+                                    <p className="font-semibold text-slate-900">{supportInfo.phone}</p>
                                 </div>
                                 <div className="ml-auto text-slate-300">→</div>
-                            </div>
+                            </a>
                         </div>
 
                         <div className="flex items-center gap-2 mt-4 text-xs text-slate-400 px-2">
                             <div className="w-4 h-4 bg-slate-200 rounded-full flex items-center justify-center text-[10px] font-bold text-white font-serif">i</div>
-                            <span>Reference ID: <span className="font-mono text-slate-600">UST-8829-XJ</span></span>
+                            <span>Reference ID: <span className="font-mono text-slate-600">{supportInfo.supportId}</span></span>
                         </div>
                     </div>
                 </div>
