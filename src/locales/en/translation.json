@@ -273,7 +273,9 @@
       "notReceived": "Didn't receive code?",
       "verifyButton": "Verify & Proceed",
       "verifying": "Verifying...",
-      "edit": "Edit"
+      "edit": "Edit",
+      "lengthError": "Please enter a 6-digit OTP.",
+      "invalidError": "Invalid OTP"
     },
     "terms": "By clicking, you agree to USTART <1>terms and conditions</1>."
   }

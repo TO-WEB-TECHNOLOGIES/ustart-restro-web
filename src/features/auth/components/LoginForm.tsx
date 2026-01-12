@@ -83,9 +83,12 @@ export const LoginForm = () => {
         setOtp('');
     };
 
+    const [otpError, setOtpError] = useState<string | null>(null);
+
     const onVerifyOtp = async () => {
+        setOtpError(null);
         if (otp.length !== 6) {
-            alert("Please enter a 6-digit OTP.");
+            setOtpError(t('auth.otp.lengthError') || "Please enter a 6-digit OTP.");
             return;
         }
 
@@ -98,7 +101,7 @@ export const LoginForm = () => {
 
             // Decode token to check status for redirect
             const decoded = decodeToken(response.token);
-            console.log({status: decoded.status});
+            console.log({ status: decoded.status });
             if (decoded && decoded.status === 'APPROVAL_PENDING') {
                 navigate('/grow-with-ustart/verification');
                 return;
@@ -110,7 +113,7 @@ export const LoginForm = () => {
                 navigate('/grow-with-ustart');
             }
         } catch (error) {
-            alert("Invalid OTP");
+            setOtpError(t('auth.otp.invalidError') || "Invalid OTP");
             console.error(error);
         } finally {
             setLoading(false);
@@ -148,7 +151,18 @@ export const LoginForm = () => {
                                     id="mobile"
                                     placeholder={t('auth.login.placeholder')}
                                     type="tel"
-                                    {...registerMobile('mobile')}
+                                    {...(() => {
+                                        const { onChange, ...rest } = registerMobile('mobile');
+                                        return {
+                                            ...rest,
+                                            onChange: (e: React.ChangeEvent<HTMLInputElement>) => {
+                                                const value = e.target.value.replace(/\D/g, '').slice(0, 10);
+                                                e.target.value = value;
+                                                onChange(e);
+                                            }
+                                        };
+                                    })()}
+                                    maxLength={10}
                                     className="flex-1 rounded-4xl rounded-l-none "
                                 />
                             </div>
@@ -162,7 +176,15 @@ export const LoginForm = () => {
                     <div className="space-y-6">
                         <div className="space-y-2">
                             <Label className="text-xs font-bold text-slate-500 uppercase">{t('auth.otp.label')}</Label>
-                            <OtpInput value={otp} onChange={setOtp} length={6} />
+                            <OtpInput
+                                value={otp}
+                                onChange={(val) => {
+                                    setOtp(val);
+                                    if (otpError) setOtpError(null);
+                                }}
+                                length={6}
+                            />
+                            {otpError && <p className="text-red-500 text-xs">{otpError}</p>}
                             <div className="flex justify-end items-center text-xs">
                                 {canResend ? (
                                     <button
