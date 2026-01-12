@@ -29,7 +29,7 @@ export const mockAuthService = {
             const payload = {
                 user: {
                     id: 'user-123',
-                    name: 'Demo Partner',
+                    name: isNewUser ? null : 'Demo Partner',
                     mobile
                 },
                 isOnboardingComplete: !isNewUser, // Assuming established users are "complete" in sense of steps, but maybe dependent on status
