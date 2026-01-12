@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { useAuth } from '@/context/AuthContext';
 import { useLanguage } from '@/hooks/useLanguage';
 import { useOnboardingStore } from '../store/useOnboardingStore';
-import { Outlet, useNavigate, useLocation, replace } from 'react-router-dom';
+import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import {
     HelpCircle,
     LogOut,

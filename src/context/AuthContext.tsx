@@ -1,7 +1,6 @@
 import { createContext, useContext, useState, type ReactNode, useEffect } from 'react';
 import { api } from '@/api/axios';
 import { decodeToken } from '@/utils/jwt';
-import { useOnboardingStore } from '@/features/onboarding/store/useOnboardingStore';
 
 interface User {
     id: string;
