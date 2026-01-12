@@ -29,7 +29,8 @@ export const AboutRestaurant = () => {
         setDocuments,
         personalInfo,
         restaurantInfo,
-        reset
+        reset,
+        isEditing
     } = useOnboardingStore();
     const [view, setView] = useState<'details' | 'documents'>('details'); // Manage internal view state
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -108,14 +109,18 @@ export const AboutRestaurant = () => {
             };
 
             // Call API
-            const response = await onboardingService.submitOnboarding(fullPayload);
+            let response;
+            if (isEditing) {
+                response = await onboardingService.updateOnboarding(fullPayload);
+            } else {
+                response = await onboardingService.submitOnboarding(fullPayload);
+            }
 
             // Update Auth State (persists to localStorage)
             login(response.token);
 
             console.log("Documents Submitted & Status Updated:", data);
 
-            // Finalize this step, move to Step 4 (Verification)
             // Finalize this step, move to Step 4 (Verification)
             console.log("Submission successful. Resetting store state for clean slate.");
             reset(); // Clears all data and sets step to 1
