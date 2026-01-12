@@ -334,6 +334,15 @@
         "q3": "How do I contact support?",
         "a3": "Use the 'Help' button in the sidebar or email support@ustart.com."
       }
-    }
+    },
+    "searchPlaceholder": "Search for help...",
+    "searchButton": "Search",
+    "noResults": "No results found for your search.",
+    "contactTitle": "Still have any unanswered questions?",
+    "contactSubtitle": "Our dedicated partner support team is available 24/7 to help you with any queries or technical issues.",
+    "emailUs": "EMAIL US",
+    "callUs": "CALL US",
+    "loginSignup": "Login / Signup",
+    "login": "Login"
   }
 }

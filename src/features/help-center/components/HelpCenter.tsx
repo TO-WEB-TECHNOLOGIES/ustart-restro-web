@@ -124,8 +124,8 @@ export const HelpCenter = () => {
                                 className="bg-secondary-orange hover:bg-secondary-orange/90 text-white gap-2 font-semibold ml-2"
                             >
                                 <LogIn className="w-4 h-4" />
-                                <span className="hidden md:inline">Login / Signup</span>
-                                <span className="md:hidden">Login</span>
+                                <span className="hidden md:inline">{t('help.loginSignup')}</span>
+                                <span className="md:hidden">{t('help.login')}</span>
                             </Button>
                         )}
                     </div>
@@ -178,17 +178,17 @@ export const HelpCenter = () => {
                     </p>
 
                     <div className="relative max-w-xl mx-auto mt-8">
-                        <div className="relative">
-                            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 w-5 h-5" />
+                        <div className="relative flex items-center">
+                            <Search className="absolute left-4 text-slate-400 w-5 h-5 pointer-events-none" />
                             <Input
                                 type="text"
-                                placeholder={t('Search for help...')}
-                                className="w-full pl-12 pr-32 h-14 rounded-full bg-white text-slate-900 border-none ring-offset-0 focus-visible:ring-2 focus-visible:ring-secondary-orange placeholder:text-slate-400"
+                                placeholder={t('help.searchPlaceholder')}
+                                className="w-full pl-12 pr-32 h-14 rounded-full bg-white text-slate-900 border-none ring-offset-0 focus-visible:ring-2 focus-visible:ring-secondary-orange placeholder:text-slate-400 shadow-sm"
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
                             />
-                            <Button className="absolute right-1 top-1 bottom-1 rounded-full bg-secondary-orange hover:bg-secondary-orange/90 text-white px-6 font-bold">
-                                {t('Search')}
+                            <Button className="absolute right-1.5 top-1/2 -translate-y-1/2 h-11 rounded-full bg-secondary-orange hover:bg-secondary-orange/90 text-white px-6 font-bold transition-all">
+                                {t('help.searchButton')}
                             </Button>
                         </div>
                     </div>
@@ -227,7 +227,7 @@ export const HelpCenter = () => {
                             </Accordion>
                         ) : (
                             <div className="text-center py-12 text-slate-500">
-                                <p>{t('No results found for your search.')}</p>
+                                <p>{t('help.noResults')}</p>
                             </div>
                         )}
                     </div>
@@ -240,10 +240,10 @@ export const HelpCenter = () => {
 
                         <div className="max-w-2xl mx-auto space-y-4">
                             <h2 className="text-3xl font-bold text-slate-900">
-                                {t('Still have any unanswered questions?')}
+                                {t('help.contactTitle')}
                             </h2>
                             <p className="text-slate-500 text-lg">
-                                {t('Our dedicated partner support team is available 24/7 to help you with any queries or technical issues.')}
+                                {t('help.contactSubtitle')}
                             </p>
                         </div>
 
@@ -253,7 +253,7 @@ export const HelpCenter = () => {
                                     <Mail className="w-5 h-5" />
                                 </div>
                                 <div>
-                                    <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">EMAIL US</p>
+                                    <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">{t('help.emailUs')}</p>
                                     <a href="mailto:contact@ustart.in" className="font-bold text-slate-900 text-lg hover:text-secondary-orange transition-colors">
                                         contact@ustart.in
                                     </a>
@@ -265,7 +265,7 @@ export const HelpCenter = () => {
                                     <Phone className="w-5 h-5" />
                                 </div>
                                 <div>
-                                    <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">CALL US</p>
+                                    <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">{t('help.callUs')}</p>
                                     <a href="tel:+919876543210" className="font-bold text-slate-900 text-lg hover:text-secondary-orange transition-colors">
                                         +91 98765 43210
                                     </a>
