@@ -4,7 +4,29 @@
     "dashboard": "Dashboard",
     "settings": "Settings",
     "profile": "Profile",
-    "logoutConfirmation": "Are you sure you want to logout? Your progress is saved."
+    "logoutConfirmation": "Are you sure you want to logout? Your progress is saved.",
+    "greeting": {
+      "morning": "Good morning",
+      "afternoon": "Good afternoon",
+      "evening": "Good evening"
+    },
+    "theme": {
+      "light": "Light",
+      "dark": "Dark",
+      "system": "System"
+    },
+    "header": {
+      "happening": "Here's what's happening today.",
+      "manageMenu": "Manage Menu",
+      "createOffer": "Create Offer"
+    },
+    "titles": {
+      "overview": "Dashboard Overview",
+      "menu": "Menu Management",
+      "orders": "Orders Overview",
+      "reports": "Analytics & Reports",
+      "settings": "Settings"
+    }
   },
   "landing": {
     "nav": {

@@ -63,7 +63,12 @@ const MENU_SECTIONS = [
     }
 ];
 
-export const DashboardSidebar = () => {
+interface DashboardSidebarProps {
+    isOpen?: boolean;
+    onClose?: () => void;
+}
+
+export const DashboardSidebar = ({ isOpen, onClose }: DashboardSidebarProps) => {
     const navigate = useNavigate();
     const location = useLocation();
     const { t } = useTranslation();
@@ -124,74 +129,92 @@ export const DashboardSidebar = () => {
     };
 
     return (
-        <aside className="w-64 bg-white dark:bg-slate-900 border-r border-slate-100 dark:border-slate-800 h-screen sticky top-0 z-40 hidden md:flex flex-col shrink-0 transition-colors duration-300">
-            <div className="p-6">
-                <div className="w-32">
-                    <Logo color={isDark ? '#FFFFFF' : 'var(--color-primary-blue)'} />
-                </div>
-                {partnershipText && (
-                    <div className="mt-2 text-sm font-bold text-slate-500 dark:text-slate-400">
-                        {partnershipText}
+        <>
+            {/* Mobile Overlay */}
+            {isOpen && (
+                <div
+                    className="fixed inset-0 bg-black/50 z-40 md:hidden animate-in fade-in duration-200"
+                    onClick={onClose}
+                />
+            )}
+
+            <aside className={`
+                fixed md:sticky top-0 h-screen z-50 md:z-40
+                w-64 bg-white dark:bg-slate-900 border-r border-slate-100 dark:border-slate-800
+                flex flex-col shrink-0 transition-all duration-300 ease-in-out
+                ${isOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
+            `}>
+                <div className="p-6">
+                    <div className="w-32">
+                        <Logo color={isDark ? '#FFFFFF' : 'var(--color-primary-blue)'} />
                     </div>
-                )}
-            </div>
+                    {partnershipText && (
+                        <div className="mt-2 text-sm font-bold text-slate-500 dark:text-slate-400">
+                            {partnershipText}
+                        </div>
+                    )}
+                </div>
 
-            <div className="flex-1 overflow-y-auto px-4">
-                <Accordion type="multiple" defaultValue={allSections} className="w-full">
-                    {MENU_SECTIONS.map((section) => (
-                        <AccordionItem key={section.key} value={`section-${section.key}`} className="border-b-0 mb-2">
-                            <AccordionTrigger className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider py-3 hover:no-underline hover:text-slate-600 dark:hover:text-slate-300">
-                                {t(`dashboard.sidebar.sections.${section.key}`)}
-                            </AccordionTrigger>
-                            <AccordionContent className="pb-2">
-                                <div className="space-y-1">
-                                    {section.items.map((item) => {
-                                        const isActive = location.pathname === item.path;
-                                        const Icon = item.icon;
+                <div className="flex-1 overflow-y-auto px-4">
+                    <Accordion type="multiple" defaultValue={allSections} className="w-full">
+                        {MENU_SECTIONS.map((section) => (
+                            <AccordionItem key={section.key} value={`section-${section.key}`} className="border-b-0 mb-2">
+                                <AccordionTrigger className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider py-3 hover:no-underline hover:text-slate-600 dark:hover:text-slate-300">
+                                    {t(`dashboard.sidebar.sections.${section.key}`)}
+                                </AccordionTrigger>
+                                <AccordionContent className="pb-2">
+                                    <div className="space-y-1">
+                                        {section.items.map((item) => {
+                                            const isActive = location.pathname === item.path;
+                                            const Icon = item.icon;
 
-                                        return (
-                                            <button
-                                                key={item.key}
-                                                onClick={() => navigate(item.path)}
-                                                className={`w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-sm font-medium transition-all ${isActive
-                                                    ? 'bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white'
-                                                    : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/50 hover:text-slate-700 dark:hover:text-slate-200'
-                                                    }`}
-                                            >
-                                                <div className="flex items-center gap-3">
-                                                    <Icon className={`w-5 h-5 ${isActive ? 'text-slate-900 dark:text-white' : 'text-slate-400 dark:text-slate-500'}`} />
-                                                    <span>{t(`dashboard.sidebar.items.${item.key}`)}</span>
-                                                </div>
-                                                {item.badge && (
-                                                    <span className="bg-secondary-orange text-white text-xs font-bold px-1.5 py-0.5 rounded-full min-w-[20px] text-center">
-                                                        {item.badge}
-                                                    </span>
-                                                )}
-                                            </button>
-                                        );
-                                    })}
-                                </div>
-                            </AccordionContent>
-                        </AccordionItem>
-                    ))}
-                </Accordion>
-            </div>
+                                            return (
+                                                <button
+                                                    key={item.key}
+                                                    onClick={() => {
+                                                        navigate(item.path);
+                                                        onClose?.();
+                                                    }}
+                                                    className={`w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-sm font-medium transition-all ${isActive
+                                                        ? 'bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white'
+                                                        : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/50 hover:text-slate-700 dark:hover:text-slate-200'
+                                                        }`}
+                                                >
+                                                    <div className="flex items-center gap-3">
+                                                        <Icon className={`w-5 h-5 ${isActive ? 'text-slate-900 dark:text-white' : 'text-slate-400 dark:text-slate-500'}`} />
+                                                        <span>{t(`dashboard.sidebar.items.${item.key}`)}</span>
+                                                    </div>
+                                                    {item.badge && (
+                                                        <span className="bg-secondary-orange text-white text-xs font-bold px-1.5 py-0.5 rounded-full min-w-[20px] text-center">
+                                                            {item.badge}
+                                                        </span>
+                                                    )}
+                                                </button>
+                                            );
+                                        })}
+                                    </div>
+                                </AccordionContent>
+                            </AccordionItem>
+                        ))}
+                    </Accordion>
+                </div>
 
-            <div className="p-4 border-t border-slate-100 dark:border-slate-800">
-                <button
-                    onClick={() => setShowLogoutConfirm(true)}
-                    className="flex items-center gap-3 text-secondary-orange hover:bg-orange-50 dark:hover:bg-orange-900/10 px-3 py-3 rounded-lg w-full transition-colors font-medium"
-                >
-                    <LogOut className="w-5 h-5" />
-                    <span>{t('dashboard.sidebar.items.logout')}</span>
-                </button>
-            </div>
+                <div className="p-4 border-t border-slate-100 dark:border-slate-800">
+                    <button
+                        onClick={() => setShowLogoutConfirm(true)}
+                        className="flex items-center gap-3 text-secondary-orange hover:bg-orange-50 dark:hover:bg-orange-900/10 px-3 py-3 rounded-lg w-full transition-colors font-medium"
+                    >
+                        <LogOut className="w-5 h-5" />
+                        <span>{t('dashboard.sidebar.items.logout')}</span>
+                    </button>
+                </div>
 
-            <LogoutConfirmationModal
-                isOpen={showLogoutConfirm}
-                onClose={() => setShowLogoutConfirm(false)}
-                onConfirm={handleLogout}
-            />
-        </aside>
+                <LogoutConfirmationModal
+                    isOpen={showLogoutConfirm}
+                    onClose={() => setShowLogoutConfirm(false)}
+                    onConfirm={handleLogout}
+                />
+            </aside>
+        </>
     );
 };
