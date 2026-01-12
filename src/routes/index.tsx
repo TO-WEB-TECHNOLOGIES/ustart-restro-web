@@ -10,6 +10,7 @@ import { RestaurantInfo } from '@/features/onboarding/components/RestaurantInfo'
 import { AboutRestaurant } from '@/features/onboarding/components/AboutRestaurant';
 import { Verification } from '@/features/onboarding/components/Verification';
 import { HelpCenter } from '@/features/help-center/components/HelpCenter';
+import { NotFound } from '@/pages/NotFound';
 
 export const router = createBrowserRouter([
     {
@@ -78,6 +79,6 @@ export const router = createBrowserRouter([
     },
     {
         path: '*',
-        element: <div>404 Not Found</div>,
+        element: <NotFound />,
     },
 ]);

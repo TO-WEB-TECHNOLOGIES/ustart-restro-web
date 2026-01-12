@@ -23,7 +23,7 @@ export const Footer = () => {
                             {[
                                 { Icon: Instagram, href: 'https://www.instagram.com/ustart_rides/' },
                                 { Icon: Linkedin, href: 'https://www.linkedin.com/company/ustartrg/' },
-                                // { Icon: Twitter, href: '#' }, // Using Twitter icon for X as requested/implied standard
+                                // { Icon: Twitter, href: '#' }, // Using Twitter icon for X as standard
                                 { Icon: Facebook, href: 'https://www.facebook.com/profile.php?id=61572376997840' }
                             ].map(({ Icon, href }, index) => (
                                 <a
@@ -102,7 +102,6 @@ export const Footer = () => {
                                 {t('landing.footer.download.title')}
                             </h4>
                             <div className="flex flex-col md:flex-row gap-4">
-                                {/* Placeholders for App Store buttons - using simple styled text/boxes if images not available or complex SVG */}
                                 <button>
                                     <GooglePlayButton />
                                 </button>

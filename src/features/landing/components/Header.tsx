@@ -32,7 +32,7 @@ export const Header = () => {
                     <a href="#" className="hover:text-white transition-colors">{t('landing.nav.howItWorks')}</a>
                     <a href="#" className="hover:text-white transition-colors">{t('landing.nav.benefits')}</a>
                     <a href="#" className="hover:text-white transition-colors">{t('landing.nav.pricing')}</a>
-                    <a href="#" className="hover:text-white transition-colors">{t('landing.nav.support')}</a>
+                    <a href="/help" className="hover:text-white transition-colors">{t('landing.nav.support')}</a>
                 </nav>
 
                 <div className="flex items-center">
