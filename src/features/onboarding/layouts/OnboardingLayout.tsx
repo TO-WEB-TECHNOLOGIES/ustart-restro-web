@@ -100,17 +100,17 @@ export const OnboardingLayout = () => {
                         const isCompleted = currentStep > step.id;
 
                         return (
-                            <div key={step.id} className={`flex items-start gap-4 ${isActive || isCompleted ? 'opacity-100' : 'opacity-50'}`}>
+                            <div key={step.id} className={`flex items-start gap-4 ${isActive || isCompleted ? 'opacity-100' : 'opacity-90'}`}>
                                 <div className={`
                                     w-8 h-8 rounded-full flex items-center justify-center shrink-0 border-2 transition-colors
                                     ${isActive ? 'bg-secondary-orange border-secondary-orange text-white' :
                                         isCompleted ? 'bg-green-500 border-green-500 text-white' :
-                                            'bg-transparent border-slate-600 text-slate-400'}
+                                            'bg-primary-blue border-slate-600 text-slate-400 opacity-100'}
                                 `}>
                                     {isCompleted ? (
                                         <span className="text-sm font-bold">✓</span>
                                     ) : (
-                                        <span className="text-sm font-bold">{step.id}</span>
+                                        <span className="text-sm font-bold opacity-100">{step.id}</span>
                                     )}
                                 </div>
                                 <div>
