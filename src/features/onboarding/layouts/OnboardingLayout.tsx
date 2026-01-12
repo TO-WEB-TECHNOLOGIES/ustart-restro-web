@@ -33,7 +33,11 @@ export const OnboardingLayout = () => {
         // Debugging logs
         console.log("OnboardingLayout Redirect Check:", { status, path: location.pathname, isEditing });
 
-        if (status === 'APPROVAL_PENDING' && !isEditing) {
+        if (location.pathname.includes('/help')) {
+            return;
+        }
+
+        if (status === 'APPROVAL_PENDING' && !isEditing && !location.pathname.includes('/verification')) {
             console.log("Redirecting to verification...");
             navigate('/grow-with-ustart/verification', { replace: true });
         }
@@ -144,7 +148,7 @@ export const OnboardingLayout = () => {
             <div className="flex-1 md:ml-80 bg-[#f8fafc] flex flex-col">
                 {/* Header */}
                 <div className="h-16 bg-white flex items-center justify-end px-8 gap-6 sticky top-0 z-20 shadow-sm">
-                    <Button variant="ghost" className="text-slate-500 hover:text-slate-900 gap-2 text-sm font-medium">
+                    <Button variant="ghost" className="text-slate-500 hover:text-slate-900 gap-2 text-sm font-medium" onClick={() => navigate('/help')}>
                         <HelpCircle className="w-4 h-4" />
                         {t('onboarding.header.help')}
                     </Button>

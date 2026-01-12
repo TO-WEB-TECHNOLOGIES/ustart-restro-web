@@ -184,6 +184,14 @@ export const AboutRestaurant = () => {
         setValue('menuImages', updated, { shouldValidate: true });
     };
 
+    const cuisineOptions = useMemo(() =>
+        cuisines.map(c => ({
+            value: c.cuisineId,
+            label: c.cuisineName
+        })),
+        [cuisines]
+    );
+
     return (
         <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500 h-full flex flex-col justify-between">
             <div>
@@ -240,29 +248,20 @@ export const AboutRestaurant = () => {
                                     control={control}
                                     name="cuisines"
                                     render={({ field }) => {
-                                        // Map cuisines to react-select options
-                                        const options = useMemo(() =>
-                                            cuisines.map(c => ({
-                                                value: c.cuisineId,
-                                                label: c.cuisineName
-                                            })),
-                                            [cuisines]);
-
                                         // Map current selected IDs back to option objects
-                                        const selectedOptions = useMemo(() =>
-                                            options.filter(opt => field.value?.includes(opt.value)),
-                                            [field.value, options]);
+                                        const selectedOptions = cuisineOptions.filter(opt => field.value?.includes(opt.value));
 
                                         return (
                                             <ReactSelect
                                                 isMulti
                                                 isLoading={isLoadingCuisines}
-                                                options={options}
+                                                options={cuisineOptions}
                                                 value={selectedOptions}
-                                                onChange={(newValue) => {
+                                                onChange={(newValue: any) => {
                                                     // Map selected options back to IDs
-                                                    field.onChange(newValue.map(v => v.value));
+                                                    field.onChange(newValue.map((v: any) => v.value));
                                                 }}
+
                                                 placeholder={t('onboarding.restaurant.about.cuisinePlaceholder')}
                                                 className="react-select-container"
                                                 classNamePrefix="react-select"

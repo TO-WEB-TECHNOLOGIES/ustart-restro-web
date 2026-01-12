@@ -278,5 +278,62 @@
       "invalidError": "Invalid OTP"
     },
     "terms": "By clicking, you agree to USTART <1>terms and conditions</1>."
+  },
+  "help": {
+    "title": "Help Center",
+    "subtitle": "Common questions and support",
+    "public": {
+      "title": "General FAQs",
+      "items": {
+        "q1": "What is USTART?",
+        "a1": "USTART is a platform connecting restaurants with customers through seamless delivery and management tools.",
+        "q2": "How do I become a partner?",
+        "a2": "Click 'Get Started' on the home page and follow the onboarding steps.",
+        "q3": "Is there a setup fee?",
+        "a3": "No, joining USTART is completely free. We only charge a commission on orders."
+      }
+    },
+    "newUser": {
+      "title": "Onboarding Help",
+      "items": {
+        "q1": "What documents do I need?",
+        "a1": "You need a valid FSSAI license, PAN card, and Bank Account details.",
+        "q2": "Why is my OTP not arriving?",
+        "a2": "Please check your network signal. If the issue persists, click 'Resend OTP' after the timer expires.",
+        "q3": "Can I save my progress?",
+        "a3": "Yes, your progress is automatically saved at each step."
+      }
+    },
+    "approvalPending": {
+      "title": "Verification Status",
+      "items": {
+        "q1": "How long does verification take?",
+        "a1": "Verification usually takes 24-48 hours.",
+        "q2": "Can I edit my details now?",
+        "a2": "No, editing is locked during verification. Contact support if you made a mistake.",
+        "q3": "How will I know when I'm live?",
+        "a3": "You will receive an SMS and Email notification once your account is active."
+      }
+    },
+    "updatePending": {
+      "title": "Update Status",
+      "items": {
+        "q1": "Why is my account pending?",
+        "a1": "You recently submitted changes that require manual approval.",
+        "q2": "Can I still accept orders?",
+        "a2": "No, your restaurant is temporarily hidden until the new details are verified."
+      }
+    },
+    "active": {
+      "title": "Partner Support",
+      "items": {
+        "q1": "How do I update my menu?",
+        "a1": "Go to the 'Menu' section in your dashboard to add or edit items.",
+        "q2": "When are payouts made?",
+        "a2": "Payouts are processed weekly on Wednesdays for the previous week's orders.",
+        "q3": "How do I contact support?",
+        "a3": "Use the 'Help' button in the sidebar or email support@ustart.com."
+      }
+    }
   }
 }

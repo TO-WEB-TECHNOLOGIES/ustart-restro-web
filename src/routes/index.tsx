@@ -9,6 +9,7 @@ import { Navigate } from 'react-router-dom';
 import { RestaurantInfo } from '@/features/onboarding/components/RestaurantInfo';
 import { AboutRestaurant } from '@/features/onboarding/components/AboutRestaurant';
 import { Verification } from '@/features/onboarding/components/Verification';
+import { HelpCenter } from '@/features/help-center/components/HelpCenter';
 
 export const router = createBrowserRouter([
     {
@@ -19,6 +20,10 @@ export const router = createBrowserRouter([
                 element: <LandingPage />,
             }
         ]
+    },
+    {
+        path: '/help',
+        element: <HelpCenter />
     },
     {
         element: <RequireAuth />,
