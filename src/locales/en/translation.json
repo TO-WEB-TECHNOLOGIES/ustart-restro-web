@@ -3,7 +3,8 @@
     "welcome": "Welcome to the Admin Dashboard",
     "dashboard": "Dashboard",
     "settings": "Settings",
-    "profile": "Profile"
+    "profile": "Profile",
+    "logoutConfirmation": "Are you sure you want to logout? Your progress is saved."
   },
   "landing": {
     "nav": {
@@ -344,5 +345,31 @@
     "callUs": "CALL US",
     "loginSignup": "Login / Signup",
     "login": "Login"
+  },
+  "dashboard": {
+    "sidebar": {
+      "sections": {
+        "operations": "OPERATIONS",
+        "growth": "GROWTH & INSIGHTS",
+        "support": "SUPPORT"
+      },
+      "items": {
+        "home": "Home",
+        "menu": "Menu",
+        "orders": "Orders",
+        "history": "Order History",
+        "status": "Outlet Status",
+        "reporting": "Reporting",
+        "offers": "Offers",
+        "ads": "Ads",
+        "growth": "Growth with USTART",
+        "reviews": "Customer Reviews",
+        "complaints": "Complaints",
+        "payout": "Payout",
+        "info": "Outlet Info",
+        "help": "Help Centre",
+        "logout": "Logout"
+      }
+    }
   }
 }

@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Logo } from '@/components/ui/logo';
+import { LogoutConfirmationModal } from '@/components/ui/logout-confirmation-modal';
 
 export const OnboardingLayout = () => {
     const { t } = useTranslation();
@@ -179,30 +180,11 @@ export const OnboardingLayout = () => {
                 </div>
             </div>
 
-            {/* Logout Confirmation Modal */}
-            {showLogoutConfirm && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-in fade-in duration-200">
-                    <div className="bg-white rounded-2xl p-6 w-full max-w-sm shadow-2xl relative animate-in zoom-in-95 duration-200">
-                        <h3 className="text-lg font-bold text-slate-900 mb-2">{t('onboarding.header.logout')}?</h3>
-                        <p className="text-slate-500 mb-6 text-sm">Are you sure you want to logout? Your progress is saved.</p>
-                        <div className="flex gap-3 justify-end">
-                            <Button
-                                variant="outline"
-                                onClick={() => setShowLogoutConfirm(false)}
-                                className="rounded-xl"
-                            >
-                                Cancel
-                            </Button>
-                            <Button
-                                onClick={handleLogout}
-                                className="bg-red-500 hover:bg-red-600 text-white rounded-xl"
-                            >
-                                {t('onboarding.header.logout')}
-                            </Button>
-                        </div>
-                    </div>
-                </div>
-            )}
+            <LogoutConfirmationModal
+                isOpen={showLogoutConfirm}
+                onClose={() => setShowLogoutConfirm(false)}
+                onConfirm={handleLogout}
+            />
         </div>
     );
 };
