@@ -1,11 +1,15 @@
 import { useEffect, useState, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Mail, Phone, Clock, ClipboardCheck } from 'lucide-react';
+import { Mail, Phone, Clock, ClipboardCheck, Pencil } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { masterDataService } from '../api/masterData';
+import { useOnboardingStore } from '../store/useOnboardingStore';
 
 export const Verification = () => {
     const { t } = useTranslation();
-    const [contactData, setContactData] = useState<{ email: string; phone: string; supportId: string } | null>(null);
+    const navigate = useNavigate();
+    const { setIsEditing } = useOnboardingStore();
+    const [contactData, setContactData] = useState<{ email: string; phone: string; supportId: string; isEditLocked?: boolean } | null>(null);
 
     useEffect(() => {
         masterDataService.getContactSupport().then(setContactData);
@@ -15,9 +19,20 @@ export const Verification = () => {
         return contactData || {
             email: 'partners@ustart.com',
             phone: '+91 7827234027',
-            supportId: 'UST-8829-XJ'
+            supportId: 'UST-8829-XJ',
+            isEditLocked: false
         };
     }, [contactData]);
+
+    const handleEditClick = () => {
+        if (supportInfo.isEditLocked) {
+            console.log("Edit Locked");
+        } else {
+            console.log("Edit Unlocked - Navigating to Personal Info");
+            setIsEditing(true);
+            navigate('/grow-with-ustart/personal-info');
+        }
+    };
 
     return (
         <div className="w-full animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -26,9 +41,27 @@ export const Verification = () => {
                     <h2 className="text-3xl md:text-5xl font-bold text-slate-900 mb-4">
                         {t('onboarding.restaurant.verification.title')}
                     </h2>
-                    <p className="text-lg md:text-xl text-slate-500 leading-relaxed">
+                    <p className="text-lg md:text-xl text-slate-500 leading-relaxed mb-6">
                         {t('onboarding.restaurant.verification.subtitle')}
                     </p>
+
+                    <div className="flex flex-col gap-2">
+                        <button
+                            onClick={handleEditClick}
+                            className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors w-fit ${supportInfo.isEditLocked
+                                ? 'bg-slate-100 text-slate-400 cursor-not-allowed'
+                                : 'bg-primary-blue text-white hover:bg-primary-blue/90'
+                                }`}
+                        >
+                            <Pencil className="w-4 h-4" />
+                            {supportInfo.isEditLocked ? 'Application Locked' : 'Edit Application'}
+                        </button>
+                        {supportInfo.isEditLocked && (
+                            <p className="text-sm text-red-500 animate-in fade-in slide-in-from-top-1">
+                                Please contact customer care to edit your application data.
+                            </p>
+                        )}
+                    </div>
                 </div>
 
                 {/* Icon Component */}

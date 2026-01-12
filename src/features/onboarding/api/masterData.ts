@@ -74,7 +74,8 @@ export const masterDataService = {
         return {
             email: 'partners@ustart.com',
             phone: '+91 7827234027',
-            supportId: 'UST-8829-XJ'
+            supportId: 'UST-8829-XJ',
+            isEditLocked: false
         };
     }
 };

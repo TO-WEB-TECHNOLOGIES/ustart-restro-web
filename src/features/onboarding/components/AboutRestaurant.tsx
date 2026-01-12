@@ -28,7 +28,8 @@ export const AboutRestaurant = () => {
         documents,
         setDocuments,
         personalInfo,
-        restaurantInfo
+        restaurantInfo,
+        reset
     } = useOnboardingStore();
     const [view, setView] = useState<'details' | 'documents'>('details'); // Manage internal view state
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -115,7 +116,12 @@ export const AboutRestaurant = () => {
             console.log("Documents Submitted & Status Updated:", data);
 
             // Finalize this step, move to Step 4 (Verification)
-            setCurrentStep(4);
+            // Finalize this step, move to Step 4 (Verification)
+            console.log("Submission successful. Resetting store state for clean slate.");
+            reset(); // Clears all data and sets step to 1
+            setCurrentStep(4); // Move to Verification
+            // Note: persist middleware will automatically save the reset state
+
             navigate('/grow-with-ustart/verification');
         } catch (error) {
             console.error("Submission failed", error);

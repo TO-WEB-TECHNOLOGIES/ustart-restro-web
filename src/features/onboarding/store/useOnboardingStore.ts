@@ -35,6 +35,7 @@ export interface OnboardingState {
     aboutRestaurant: AboutRestaurantState;
     documents: Partial<BankDetailsValues>;
     isEmailVerified: boolean;
+    isEditing: boolean;
 
     // Actions
     setPersonalInfo: (data: PersonalInfoValues) => void;
@@ -42,6 +43,7 @@ export interface OnboardingState {
     setAboutRestaurant: (data: Partial<AboutRestaurantState>) => void;
     setDocuments: (data: Partial<BankDetailsValues>) => void;
     setIsEmailVerified: (status: boolean) => void;
+    setIsEditing: (status: boolean) => void;
     setCurrentStep: (step: number) => void;
     reset: () => void;
 }
@@ -49,6 +51,7 @@ export interface OnboardingState {
 const initialState = {
     currentStep: 1,
     isEmailVerified: false,
+    isEditing: false,
     personalInfo: {
         fullName: '',
         email: '',
@@ -108,6 +111,7 @@ export const useOnboardingStore = create<OnboardingState>()(
                 documents: { ...state.documents, ...data }
             })),
             setIsEmailVerified: (status) => set({ isEmailVerified: status }),
+            setIsEditing: (status) => set({ isEditing: status }),
             setCurrentStep: (step) => set({ currentStep: step }),
             reset: () => set(initialState),
         }),

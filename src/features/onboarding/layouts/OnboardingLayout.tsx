@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { useAuth } from '@/context/AuthContext';
 import { useLanguage } from '@/hooks/useLanguage';
 import { useOnboardingStore } from '../store/useOnboardingStore';
-import { Outlet, useNavigate, useLocation } from 'react-router-dom';
+import { Outlet, useNavigate, useLocation, replace } from 'react-router-dom';
 import {
     HelpCircle,
     LogOut,
@@ -24,16 +24,20 @@ export const OnboardingLayout = () => {
     const { language, changeLanguage } = useLanguage();
     const navigate = useNavigate();
     const location = useLocation();
-    const { currentStep, setCurrentStep, personalInfo, reset } = useOnboardingStore();
+    const { currentStep, setCurrentStep, personalInfo, reset, isEditing } = useOnboardingStore();
     const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
     const { user, status } = useAuth(); // Destructure user and status
 
     // Redirect to verification if status is APPROVAL_PENDING
     useEffect(() => {
-        if (status === 'APPROVAL_PENDING' && !location.pathname.includes('/verification')) {
+        // Debugging logs
+        console.log("OnboardingLayout Redirect Check:", { status, path: location.pathname, isEditing });
+
+        if (status === 'APPROVAL_PENDING' && !isEditing) {
+            console.log("Redirecting to verification...");
             navigate('/grow-with-ustart/verification', { replace: true });
         }
-    }, [status, location.pathname, navigate]);
+    }, [status, location.pathname, navigate, isEditing]);
     useEffect(() => {
         const path = location.pathname;
         if (path.includes('/personal-info')) {
@@ -51,14 +55,19 @@ export const OnboardingLayout = () => {
 
     // Reset onboarding if different user logs in
     useEffect(() => {
-        if (user?.mobile && personalInfo.mobile && user.mobile !== personalInfo.mobile) {
+        if (!isEditing && user?.mobile && personalInfo.mobile && user.mobile !== personalInfo.mobile) {
+            console.log("User mismatch detected, resetting store.");
             reset();
         }
-    }, [user, personalInfo.mobile, reset]);
+    }, [user, personalInfo.mobile, reset, isEditing]);
 
     const handleLogout = () => {
+        if (isEditing) {
+            console.log("Logout during edit mode. Resetting store to clear temporary data.");
+            reset();
+        }
         logout();
-        navigate('/');
+        navigate('/', { replace: true });
     };
 
     const steps = [

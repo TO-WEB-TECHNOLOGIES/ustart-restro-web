@@ -4,6 +4,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { useOnboardingStore } from '../store/useOnboardingStore';
+import { onboardingService } from '../api/onboardingService';
 import { personalInfoSchema, type PersonalInfoValues } from '../schemas';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -17,12 +18,23 @@ export const PersonalInfo = () => {
     const { t } = useTranslation();
     const navigate = useNavigate();
     const { user, token } = useAuth();
-    const { personalInfo, setPersonalInfo, setCurrentStep, isEmailVerified, setIsEmailVerified } = useOnboardingStore();
+    const {
+        personalInfo,
+        setPersonalInfo,
+        setCurrentStep,
+        isEmailVerified,
+        setIsEmailVerified,
+        isEditing,
+        setRestaurantInfo,
+        setAboutRestaurant,
+        setDocuments
+    } = useOnboardingStore();
 
     // OTP State
     const [showOtpInput, setShowOtpInput] = useState(false);
     const [otp, setOtp] = useState('');
     const [isLoading, setIsLoading] = useState(false);
+    const [isFetching, setIsFetching] = useState(false);
     const [otpError, setOtpError] = useState('');
     const [resendTimer, setResendTimer] = useState(0);
 
@@ -43,6 +55,7 @@ export const PersonalInfo = () => {
         watch,
         setValue,
         getValues,
+        reset,
         formState: { errors }
     } = useForm<PersonalInfoValues>({
         resolver: zodResolver(personalInfoSchema),
@@ -53,12 +66,40 @@ export const PersonalInfo = () => {
     const isSameAsMobile = watch('isSameAsMobile');
     const mobileValue = watch('mobile');
 
-    // Pre-fill from Auth User
+    // Fetch Data on Edit
     useEffect(() => {
-        if (user?.mobile && !personalInfo.mobile) {
+        const fetchData = async () => {
+            if (isEditing) {
+                setIsFetching(true);
+                try {
+                    const data = await onboardingService.getOnboardingData();
+
+                    // Update Store
+                    if (data.personalInfo) setPersonalInfo(data.personalInfo);
+                    if (data.restaurantInfo) setRestaurantInfo(data.restaurantInfo);
+                    if (data.aboutRestaurant) setAboutRestaurant(data.aboutRestaurant);
+                    if (data.documents) setDocuments(data.documents);
+
+                    // Update Form
+                    reset(data.personalInfo);
+                    setIsEmailVerified(true); // Assuming fetched data implies verified email
+
+                } catch (error) {
+                    console.error("Failed to fetch onboarding data", error);
+                } finally {
+                    setIsFetching(false);
+                }
+            }
+        };
+        fetchData();
+    }, [isEditing, setPersonalInfo, setRestaurantInfo, setAboutRestaurant, setDocuments, reset, setIsEmailVerified]);
+
+    // Pre-fill from Auth User (only if NOT editing and empty)
+    useEffect(() => {
+        if (!isEditing && user?.mobile && !personalInfo.mobile) {
             setValue('mobile', user.mobile);
         }
-    }, [user, personalInfo.mobile, setValue]);
+    }, [user, personalInfo.mobile, setValue, isEditing]);
 
     useEffect(() => {
         if (isSameAsMobile) {
@@ -120,164 +161,171 @@ export const PersonalInfo = () => {
             </div>
 
             <div className="py-8 space-y-6 flex flex-col justify-between flex-grow">
-                <form id="personal-info-form" onSubmit={handleSubmit(onSendOtp)} className="space-y-6">
-
-                    {/* Owner Name */}
-                    <div className="space-y-2">
-                        <Label htmlFor="fullName" className="font-semibold text-slate-700">{t('onboarding.personal.fullNameLabel')}</Label>
-                        <div className="relative">
-                            <UserIcon className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
-                            <Input
-                                id="fullName"
-                                {...register('fullName')}
-                                className="pl-10 h-12 bg-white border-slate-200"
-                                placeholder={t('onboarding.personal.fullNamePlaceholder')}
-                                disabled={showOtpInput}
-                            />
-                        </div>
-                        {errors.fullName && <p className="text-red-500 text-xs">{errors.fullName.message}</p>}
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        {/* Mobile */}
-                        <div className="space-y-2">
-                            <Label className="font-semibold text-slate-700 flex items-center gap-2">
-                                {t('onboarding.personal.pocMobileLabel')}
-                                <span className="bg-green-100 text-green-700 text-[10px] px-2 py-0.5 rounded-full font-bold flex items-center gap-1">
-                                    <CheckCircle2 className="w-3 h-3" /> {t('onboarding.personal.verified')}
-                                </span>
-                            </Label>
-                            <div className="relative">
-                                <div className="absolute left-3 top-3.5 text-gray-500 font-medium z-10 text-sm">+91</div>
-                                <div className="absolute left-10 top-3 bottom-3 w-[1px] bg-slate-300"></div>
-                                <Input
-                                    {...register('mobile')}
-                                    readOnly
-                                    className="pl-14 h-12 bg-gray-100 border-slate-200 text-gray-500 cursor-not-allowed"
-                                />
-                                <Lock className="absolute right-3 top-3.5 h-4 w-4 text-green-600" />
-                            </div>
-                        </div>
-
-                        {/* Email */}
-                        <div className="space-y-2">
-                            <Label htmlFor="email" className="font-semibold text-slate-700">{t('onboarding.personal.emailLabel')}</Label>
-                            <div className="relative">
-                                <MailIcon className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
-                                <Input
-                                    id="email"
-                                    {...register('email')}
-                                    className="pl-10 h-12 bg-white border-slate-200"
-                                    placeholder={t('onboarding.personal.emailPlaceholder')}
-                                    disabled={showOtpInput || isEmailVerified}
-                                />
-                                {isEmailVerified && (
-                                    <CheckCircle2 className="absolute right-3 top-3.5 h-4 w-4 text-green-600" />
-                                )}
-                            </div>
-                            {errors.email && <p className="text-red-500 text-xs">{errors.email.message}</p>}
-                        </div>
-                    </div>
-
-                    {/* WhatsApp */}
-                    <div className="space-y-4">
-                        <div className="space-y-2">
-                            <Label htmlFor="whatsapp" className="font-semibold text-slate-700">{t('onboarding.personal.whatsappLabel')}</Label>
-                            <div className="relative">
-                                <div className="absolute left-3 top-3.5 text-gray-500 font-medium z-10 text-sm">+91</div>
-                                <div className="absolute left-10 top-3 bottom-3 w-[1px] bg-slate-200"></div>
-                                <Input
-                                    id="whatsapp"
-                                    {...register('whatsapp')}
-                                    className="pl-14 h-12 bg-white border-slate-200"
-                                    placeholder={t('onboarding.personal.whatsappPlaceholder')}
-                                    readOnly={isSameAsMobile}
-                                    disabled={showOtpInput}
-                                />
-                                <MessageSquare className="absolute right-3 top-3.5 h-4 w-4 text-slate-400" />
-                            </div>
-                            {errors.whatsapp && <p className="text-red-500 text-xs">{errors.whatsapp.message}</p>}
-                        </div>
-
-                        <div className="flex items-start gap-2">
-                            <input
-                                type="checkbox"
-                                id="sameAsMobile"
-                                className="mt-1 w-4 h-4 text-secondary-orange focus:ring-secondary-orange rounded border-slate-300 accent-secondary-orange"
-                                {...register('isSameAsMobile')}
-                                disabled={showOtpInput}
-                            />
-                            <label htmlFor="sameAsMobile" className="text-sm cursor-pointer">
-                                <span className="font-semibold text-slate-700 block">{t('onboarding.personal.sameAsMobile')}</span>
-                                <span className="text-slate-500 text-xs">{t('onboarding.personal.sameAsMobileHint')}</span>
-                            </label>
-                        </div>
-                    </div>
-
-                </form>
-
-                {/* Inline OTP Section or Continue Button */}
-                {showOtpInput ? (
-                    <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300 bg-slate-50 p-6 rounded-xl border border-slate-200">
-                        <div className="text-center mb-4">
-                            <h3 className="text-lg font-bold text-slate-900">{t('onboarding.personal.emailValidation.title')}</h3>
-                            <p className="text-slate-500 text-sm mt-1">
-                                {t('onboarding.personal.emailValidation.subtitle')} <span className="font-semibold text-slate-900">{getValues('email')}</span>
-                            </p>
-                        </div>
-
-                        <div className="flex justify-center">
-                            <OtpInput
-                                value={otp}
-                                onChange={setOtp}
-                                length={6}
-                            />
-                        </div>
-
-                        {otpError && <p className="text-red-500 text-sm text-center font-medium">{otpError}</p>}
-
-                        <Button
-                            onClick={onVerifyOtp}
-                            disabled={otp.length !== 6 || isLoading}
-                            className="w-full h-12 bg-secondary-orange hover:bg-secondary-orange/90 text-white font-bold rounded-xl"
-                        >
-                            {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : t('onboarding.personal.emailValidation.verifyButton')}
-                        </Button>
-
-                        <div className="text-center flex gap-4 justify-center">
-                            <button
-                                type="button"
-                                onClick={() => setShowOtpInput(false)}
-                                className="text-sm text-slate-500 font-medium hover:text-slate-900 hover:underline"
-                            >
-                                Edit Email
-                            </button>
-                            <button
-                                type="button"
-                                onClick={() => onSendOtp(getValues())}
-                                disabled={resendTimer > 0 || isLoading}
-                                className={`text-sm font-medium hover:underline ${resendTimer > 0 ? 'text-slate-400 cursor-not-allowed no-underline' : 'text-primary-blue'}`}
-                            >
-                                {resendTimer > 0
-                                    ? t('auth.otp.resendTimer', { time: resendTimer })
-                                    : t('onboarding.personal.emailValidation.resend')
-                                }
-                            </button>
-                        </div>
+                {isFetching ? (
+                    <div className="flex flex-col items-center justify-center h-64 space-y-4">
+                        <Loader2 className="w-8 h-8 animate-spin text-secondary-orange" />
+                        <p className="text-slate-500 font-medium">{t('Loading your details...')}</p>
                     </div>
                 ) : (
-                    <Button
-                        type="submit"
-                        form="personal-info-form"
-                        disabled={isLoading}
-                        className="w-full h-12 bg-secondary-orange hover:bg-secondary-orange/90 text-white font-bold text-lg rounded-xl shadow-lg shadow-secondary-orange/20 transition-all hover:scale-[1.01]"
-                    >
-                        {isLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : <>{t('onboarding.personal.continueButton')} →</>}
-                    </Button>
+                    <>
+                        <form id="personal-info-form" onSubmit={handleSubmit(onSendOtp)} className="space-y-6">
+
+                            {/* Owner Name */}
+                            <div className="space-y-2">
+                                <Label htmlFor="fullName" className="font-semibold text-slate-700">{t('onboarding.personal.fullNameLabel')}</Label>
+                                <div className="relative">
+                                    <UserIcon className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
+                                    <Input
+                                        id="fullName"
+                                        {...register('fullName')}
+                                        className="pl-10 h-12 bg-white border-slate-200"
+                                        placeholder={t('onboarding.personal.fullNamePlaceholder')}
+                                        disabled={showOtpInput}
+                                    />
+                                </div>
+                                {errors.fullName && <p className="text-red-500 text-xs">{errors.fullName.message}</p>}
+                            </div>
+
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                {/* Mobile */}
+                                <div className="space-y-2">
+                                    <Label className="font-semibold text-slate-700 flex items-center gap-2">
+                                        {t('onboarding.personal.pocMobileLabel')}
+                                        <span className="bg-green-100 text-green-700 text-[10px] px-2 py-0.5 rounded-full font-bold flex items-center gap-1">
+                                            <CheckCircle2 className="w-3 h-3" /> {t('onboarding.personal.verified')}
+                                        </span>
+                                    </Label>
+                                    <div className="relative">
+                                        <div className="absolute left-3 top-3.5 text-gray-500 font-medium z-10 text-sm">+91</div>
+                                        <div className="absolute left-10 top-3 bottom-3 w-[1px] bg-slate-300"></div>
+                                        <Input
+                                            {...register('mobile')}
+                                            readOnly
+                                            className="pl-14 h-12 bg-gray-100 border-slate-200 text-gray-500 cursor-not-allowed"
+                                        />
+                                        <Lock className="absolute right-3 top-3.5 h-4 w-4 text-green-600" />
+                                    </div>
+                                </div>
+
+                                {/* Email */}
+                                <div className="space-y-2">
+                                    <Label htmlFor="email" className="font-semibold text-slate-700">{t('onboarding.personal.emailLabel')}</Label>
+                                    <div className="relative">
+                                        <MailIcon className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
+                                        <Input
+                                            id="email"
+                                            {...register('email')}
+                                            className="pl-10 h-12 bg-white border-slate-200"
+                                            placeholder={t('onboarding.personal.emailPlaceholder')}
+                                            disabled={showOtpInput || isEmailVerified}
+                                        />
+                                        {isEmailVerified && (
+                                            <CheckCircle2 className="absolute right-3 top-3.5 h-4 w-4 text-green-600" />
+                                        )}
+                                    </div>
+                                    {errors.email && <p className="text-red-500 text-xs">{errors.email.message}</p>}
+                                </div>
+                            </div>
+
+                            {/* WhatsApp */}
+                            <div className="space-y-4">
+                                <div className="space-y-2">
+                                    <Label htmlFor="whatsapp" className="font-semibold text-slate-700">{t('onboarding.personal.whatsappLabel')}</Label>
+                                    <div className="relative">
+                                        <div className="absolute left-3 top-3.5 text-gray-500 font-medium z-10 text-sm">+91</div>
+                                        <div className="absolute left-10 top-3 bottom-3 w-[1px] bg-slate-200"></div>
+                                        <Input
+                                            id="whatsapp"
+                                            {...register('whatsapp')}
+                                            className="pl-14 h-12 bg-white border-slate-200"
+                                            placeholder={t('onboarding.personal.whatsappPlaceholder')}
+                                            readOnly={isSameAsMobile}
+                                            disabled={showOtpInput}
+                                        />
+                                        <MessageSquare className="absolute right-3 top-3.5 h-4 w-4 text-slate-400" />
+                                    </div>
+                                    {errors.whatsapp && <p className="text-red-500 text-xs">{errors.whatsapp.message}</p>}
+                                </div>
+
+                                <div className="flex items-start gap-2">
+                                    <input
+                                        type="checkbox"
+                                        id="sameAsMobile"
+                                        className="mt-1 w-4 h-4 text-secondary-orange focus:ring-secondary-orange rounded border-slate-300 accent-secondary-orange"
+                                        {...register('isSameAsMobile')}
+                                        disabled={showOtpInput}
+                                    />
+                                    <label htmlFor="sameAsMobile" className="text-sm cursor-pointer">
+                                        <span className="font-semibold text-slate-700 block">{t('onboarding.personal.sameAsMobile')}</span>
+                                        <span className="text-slate-500 text-xs">{t('onboarding.personal.sameAsMobileHint')}</span>
+                                    </label>
+                                </div>
+                            </div>
+
+                        </form>
+
+                        {/* Inline OTP Section or Continue Button */}
+                        {showOtpInput ? (
+                            <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300 bg-slate-50 p-6 rounded-xl border border-slate-200">
+                                <div className="text-center mb-4">
+                                    <h3 className="text-lg font-bold text-slate-900">{t('onboarding.personal.emailValidation.title')}</h3>
+                                    <p className="text-slate-500 text-sm mt-1">
+                                        {t('onboarding.personal.emailValidation.subtitle')} <span className="font-semibold text-slate-900">{getValues('email')}</span>
+                                    </p>
+                                </div>
+
+                                <div className="flex justify-center">
+                                    <OtpInput
+                                        value={otp}
+                                        onChange={setOtp}
+                                        length={6}
+                                    />
+                                </div>
+
+                                {otpError && <p className="text-red-500 text-sm text-center font-medium">{otpError}</p>}
+
+                                <Button
+                                    onClick={onVerifyOtp}
+                                    disabled={otp.length !== 6 || isLoading}
+                                    className="w-full h-12 bg-secondary-orange hover:bg-secondary-orange/90 text-white font-bold rounded-xl"
+                                >
+                                    {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : t('onboarding.personal.emailValidation.verifyButton')}
+                                </Button>
+
+                                <div className="text-center flex gap-4 justify-center">
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowOtpInput(false)}
+                                        className="text-sm text-slate-500 font-medium hover:text-slate-900 hover:underline"
+                                    >
+                                        Edit Email
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => onSendOtp(getValues())}
+                                        disabled={resendTimer > 0 || isLoading}
+                                        className={`text-sm font-medium hover:underline ${resendTimer > 0 ? 'text-slate-400 cursor-not-allowed no-underline' : 'text-primary-blue'}`}
+                                    >
+                                        {resendTimer > 0
+                                            ? t('auth.otp.resendTimer', { time: resendTimer })
+                                            : t('onboarding.personal.emailValidation.resend')
+                                        }
+                                    </button>
+                                </div>
+                            </div>
+                        ) : (
+                            <Button
+                                type="submit"
+                                form="personal-info-form"
+                                disabled={isLoading}
+                                className="w-full h-12 bg-secondary-orange hover:bg-secondary-orange/90 text-white font-bold text-lg rounded-xl shadow-lg shadow-secondary-orange/20 transition-all hover:scale-[1.01]"
+                            >
+                                {isLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : <>{t('onboarding.personal.continueButton')} →</>}
+                            </Button>
+                        )}
+                    </>
                 )}
             </div>
-
-
         </div>
     );
 };
