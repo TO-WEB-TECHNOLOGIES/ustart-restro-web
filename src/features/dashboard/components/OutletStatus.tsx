@@ -30,6 +30,11 @@ export const OutletStatus = () => {
 
     if (isAggregate) {
         return (
+            /*
+            1. Add a button for toggle all status (Sttaus for all restaurant) for close and open with confirmation
+            2. Add a view all button where a modal will open with all restaurants paginated, a search bar that will
+            be used to manually toggle status of each restaurant.
+            */
             <div className="bg-white dark:bg-slate-900 rounded-2xl p-6 border border-slate-200 dark:border-slate-800 shadow-lg relative overflow-hidden">
                 {renderError()}
                 <div className="flex flex-col md:flex-row items-center justify-between gap-6 relative z-10">
