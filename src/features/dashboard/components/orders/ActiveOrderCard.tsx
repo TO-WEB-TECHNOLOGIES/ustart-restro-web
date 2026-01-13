@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Clock, Phone, MessageSquare, Utensils, MapPin } from 'lucide-react';
+import { Clock, Phone, Utensils, MapPin } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import type { LiveOrder } from '../../api/mockDashboard';
 
