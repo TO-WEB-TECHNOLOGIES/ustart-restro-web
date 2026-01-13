@@ -127,32 +127,52 @@ export const useRecentOrders = () => {
             selectedAddressId ? state.recentOrders[selectedAddressId] || EMPTY_ARRAY : EMPTY_ARRAY
         )
     );
+    const pagination = useRestaurantStore(
+        useShallow(state =>
+            selectedAddressId ? state.orderPages[selectedAddressId] || { current: 1, total: 1 } : { current: 1, total: 1 }
+        )
+    );
     const setRecentOrders = useRestaurantStore(state => state.setRecentOrders);
+    const setOrderPagination = useRestaurantStore(state => state.setOrderPagination);
     const setLoading = useRestaurantStore(state => state.setLoading);
     const isLoading = useRestaurantStore(
         useShallow(state => selectedAddressId ? state.loading.orders[selectedAddressId] : false)
     );
 
-    useEffect(() => {
+    const fetchOrders = async (page: number) => {
         if (!selectedAddressId) return;
 
-        const fetchOrders = async () => {
-            setLoading('orders', selectedAddressId, true);
-            try {
-                const data = await mockDashboardService.getRecentOrders(selectedAddressId);
-                if (JSON.stringify(data) !== JSON.stringify(orders)) {
-                    setRecentOrders(selectedAddressId, data);
-                }
-            } catch (err) {
-                console.error("Failed to fetch orders", err);
-            } finally {
-                setLoading('orders', selectedAddressId, false);
-            }
-        };
-        fetchOrders();
-    }, [selectedAddressId]);
+        setLoading('orders', selectedAddressId, true);
+        try {
+            const data = await mockDashboardService.getRecentOrders(selectedAddressId, page, 5);
+            setRecentOrders(selectedAddressId, data.orders);
+            setOrderPagination(selectedAddressId, { current: page, total: data.totalPages });
+        } catch (err) {
+            console.error("Failed to fetch orders", err);
+        } finally {
+            setLoading('orders', selectedAddressId, false);
+        }
+    };
 
-    return { orders: orders as Order[], isLoading };
+    useEffect(() => {
+        if (selectedAddressId) {
+            fetchOrders(pagination.current);
+        }
+    }, [selectedAddressId, pagination.current]);
+
+    const goToPage = (page: number) => {
+        if (selectedAddressId) {
+            setOrderPagination(selectedAddressId, { ...pagination, current: page });
+        }
+    };
+
+    return {
+        orders: orders as Order[],
+        isLoading,
+        currentPage: pagination.current,
+        totalPages: pagination.total,
+        goToPage
+    };
 };
 export const useRestaurantDetails = () => {
     const { setRestaurantName, setAddresses } = useRestaurantStore();

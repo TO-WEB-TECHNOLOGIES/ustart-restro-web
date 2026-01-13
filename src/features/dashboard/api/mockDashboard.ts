@@ -50,16 +50,26 @@ const MOCK_ORDERS: Record<string, Order[]> = {
     'addr_123': [
         { id: '#ORD-3001', customerName: 'Rajesh K.', items: '2x Butter Chicken, 4x Naan', amount: 850.00, status: 'Cooking' },
         { id: '#ORD-3002', customerName: 'Priya S.', items: '1x Veg Biryani', amount: 350.00, status: 'Ready' },
-        { id: '#ORD-3003', customerName: 'Amit B.', items: '3x Paneer Tikka', amount: 900.00, status: 'Pending' }
+        { id: '#ORD-3003', customerName: 'Amit B.', items: '3x Paneer Tikka', amount: 900.00, status: 'Pending' },
+        { id: '#ORD-3004', customerName: 'Kiran J.', items: '1x Chicken Tandoori', amount: 450.00, status: 'Completed' },
+        { id: '#ORD-3005', customerName: 'Sanjay P.', items: '2x Garlic Naan', amount: 120.00, status: 'Cooking' },
+        { id: '#ORD-3006', customerName: 'Deepa M.', items: '1x Dal Makhani, 2x Roti', amount: 280.00, status: 'Pending' },
+        { id: '#ORD-3007', customerName: 'Vijay T.', items: '1x Fish Curry', amount: 380.00, status: 'Ready' },
+        { id: '#ORD-3008', customerName: 'Lata G.', items: '2x Gulab Jamun', amount: 100.00, status: 'Completed' },
     ],
     'addr_456': [
         { id: '#ORD-4001', customerName: 'Sneha P.', items: '1x Burger Meal', amount: 250.00, status: 'Completed' },
-        { id: '#ORD-4002', customerName: 'Rahul D.', items: '2x Coffee, 1x Sandwich', amount: 300.00, status: 'Cooking' }
+        { id: '#ORD-4002', customerName: 'Rahul D.', items: '2x Coffee, 1x Sandwich', amount: 300.00, status: 'Cooking' },
+        { id: '#ORD-4003', customerName: 'Anjali R.', items: '1x Pasta Alfredo', amount: 320.00, status: 'Pending' },
+        { id: '#ORD-4004', customerName: 'Manoj S.', items: '2x Coke, 1x Fries', amount: 180.00, status: 'Ready' },
+        { id: '#ORD-4005', customerName: 'Geeta K.', items: '1x Club Sandwich', amount: 220.00, status: 'Cooking' },
+        { id: '#ORD-4006', customerName: 'Rohan V.', items: '1x Pizza Margherita', amount: 450.00, status: 'Completed' },
     ],
     'addr_789': [
         { id: '#ORD-5001', customerName: 'Arun V.', items: '1x Thali', amount: 150.00, status: 'Pending' },
         { id: '#ORD-5002', customerName: 'Meera N.', items: '1x Chai, 1x Samosa', amount: 40.00, status: 'Ready' },
-        { id: '#ORD-5003', customerName: 'Vikram S.', items: '2x Vada Pav', amount: 60.00, status: 'Completed' }
+        { id: '#ORD-5003', customerName: 'Vikram S.', items: '2x Vada Pav', amount: 60.00, status: 'Completed' },
+        { id: '#ORD-5004', customerName: 'Sonali D.', items: '1x Misal Pav', amount: 80.00, status: 'Cooking' },
     ]
 };
 
@@ -104,9 +114,15 @@ export const mockDashboardService = {
                 totalOrders += ord;
             });
 
+            const formatter = new Intl.NumberFormat('en-IN');
+            const currencyFormatter = new Intl.NumberFormat('en-IN', {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+            });
+
             return [
-                { id: 'revenue', label: "Total Revenue", value: `₹${totalRevenue.toFixed(2)}`, highlight: true },
-                { id: 'orders', label: "Total Orders", value: `${totalOrders}` },
+                { id: 'revenue', label: "Total Revenue", value: `₹${currencyFormatter.format(totalRevenue)}`, highlight: true },
+                { id: 'orders', label: "Total Orders", value: formatter.format(totalOrders) },
                 { id: 'ticket', label: "Avg Ticket Size", value: `₹245.00` },
                 { id: 'rating', label: "Avg Rating", value: '4.5' }
             ];
@@ -115,15 +131,26 @@ export const mockDashboardService = {
         return MOCK_STATS[addressId] || MOCK_STATS['addr_123'];
     },
 
-    getRecentOrders: async (addressId: string): Promise<Order[]> => {
+    getRecentOrders: async (addressId: string, page: number = 1, limit: number = 5): Promise<{ orders: Order[]; total: number; totalPages: number }> => {
         await delay(600);
-        console.log(`Fetching orders for address: ${addressId}`);
+        console.log(`Fetching orders for address: ${addressId}, Page: ${page}`);
 
+        let allOrders: Order[] = [];
         if (addressId === 'all') {
-            return Object.values(MOCK_ORDERS).flat();
+            allOrders = Object.values(MOCK_ORDERS).flat();
+        } else {
+            allOrders = MOCK_ORDERS[addressId] || [];
         }
 
-        return MOCK_ORDERS[addressId] || [];
+        const start = (page - 1) * limit;
+        const end = start + limit;
+        const paginated = allOrders.slice(start, end);
+
+        return {
+            orders: paginated,
+            total: allOrders.length,
+            totalPages: Math.ceil(allOrders.length / limit)
+        };
     },
 
     getOutletStatus: async (addressId: string): Promise<OutletStatus | { openCount: number; closedCount: number; isOpen: boolean }> => {

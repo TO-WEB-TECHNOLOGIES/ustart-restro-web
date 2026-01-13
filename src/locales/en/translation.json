@@ -414,6 +414,40 @@
       "rating": "Customer Rating",
       "avgRating": "Avg Rating",
       "basedOnReviews": "Based on recent reviews"
+    },
+    "recentOrders": {
+      "title": "Today's Orders",
+      "viewAll": "View All",
+      "noOrders": "No recent orders found.",
+      "pageOf": "Page {{current}} of {{total}}",
+      "table": {
+        "id": "Order ID",
+        "customer": "Customer",
+        "items": "Items",
+        "amount": "Amount",
+        "status": "Status"
+      },
+      "statuses": {
+        "pending": "Pending",
+        "cooking": "Cooking",
+        "ready": "Ready",
+        "completed": "Completed"
+      }
+    },
+    "widgets": {
+      "boost": {
+        "title": "Boost your visibility",
+        "description": "Get 20% more orders by promoting your top dishes this weekend.",
+        "button": "Create Ad Campaign"
+      },
+      "help": {
+        "title": "Need Help?",
+        "links": {
+          "operatingHours": "How to update operating hours",
+          "refunds": "Managing customer refunds",
+          "support": "Contact Partner Support"
+        }
+      }
     }
   }
 }

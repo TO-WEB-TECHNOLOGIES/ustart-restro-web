@@ -31,6 +31,7 @@ interface RestaurantState {
     statuses: Record<string, RestaurantStatus>;
     stats: Record<string, StatMetric[]>;
     recentOrders: Record<string, Order[]>;
+    orderPages: Record<string, { current: number; total: number }>;
 
     // Granular Loading States
     loading: {
@@ -49,6 +50,7 @@ interface RestaurantState {
     setSelectedAddressId: (id: string) => void;
     setStats: (addressId: string, stats: StatMetric[]) => void;
     setRecentOrders: (addressId: string, orders: Order[]) => void;
+    setOrderPagination: (addressId: string, pagination: { current: number; total: number }) => void;
     setLoading: (type: 'status' | 'stats' | 'orders', id: string, isLoading: boolean) => void;
     reset: () => void;
 }
@@ -61,6 +63,7 @@ const initialState = {
     selectedAddressId: null,
     stats: {},
     recentOrders: {},
+    orderPages: {},
     loading: {
         status: {},
         stats: {},
@@ -90,6 +93,9 @@ export const useRestaurantStore = create<RestaurantState>()(
             })),
             setRecentOrders: (addressId, orders) => set((state) => ({
                 recentOrders: { ...state.recentOrders, [addressId]: orders }
+            })),
+            setOrderPagination: (addressId, pagination) => set((state) => ({
+                orderPages: { ...state.orderPages, [addressId]: pagination }
             })),
             setLoading: (type, id, isLoading) => set((state) => ({
                 loading: {
