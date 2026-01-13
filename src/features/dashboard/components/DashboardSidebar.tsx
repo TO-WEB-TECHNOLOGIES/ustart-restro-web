@@ -21,6 +21,7 @@ import {
   Wallet as WalletIcon,
   Store as StoreIcon,
 } from "lucide-react";
+import { usePendingOrders } from "../hooks/useDashboardData";
 import { Logo } from "@/components/ui/logo";
 import {
   Accordion,
@@ -29,8 +30,20 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 
+interface MenuItem {
+  icon: any;
+  key: string;
+  path: string;
+  badge?: string | number;
+}
+
+interface MenuSection {
+  key: string;
+  items: MenuItem[];
+}
+
 // Define keys for translation mapping
-const MENU_SECTIONS = [
+const MENU_SECTIONS: MenuSection[] = [
   {
     key: "operations",
     items: [
@@ -40,7 +53,6 @@ const MENU_SECTIONS = [
         icon: CalendarClock,
         key: "orders",
         path: "/dashboard/orders",
-        badge: 3,
       },
       { icon: History, key: "history", path: "/dashboard/history" },
       { icon: Store, key: "status", path: "/dashboard/status" },
@@ -113,6 +125,20 @@ export const DashboardSidebar = ({
     return restaurantName ? `X ${restaurantName}` : "X";
   }, [restaurantName]);
 
+  const { hasPendingOrders } = usePendingOrders();
+
+  const menuWithBadges = useMemo(() => {
+    return MENU_SECTIONS.map((section) => ({
+      ...section,
+      items: section.items.map((item) => {
+        if (item.key === "orders" && hasPendingOrders) {
+          return { ...item, badge: "New" };
+        }
+        return item;
+      }),
+    }));
+  }, [hasPendingOrders]);
+
   return (
     <>
       {/* Mobile Overlay */}
@@ -128,11 +154,10 @@ export const DashboardSidebar = ({
                 fixed md:sticky top-0 h-screen z-50 md:z-40
                 w-64 bg-white dark:bg-slate-900 border-r border-slate-100 dark:border-slate-800
                 flex flex-col shrink-0 transition-all duration-300 ease-in-out
-                ${
-                  isOpen
-                    ? "translate-x-0"
-                    : "-translate-x-full md:translate-x-0"
-                }
+                ${isOpen
+            ? "translate-x-0"
+            : "-translate-x-full md:translate-x-0"
+          }
             `}
       >
         <div className="p-6">
@@ -152,7 +177,7 @@ export const DashboardSidebar = ({
             defaultValue={allSections}
             className="w-full"
           >
-            {MENU_SECTIONS.map((section) => (
+            {menuWithBadges.map((section) => (
               <AccordionItem
                 key={section.key}
                 value={`section-${section.key}`}
@@ -174,19 +199,17 @@ export const DashboardSidebar = ({
                             navigate(item.path);
                             onClose?.();
                           }}
-                          className={`w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-sm font-medium transition-all ${
-                            isActive
-                              ? "bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white"
-                              : "text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/50 hover:text-slate-700 dark:hover:text-slate-200"
-                          }`}
+                          className={`w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-sm font-medium transition-all ${isActive
+                            ? "bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white"
+                            : "text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/50 hover:text-slate-700 dark:hover:text-slate-200"
+                            }`}
                         >
                           <div className="flex items-center gap-3">
                             <Icon
-                              className={`w-5 h-5 ${
-                                isActive
-                                  ? "text-slate-900 dark:text-white"
-                                  : "text-slate-400 dark:text-slate-500"
-                              }`}
+                              className={`w-5 h-5 ${isActive
+                                ? "text-slate-900 dark:text-white"
+                                : "text-slate-400 dark:text-slate-500"
+                                }`}
                             />
                             <span>
                               {t(`dashboard.sidebar.items.${item.key}`)}

@@ -50,9 +50,9 @@ export const StatsCards = () => {
     };
 
     return (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="flex md:grid overflow-x-auto md:overflow-x-visible snap-x snap-mandatory md:snap-none pb-4 md:pb-0 grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 no-scrollbar">
             {displayStats.map((stat) => (
-                <div key={stat.id} className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 p-6 rounded-2xl shadow-sm hover:shadow-md dark:hover:shadow-none transition-all">
+                <div key={stat.id} className="min-w-[85%] md:min-w-0 snap-center bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 p-6 rounded-2xl shadow-sm hover:shadow-md dark:hover:shadow-none transition-all flex-shrink-0 md:flex-shrink">
                     <div className="flex justify-between items-start mb-4">
                         <span className="text-slate-500 dark:text-slate-400 text-sm font-medium">{getLabel(stat.id)}</span>
                         <div className={`p-2 rounded-lg ${getIconBg(stat.id)}`}>

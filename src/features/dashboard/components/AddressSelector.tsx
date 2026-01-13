@@ -60,7 +60,7 @@ export const AddressSelector = () => {
         return (
             <Button
                 variant="outline"
-                className="h-10 px-4 border-dashed border-slate-300 dark:border-slate-700 bg-transparent hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-500 dark:text-slate-400 flex items-center gap-2 w-[200px] justify-center"
+                className="h-10 px-3 md:px-4 border-dashed border-slate-300 dark:border-slate-700 bg-transparent hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-500 dark:text-slate-400 flex items-center gap-2 w-auto min-w-[140px] sm:w-[200px] justify-center transition-all"
             >
                 <MapPin className="w-4 h-4" />
                 <span className="text-sm font-medium">{t('dashboard.addNewLocation', 'Add Location')}</span>
@@ -72,7 +72,7 @@ export const AddressSelector = () => {
         <div className="relative" ref={dropdownRef}>
             <Button
                 variant="outline"
-                className="h-10 px-4 border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 flex items-center gap-3 w-[200px] justify-between group"
+                className="h-9 md:h-10 px-2 md:px-4 border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 flex items-center gap-1.5 md:gap-3 w-auto max-w-[130px] sm:max-w-none sm:w-[200px] justify-between group transition-all"
                 onClick={() => setIsOpen(!isOpen)}
             >
                 <div className="flex items-center gap-2 overflow-hidden">
@@ -80,8 +80,8 @@ export const AddressSelector = () => {
                         {isAllSelected ? <Store className="w-3.5 h-3.5" /> : <MapPin className="w-3.5 h-3.5" />}
                     </div>
                     <div className="flex flex-col items-start truncate text-left">
-                        <span className="text-xs font-bold text-slate-800 dark:text-slate-200 leading-none mb-0.5 truncate max-w-[140px]">{displayLabel || t('dashboard.selectLocation', 'Select Location')}</span>
-                        <span className="text-[10px] text-slate-500 dark:text-slate-400 font-medium leading-none truncate max-w-[140px]">{displayAddress}</span>
+                        <span className="text-xs font-bold text-slate-800 dark:text-slate-200 leading-none mb-0.5 truncate max-w-[80px] sm:max-w-[140px]">{displayLabel || t('dashboard.selectLocation', 'Select Location')}</span>
+                        <span className="text-[10px] text-slate-500 dark:text-slate-400 font-medium leading-none truncate max-w-0 sm:max-w-[140px] hidden sm:block">{displayAddress}</span>
                     </div>
                 </div>
                 <ChevronDown className={`w-4 h-4 text-slate-400 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} />

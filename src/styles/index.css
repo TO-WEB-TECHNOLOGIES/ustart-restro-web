@@ -11,3 +11,13 @@
   --color-dark-gray: #443d38;
   --color-terracotta-green: #539987;
 }
+
+@layer utilities {
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+}

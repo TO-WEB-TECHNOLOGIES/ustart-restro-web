@@ -6,7 +6,7 @@ export const BoostWidget = () => {
     const { t } = useTranslation();
 
     return (
-        <div className="bg-slate-900 dark:bg-slate-950 rounded-2xl p-6 text-white relative overflow-hidden transition-colors">
+        <div className="bg-slate-900 dark:bg-gradient-to-br dark:from-slate-900 dark:via-slate-900 dark:to-slate-950 rounded-2xl p-6 text-white relative overflow-hidden transition-colors border border-transparent dark:border-slate-800/50">
             {/* Background Gradient/Effect */}
             <div className="absolute top-0 right-0 w-32 h-32 bg-secondary-orange/20 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
 

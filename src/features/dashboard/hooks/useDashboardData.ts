@@ -234,3 +234,15 @@ export const useAddressSearch = () => {
         isLoading
     };
 };
+
+export const usePendingOrders = () => {
+    const recentOrders = useRestaurantStore(
+        useShallow(state => state.recentOrders)
+    );
+
+    const hasPendingOrders = Object.values(recentOrders).some(orders =>
+        orders.some(order => order.status === 'Pending')
+    );
+
+    return { hasPendingOrders };
+};

@@ -70,10 +70,6 @@ export const DashboardHeader = ({ user, onMenuClick }: DashboardHeaderProps) => 
                     </Button>
                 </div>
 
-                {/* Mobile: Show Icon only for Create Offer */}
-                <Button size="icon" className="lg:hidden bg-secondary-orange hover:bg-secondary-orange/90 text-white shadow-sm h-9 w-9 rounded-full">
-                    <Plus className="w-4 h-4" />
-                </Button>
 
                 <div className="h-8 w-px bg-slate-200 dark:bg-slate-700 mx-2 hidden md:block" />
 
@@ -84,10 +80,8 @@ export const DashboardHeader = ({ user, onMenuClick }: DashboardHeaderProps) => 
                     <span className="absolute top-2.5 right-2.5 w-2 h-2 bg-red-500 rounded-full border border-white dark:border-slate-900" />
                 </button>
 
-                {/* Address Selector - Responsive Width handled inside component/parent */}
-                <div className="hidden sm:block">
-                    <AddressSelector />
-                </div>
+                {/* Address Selector - Responsive Width handled inside component */}
+                <AddressSelector />
             </div>
         </header>
     );
