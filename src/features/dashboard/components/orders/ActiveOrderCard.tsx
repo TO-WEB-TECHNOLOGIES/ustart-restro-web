@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react';
 import { Clock, Phone, MessageSquare, Utensils, MapPin } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import type { LiveOrder } from '../../api/mockDashboard';
@@ -10,6 +11,35 @@ interface ActiveOrderCardProps {
 
 export const ActiveOrderCard = ({ order, onAccept, onReject }: ActiveOrderCardProps) => {
     const { t } = useTranslation();
+    const [prepTime, setPrepTime] = useState<string>('');
+    const [timeLeft, setTimeLeft] = useState(600); // 10 minutes in seconds
+
+    useEffect(() => {
+        if (timeLeft <= 0) {
+            onReject(order.id);
+            return;
+        }
+
+        const timer = setInterval(() => {
+            setTimeLeft((prev) => prev - 1);
+        }, 1000);
+
+        return () => clearInterval(timer);
+    }, [timeLeft, order.id, onReject]);
+
+    const handleAccept = () => {
+        if (prepTime) {
+            onAccept(order.id, parseInt(prepTime));
+        }
+    };
+
+    const formatTime = (seconds: number) => {
+        const mins = Math.floor(seconds / 60);
+        const secs = seconds % 60;
+        return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+    };
+
+    const progressPercentage = (timeLeft / 600) * 100;
 
     return (
         <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm hover:shadow-md transition-all overflow-hidden flex flex-col md:flex-row min-h-[350px]">
@@ -134,7 +164,12 @@ export const ActiveOrderCard = ({ order, onAccept, onReject }: ActiveOrderCardPr
                                 {t('dashboard.orders.card.prepTime')}
                             </label>
                             <div className="relative group">
-                                <select className="w-full appearance-none bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg px-3 py-2.5 pr-8 text-xs font-bold text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-orange-500 transition-all shadow-sm cursor-pointer">
+                                <select
+                                    value={prepTime}
+                                    onChange={(e) => setPrepTime(e.target.value)}
+                                    className={`w-full appearance-none bg-white dark:bg-slate-900 border ${prepTime ? 'border-slate-200 dark:border-slate-800' : 'border-orange-200 dark:border-orange-900/50'} rounded-lg px-3 py-2.5 pr-8 text-xs font-bold text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-orange-500 transition-all shadow-sm cursor-pointer`}
+                                >
+                                    <option value="" disabled>{t('dashboard.orders.card.selectTime')}</option>
                                     <option value="5">{t('dashboard.orders.card.mins', { count: 5 })}</option>
                                     <option value="10">{t('dashboard.orders.card.mins', { count: 10 })}</option>
                                     <option value="15">{t('dashboard.orders.card.mins', { count: 15 })}</option>
@@ -143,20 +178,31 @@ export const ActiveOrderCard = ({ order, onAccept, onReject }: ActiveOrderCardPr
                                 <Clock className="absolute right-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400 pointer-events-none group-hover:text-orange-500 transition-colors" />
                             </div>
                         </div>
-                        <div>
-
-                        </div>
                     </div>
                 </div>
 
                 <div className="space-y-3 mt-6">
                     <button
-                        onClick={() => onAccept(order.id, 15)}
-                        className="group relative w-full overflow-hidden bg-slate-900 dark:bg-white text-white dark:text-slate-900 py-3.5 rounded-xl font-black text-base tracking-wide shadow-lg shadow-slate-200 dark:shadow-none transition-all active:scale-[0.98] flex items-center justify-center gap-4"
+                        onClick={handleAccept}
+                        disabled={!prepTime}
+                        className={`group relative w-full overflow-hidden py-4 rounded-2xl font-black text-lg tracking-tight transition-all active:scale-[0.98] flex items-center justify-center gap-4 shadow-xl ${prepTime
+                            ? 'bg-[#0f172a] text-white'
+                            : 'bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-600 cursor-not-allowed shadow-none'
+                            }`}
                     >
+                        {/* Progress Bar Background Overlay */}
+                        {prepTime && (
+                            <div
+                                className="absolute inset-y-0 left-0 bg-[#2b3e5d] transition-all duration-1000 ease-linear"
+                                style={{ width: `${progressPercentage}%` }}
+                            />
+                        )}
+
                         <span className="relative z-10">{t('dashboard.orders.card.accept')}</span>
-                        <span className="relative z-10 bg-white/20 dark:bg-black/10 px-2 py-0.5 rounded text-[11px] font-black shadow-inner">01:59</span>
-                        <div className="absolute inset-x-0 bottom-0 h-1 bg-orange-500 origin-left scale-x-0 group-hover:scale-x-100 transition-transform duration-500"></div>
+
+                        <span className="relative z-10 bg-white/10 px-3 py-1 rounded-lg text-sm font-bold backdrop-blur-sm border border-white/5">
+                            {formatTime(timeLeft)}
+                        </span>
                     </button>
                     <button
                         onClick={() => onReject(order.id)}

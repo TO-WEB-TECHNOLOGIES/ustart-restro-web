@@ -4,6 +4,7 @@ import {
     mockDashboardService,
     type StatMetric,
     type Order,
+    type LiveOrder,
     type OutletStatus
 } from '../api/mockDashboard';
 import { useRestaurantStore, ALL_LOCATIONS_ID, type RestaurantStatus } from '../store/useRestaurantStore';
@@ -241,8 +242,78 @@ export const usePendingOrders = () => {
     );
 
     const hasPendingOrders = Object.values(recentOrders).some(orders =>
-        orders.some(order => order.status === 'Pending')
+        orders.some(order => order.status === 'New')
     );
 
     return { hasPendingOrders };
+};
+
+export type OrderTab = 'New' | 'Preparing' | 'Ready' | 'Completed';
+
+export const useLiveOrders = () => {
+    const selectedAddressId = useRestaurantStore(state => state.selectedAddressId);
+    const recentOrders = useRestaurantStore(
+        useShallow(state =>
+            selectedAddressId ? state.recentOrders[selectedAddressId] || (EMPTY_ARRAY as LiveOrder[]) : (EMPTY_ARRAY as LiveOrder[])
+        )
+    );
+    const setRecentOrders = useRestaurantStore(state => state.setRecentOrders);
+    const [activeTab, setActiveTab] = useState<OrderTab>('New');
+
+    // Counts for tabs
+    const counts = {
+        New: recentOrders.filter(o => o.status === 'New').length,
+        Preparing: recentOrders.filter(o => o.status === 'Preparing').length,
+        Ready: recentOrders.filter(o => o.status === 'Ready').length,
+        Completed: recentOrders.filter(o => o.status === 'Completed' || o.status === 'Rejected').length,
+    };
+
+    // Filtered orders based on active tab
+    const filteredOrders = recentOrders.filter(order => {
+        if (activeTab === 'New') return order.status === 'New';
+        if (activeTab === 'Preparing') return order.status === 'Preparing';
+        if (activeTab === 'Ready') return order.status === 'Ready';
+        if (activeTab === 'Completed') return order.status === 'Completed' || order.status === 'Rejected';
+        return false;
+    });
+
+    const refreshOrders = async () => {
+        if (!selectedAddressId) return;
+        // In a real app we might fetch specific tab data, but mock fetches all
+        const data = await mockDashboardService.getRecentOrders(selectedAddressId, 1, 100); // Fetch more for live view
+        setRecentOrders(selectedAddressId, data.orders);
+    };
+
+    const acceptOrder = async (orderId: string, prepTime: number) => {
+        const success = await mockDashboardService.updateOrderStatus(orderId, 'Preparing', prepTime);
+        if (success) refreshOrders();
+    };
+
+    const rejectOrder = async (orderId: string) => {
+        const success = await mockDashboardService.updateOrderStatus(orderId, 'Rejected');
+        if (success) refreshOrders();
+    };
+
+    const markReady = async (orderId: string) => {
+        const success = await mockDashboardService.updateOrderStatus(orderId, 'Ready');
+        if (success) refreshOrders();
+    };
+
+    const markCompleted = async (orderId: string) => {
+        const success = await mockDashboardService.updateOrderStatus(orderId, 'Completed');
+        if (success) refreshOrders();
+    };
+
+    return {
+        activeTab,
+        setActiveTab,
+        orders: filteredOrders,
+        counts,
+        actions: {
+            acceptOrder,
+            rejectOrder,
+            markReady,
+            markCompleted
+        }
+    };
 };

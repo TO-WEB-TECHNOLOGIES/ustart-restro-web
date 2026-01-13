@@ -8,13 +8,36 @@ export interface StatMetric {
     highlight?: boolean;
 }
 
-export interface Order {
-    id: string;
-    customerName: string;
-    items: string;
-    amount: number;
-    status: 'Pending' | 'Cooking' | 'Ready' | 'Completed' | 'Cancelled';
+export interface OrderItem {
+    name: string;
+    quantity: number;
+    price: number;
+    variant?: string;
+    addons?: string[];
+    instruction?: string;
 }
+
+export interface LiveOrder {
+    id: string;
+    customer: {
+        name: string;
+        phone: string;
+        isNewUser?: boolean; // "FIRST-TIME USER" badge
+        totalOrders?: number; // "ORDERED 5 TIMES" badge
+        avatarColor?: string;
+    };
+    items: OrderItem[];
+    amount: number;
+    status: 'New' | 'Preparing' | 'Ready' | 'Completed' | 'Rejected';
+    placedAt: number; // Timestamp
+    isRush?: boolean;
+    isGift?: boolean;
+    giftMessage?: string;
+    restaurantInstructions?: string;
+    prepTime?: number; // Minutes
+}
+
+export type Order = LiveOrder; // Maintain backward compatibility if needed, or refactor usages
 
 export interface OutletStatus {
     isOpen: boolean;
@@ -26,19 +49,19 @@ const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 // Mock Data Maps
 const MOCK_STATS: Record<string, StatMetric[]> = {
-    'addr_123': [ // Main Branch (Mumbai) - High volume
+    'addr_123': [
         { id: 'revenue', label: "Today's Revenue", value: '₹45,250.00', highlight: true },
         { id: 'orders', label: 'Daily Orders', value: '145' },
         { id: 'ticket', label: 'Avg Ticket Size', value: '₹312.00' },
         { id: 'rating', label: 'Customer Rating', value: '4.8' }
     ],
-    'addr_456': [ // City Center (Pune) - Mall location, lower ticket, high traffic
+    'addr_456': [
         { id: 'revenue', label: "Today's Revenue", value: '₹28,400.00', highlight: true },
         { id: 'orders', label: 'Daily Orders', value: '210' },
         { id: 'ticket', label: 'Avg Ticket Size', value: '₹135.00' },
         { id: 'rating', label: 'Customer Rating', value: '4.5' }
     ],
-    'addr_789': [ // Express Outlet (Delhi) - Fast food, stable
+    'addr_789': [
         { id: 'revenue', label: "Today's Revenue", value: '₹12,100.00', highlight: true },
         { id: 'orders', label: 'Daily Orders', value: '85' },
         { id: 'ticket', label: 'Avg Ticket Size', value: '₹142.00' },
@@ -46,31 +69,73 @@ const MOCK_STATS: Record<string, StatMetric[]> = {
     ]
 };
 
-const MOCK_ORDERS: Record<string, Order[]> = {
+const MOCK_ORDERS: Record<string, LiveOrder[]> = {
     'addr_123': [
-        { id: '#ORD-3001', customerName: 'Rajesh K.', items: '2x Butter Chicken, 4x Naan', amount: 850.00, status: 'Cooking' },
-        { id: '#ORD-3002', customerName: 'Priya S.', items: '1x Veg Biryani', amount: 350.00, status: 'Ready' },
-        { id: '#ORD-3003', customerName: 'Amit B.', items: '3x Paneer Tikka', amount: 900.00, status: 'Pending' },
-        { id: '#ORD-3004', customerName: 'Kiran J.', items: '1x Chicken Tandoori', amount: 450.00, status: 'Completed' },
-        { id: '#ORD-3005', customerName: 'Sanjay P.', items: '2x Garlic Naan', amount: 120.00, status: 'Cooking' },
-        { id: '#ORD-3006', customerName: 'Deepa M.', items: '1x Dal Makhani, 2x Roti', amount: 280.00, status: 'Pending' },
-        { id: '#ORD-3007', customerName: 'Vijay T.', items: '1x Fish Curry', amount: 380.00, status: 'Ready' },
-        { id: '#ORD-3008', customerName: 'Lata G.', items: '2x Gulab Jamun', amount: 100.00, status: 'Completed' },
+        {
+            id: '#ORD-2933',
+            customer: { name: 'James Sullivan', phone: '+91 98765 43210', totalOrders: 5, avatarColor: 'bg-orange-100 text-orange-600' },
+            items: [
+                { name: 'Margherita Pizza (L)', quantity: 1, price: 450, variant: 'Large' },
+                { name: 'Garlic Bread', quantity: 2, price: 240 }
+            ],
+            amount: 690.00,
+            status: 'New',
+            placedAt: Date.now() - 1000 * 60 * 2, // 2 mins ago
+            restaurantInstructions: "Please make the pizza extra spicy and don't add oregano on garlic bread.",
+        },
+        {
+            id: '#ORD-2932',
+            customer: { name: 'Alice Moore', phone: '+91 88776 55443', isNewUser: true, avatarColor: 'bg-emerald-100 text-emerald-600' },
+            items: [
+                { name: 'Truffle Pasta', quantity: 1, price: 380 }
+            ],
+            amount: 380.00,
+            status: 'New',
+            placedAt: Date.now() - 1000 * 60 * 15, // 15 mins ago
+            isRush: true, // Priority Delivery
+        },
+        {
+            id: '#ORD-2930',
+            customer: { name: 'John Wick', phone: '+91 99887 77665', avatarColor: 'bg-purple-100 text-purple-600' },
+            items: [
+                { name: 'Pasta Carbonara', quantity: 1, price: 350 }
+            ],
+            amount: 350.00,
+            status: 'Preparing',
+            placedAt: Date.now() - 1000 * 60 * 25,
+            prepTime: 12, // 12 mins left
+        },
+        {
+            id: '#ORD-2928',
+            customer: { name: 'Michael Doe', phone: '+91 77665 55443', avatarColor: 'bg-blue-100 text-blue-600' },
+            items: [
+                { name: 'Chicken Burger', quantity: 2, price: 520 }
+            ],
+            amount: 520.00,
+            status: 'Preparing',
+            placedAt: Date.now() - 1000 * 60 * 45,
+            prepTime: 0, // Delayed
+        },
+        {
+            id: '#ORD-2900',
+            customer: { name: 'Robert Fox', phone: '+91 99999 88888', avatarColor: 'bg-pink-100 text-pink-600' },
+            items: [{ name: 'Veg Thali', quantity: 1, price: 250 }],
+            amount: 250.00,
+            status: 'Ready',
+            placedAt: Date.now() - 1000 * 60 * 50,
+        }
     ],
     'addr_456': [
-        { id: '#ORD-4001', customerName: 'Sneha P.', items: '1x Burger Meal', amount: 250.00, status: 'Completed' },
-        { id: '#ORD-4002', customerName: 'Rahul D.', items: '2x Coffee, 1x Sandwich', amount: 300.00, status: 'Cooking' },
-        { id: '#ORD-4003', customerName: 'Anjali R.', items: '1x Pasta Alfredo', amount: 320.00, status: 'Pending' },
-        { id: '#ORD-4004', customerName: 'Manoj S.', items: '2x Coke, 1x Fries', amount: 180.00, status: 'Ready' },
-        { id: '#ORD-4005', customerName: 'Geeta K.', items: '1x Club Sandwich', amount: 220.00, status: 'Cooking' },
-        { id: '#ORD-4006', customerName: 'Rohan V.', items: '1x Pizza Margherita', amount: 450.00, status: 'Completed' },
+        {
+            id: '#ORD-4001',
+            customer: { name: 'Sneha P.', phone: '+91 98798 76543', avatarColor: 'bg-yellow-100 text-yellow-600' },
+            items: [{ name: 'Burger Meal', quantity: 1, price: 250 }],
+            amount: 250.00,
+            status: 'Completed',
+            placedAt: Date.now() - 1000 * 60 * 120
+        }
     ],
-    'addr_789': [
-        { id: '#ORD-5001', customerName: 'Arun V.', items: '1x Thali', amount: 150.00, status: 'Pending' },
-        { id: '#ORD-5002', customerName: 'Meera N.', items: '1x Chai, 1x Samosa', amount: 40.00, status: 'Ready' },
-        { id: '#ORD-5003', customerName: 'Vikram S.', items: '2x Vada Pav', amount: 60.00, status: 'Completed' },
-        { id: '#ORD-5004', customerName: 'Sonali D.', items: '1x Misal Pav', amount: 80.00, status: 'Cooking' },
-    ]
+    'addr_789': []
 };
 
 const MOCK_STATUSES: Record<string, boolean> = {
@@ -207,5 +272,25 @@ export const mockDashboardService = {
             total: filtered.length,
             totalPages: Math.ceil(filtered.length / limit)
         };
+    },
+
+    updateOrderStatus: async (orderId: string, status: LiveOrder['status'], prepTime?: number): Promise<boolean> => {
+        await delay(400);
+        console.log(`Updating order ${orderId} to ${status}`);
+
+        // In a real app, this would update the backend.
+        // For mock, we'll iterate through all Mock Orders and update the matching one.
+        let orderFound = false;
+        Object.keys(MOCK_ORDERS).forEach(key => {
+            const orderIndex = MOCK_ORDERS[key].findIndex(o => o.id === orderId);
+            if (orderIndex !== -1) {
+                MOCK_ORDERS[key][orderIndex].status = status;
+                if (prepTime !== undefined) {
+                    MOCK_ORDERS[key][orderIndex].prepTime = prepTime;
+                }
+                orderFound = true;
+            }
+        });
+        return orderFound;
     }
 };
