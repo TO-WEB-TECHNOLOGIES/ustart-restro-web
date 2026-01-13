@@ -32,6 +32,13 @@ interface RestaurantState {
     stats: Record<string, StatMetric[]>;
     recentOrders: Record<string, Order[]>;
 
+    // Granular Loading States
+    loading: {
+        status: Record<string, boolean>;
+        stats: Record<string, boolean>;
+        orders: Record<string, boolean>;
+    };
+
     // Actions
     setRestaurantName: (name: string) => void;
     setRestaurantDetails: (details: RestaurantDetails) => void;
@@ -42,6 +49,7 @@ interface RestaurantState {
     setSelectedAddressId: (id: string) => void;
     setStats: (addressId: string, stats: StatMetric[]) => void;
     setRecentOrders: (addressId: string, orders: Order[]) => void;
+    setLoading: (type: 'status' | 'stats' | 'orders', id: string, isLoading: boolean) => void;
     reset: () => void;
 }
 
@@ -53,6 +61,11 @@ const initialState = {
     selectedAddressId: null,
     stats: {},
     recentOrders: {},
+    loading: {
+        status: {},
+        stats: {},
+        orders: {},
+    },
 };
 
 export const useRestaurantStore = create<RestaurantState>()(
@@ -78,10 +91,16 @@ export const useRestaurantStore = create<RestaurantState>()(
             setRecentOrders: (addressId, orders) => set((state) => ({
                 recentOrders: { ...state.recentOrders, [addressId]: orders }
             })),
+            setLoading: (type, id, isLoading) => set((state) => ({
+                loading: {
+                    ...state.loading,
+                    [type]: { ...state.loading[type], [id]: isLoading }
+                }
+            })),
             reset: () => set(initialState),
         }),
         {
-            name: 'restaurant-storage-v2',
+            name: 'restaurant-storage-v4', // Incremented version after removing aggregateStatus
         }
     )
 );

@@ -404,6 +404,16 @@
     "statusOverview": "Outlet Status Overview",
     "summaryAll": "Summary across all locations",
     "openCount": "{{count}} Open",
-    "closedCount": "{{count}} Closed"
+    "closedCount": "{{count}} Closed",
+    "stats": {
+      "revenue": "Today's Revenue",
+      "totalRevenue": "Total Revenue",
+      "orders": "Daily Orders",
+      "totalOrders": "Total Orders",
+      "ticket": "Avg Ticket Size",
+      "rating": "Customer Rating",
+      "avgRating": "Avg Rating",
+      "basedOnReviews": "Based on recent reviews"
+    }
   }
 }

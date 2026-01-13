@@ -4,8 +4,6 @@ export interface StatMetric {
     id: string;
     label: string;
     value: string;
-    change: number; // percentage
-    trend: 'up' | 'down' | 'neutral';
     icon?: string;
     highlight?: boolean;
 }
@@ -29,22 +27,22 @@ const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 // Mock Data Maps
 const MOCK_STATS: Record<string, StatMetric[]> = {
     'addr_123': [ // Main Branch (Mumbai) - High volume
-        { id: 'revenue', label: "Today's Revenue", value: '₹45,250.00', change: 12, trend: 'up', highlight: true },
-        { id: 'orders', label: 'Daily Orders', value: '145', change: 8, trend: 'up' },
-        { id: 'ticket', label: 'Avg Ticket Size', value: '₹312.00', change: 2, trend: 'up' },
-        { id: 'rating', label: 'Customer Rating', value: '4.8', change: 0, trend: 'neutral' }
+        { id: 'revenue', label: "Today's Revenue", value: '₹45,250.00', highlight: true },
+        { id: 'orders', label: 'Daily Orders', value: '145' },
+        { id: 'ticket', label: 'Avg Ticket Size', value: '₹312.00' },
+        { id: 'rating', label: 'Customer Rating', value: '4.8' }
     ],
     'addr_456': [ // City Center (Pune) - Mall location, lower ticket, high traffic
-        { id: 'revenue', label: "Today's Revenue", value: '₹28,400.00', change: -5, trend: 'down', highlight: true },
-        { id: 'orders', label: 'Daily Orders', value: '210', change: 15, trend: 'up' },
-        { id: 'ticket', label: 'Avg Ticket Size', value: '₹135.00', change: -2, trend: 'down' },
-        { id: 'rating', label: 'Customer Rating', value: '4.5', change: 1, trend: 'up' }
+        { id: 'revenue', label: "Today's Revenue", value: '₹28,400.00', highlight: true },
+        { id: 'orders', label: 'Daily Orders', value: '210' },
+        { id: 'ticket', label: 'Avg Ticket Size', value: '₹135.00' },
+        { id: 'rating', label: 'Customer Rating', value: '4.5' }
     ],
     'addr_789': [ // Express Outlet (Delhi) - Fast food, stable
-        { id: 'revenue', label: "Today's Revenue", value: '₹12,100.00', change: 0, trend: 'neutral', highlight: true },
-        { id: 'orders', label: 'Daily Orders', value: '85', change: 2, trend: 'neutral' },
-        { id: 'ticket', label: 'Avg Ticket Size', value: '₹142.00', change: 0, trend: 'neutral' },
-        { id: 'rating', label: 'Customer Rating', value: '4.2', change: -1, trend: 'down' }
+        { id: 'revenue', label: "Today's Revenue", value: '₹12,100.00', highlight: true },
+        { id: 'orders', label: 'Daily Orders', value: '85' },
+        { id: 'ticket', label: 'Avg Ticket Size', value: '₹142.00' },
+        { id: 'rating', label: 'Customer Rating', value: '4.2' }
     ]
 };
 
@@ -107,10 +105,10 @@ export const mockDashboardService = {
             });
 
             return [
-                { id: 'revenue', label: "Total Revenue", value: `₹${totalRevenue.toFixed(2)}`, change: 10, trend: 'up', highlight: true },
-                { id: 'orders', label: "Total Orders", value: `${totalOrders}`, change: 8, trend: 'up' },
-                { id: 'ticket', label: "Avg Ticket Size", value: `₹245.00`, change: 1, trend: 'neutral' },
-                { id: 'rating', label: "Avg Rating", value: '4.5', change: 0, trend: 'up' }
+                { id: 'revenue', label: "Total Revenue", value: `₹${totalRevenue.toFixed(2)}`, highlight: true },
+                { id: 'orders', label: "Total Orders", value: `${totalOrders}` },
+                { id: 'ticket', label: "Avg Ticket Size", value: `₹245.00` },
+                { id: 'rating', label: "Avg Rating", value: '4.5' }
             ];
         }
 

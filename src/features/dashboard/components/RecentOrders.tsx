@@ -1,11 +1,7 @@
-import { type Order } from '../hooks/useDashboardData';
+import { useRecentOrders } from '../hooks/useDashboardData';
 
-interface RecentOrdersProps {
-    orders: Order[];
-    isLoading: boolean;
-}
-
-export const RecentOrders = ({ orders, isLoading }: RecentOrdersProps) => {
+export const RecentOrders = () => {
+    const { orders, isLoading } = useRecentOrders();
     const getStatusColor = (status: string) => {
         switch (status) {
             case 'Pending': return 'bg-orange-100 text-orange-700';

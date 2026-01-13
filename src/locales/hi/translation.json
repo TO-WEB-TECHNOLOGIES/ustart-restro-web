@@ -403,6 +403,16 @@
     "statusOverview": "आउटलेट स्थिति अवलोकन",
     "summaryAll": "सभी स्थानों का सारांश",
     "openCount": "{{count}} खुले",
-    "closedCount": "{{count}} बंद"
+    "closedCount": "{{count}} बंद",
+    "stats": {
+      "revenue": "आज का राजस्व",
+      "totalRevenue": "कुल राजस्व",
+      "orders": "दैनिक ऑर्डर",
+      "totalOrders": "कुल ऑर्डर",
+      "ticket": "औसत टिकट आकार",
+      "rating": "ग्राहक रेटिंग",
+      "avgRating": "औसत रेटिंग",
+      "basedOnReviews": "हालिया समीक्षाओं के आधार पर"
+    }
   }
 }

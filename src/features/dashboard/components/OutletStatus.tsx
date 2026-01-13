@@ -2,13 +2,14 @@ import { Switch } from '../../../components/ui/switch';
 import { Wifi, WifiOff } from 'lucide-react';
 import { useOutletStatus } from '../hooks/useDashboardData';
 import { useTranslation } from 'react-i18next';
+import { useLanguage } from '../../../hooks/useLanguage';
 import { useRestaurantStore, ALL_LOCATIONS_ID } from '../store/useRestaurantStore';
-
-import { Loader } from '@/components/ui/loader';
+import { AlertCircle } from 'lucide-react';
 
 export const OutletStatus = () => {
-    const { status, toggleStatus, isLoading } = useOutletStatus();
+    const { status, toggleStatus, isLoading, error } = useOutletStatus();
     const { t } = useTranslation();
+    const { language } = useLanguage();
     const { isOpen, openCount, closedCount } = status;
     const selectedAddressId = useRestaurantStore(state => state.selectedAddressId);
 
@@ -17,17 +18,20 @@ export const OutletStatus = () => {
     const hasCounts = openCount !== undefined && closedCount !== undefined;
     const isAggregate = isAggregateSelected || hasCounts;
 
-    if (isLoading && !isAggregate) {
+    const renderError = () => {
+        if (!error) return null;
         return (
-            <div className="bg-white dark:bg-slate-900 rounded-2xl p-6 border border-slate-200 dark:border-slate-800 shadow-lg relative overflow-hidden min-h-[120px] flex items-center justify-center">
-                <Loader />
+            <div className="mb-4 p-3 bg-rose-50 dark:bg-rose-900/20 border border-rose-200 dark:border-rose-900/50 rounded-xl flex items-center gap-3 text-rose-600 dark:text-rose-400 text-sm">
+                <AlertCircle className="w-4 h-4 shrink-0" />
+                <p>{language === 'hi' ? 'स्थिति लोड करने में विफल. कृपया पुनः प्रयास करें।' : error}</p>
             </div>
         );
-    }
+    };
 
     if (isAggregate) {
         return (
             <div className="bg-white dark:bg-slate-900 rounded-2xl p-6 border border-slate-200 dark:border-slate-800 shadow-lg relative overflow-hidden">
+                {renderError()}
                 <div className="flex flex-col md:flex-row items-center justify-between gap-6 relative z-10">
                     <div className="flex items-center gap-5">
                         <div className="w-14 h-14 rounded-full flex items-center justify-center bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400">
@@ -88,6 +92,7 @@ export const OutletStatus = () => {
                 : 'bg-white dark:bg-slate-900 border-rose-100 dark:border-rose-900/50 shadow-rose-100/50 dark:shadow-none'}
             shadow-lg
         `}>
+            {renderError()}
             {/* Status Stripe */}
             <div className={`absolute left-0 top-0 bottom-0 w-1.5 ${isOpen ? 'bg-emerald-500' : 'bg-rose-500'}`} />
 
