@@ -2,7 +2,12 @@ import { Navigate, Outlet } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 
 export const RequireAuth = () => {
-    const { isAuthenticated } = useAuth();
+    const { isAuthenticated, isInitialized } = useAuth();
+
+    if (!isInitialized) {
+        return null; // Or return a loading spinner if preferred
+    }
+
     if (!isAuthenticated) {
         return <Navigate to="/" replace />;
     }
@@ -10,7 +15,11 @@ export const RequireAuth = () => {
 };
 
 export const RequireOnboarding = () => {
-    const { isOnboardingComplete, status } = useAuth();
+    const { isOnboardingComplete, status, isInitialized } = useAuth();
+
+    if (!isInitialized) {
+        return null;
+    }
 
     if (!isOnboardingComplete || status !== 'ACTIVE') {
         return <Navigate to="/grow-with-ustart" replace />;
@@ -19,7 +28,11 @@ export const RequireOnboarding = () => {
 };
 
 export const RequirePending = () => {
-    const { isOnboardingComplete, status } = useAuth();
+    const { isOnboardingComplete, status, isInitialized } = useAuth();
+
+    if (!isInitialized) {
+        return null;
+    }
 
     // If already active, go to dashboard
     if (isOnboardingComplete && status === 'ACTIVE') {
@@ -29,7 +42,11 @@ export const RequirePending = () => {
 };
 
 export const PublicOnlyRoute = () => {
-    const { isAuthenticated, isOnboardingComplete, status } = useAuth();
+    const { isAuthenticated, isOnboardingComplete, status, isInitialized } = useAuth();
+
+    if (!isInitialized) {
+        return null;
+    }
 
     if (isAuthenticated) {
         if (isOnboardingComplete && status === 'ACTIVE') {

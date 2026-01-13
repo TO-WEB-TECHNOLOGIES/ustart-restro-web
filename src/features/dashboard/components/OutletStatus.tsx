@@ -2,14 +2,16 @@ import { Switch } from '../../../components/ui/switch';
 import { Wifi, WifiOff } from 'lucide-react';
 import { useOutletStatus } from '../hooks/useDashboardData';
 import { useTranslation } from 'react-i18next';
-import { useLanguage } from '../../../hooks/useLanguage';
 import { useRestaurantStore, ALL_LOCATIONS_ID } from '../store/useRestaurantStore';
 import { AlertCircle } from 'lucide-react';
 
-export const OutletStatus = () => {
+interface OutletStatusProps {
+    compact?: boolean;
+}
+
+export const OutletStatus = ({ compact = false }: OutletStatusProps) => {
     const { status, toggleStatus, isLoading, error } = useOutletStatus();
     const { t } = useTranslation();
-    const { language } = useLanguage();
     const { isOpen, openCount, closedCount } = status;
     const selectedAddressId = useRestaurantStore(state => state.selectedAddressId);
 
@@ -21,12 +23,63 @@ export const OutletStatus = () => {
     const renderError = () => {
         if (!error) return null;
         return (
-            <div className="mb-4 p-3 bg-rose-50 dark:bg-rose-900/20 border border-rose-200 dark:border-rose-900/50 rounded-xl flex items-center gap-3 text-rose-600 dark:text-rose-400 text-sm">
-                <AlertCircle className="w-4 h-4 shrink-0" />
-                <p>{language === 'hi' ? 'स्थिति लोड करने में विफल. कृपया पुनः प्रयास करें।' : error}</p>
+            <div className={`mb-2 p-2 bg-rose-50 dark:bg-rose-900/20 border border-rose-200 dark:border-rose-900/50 rounded-lg flex items-center gap-2 text-rose-600 dark:text-rose-400 text-xs ${compact ? 'absolute top-full left-0 right-0 z-50 shadow-lg' : ''}`}>
+                <AlertCircle className="w-3 h-3 shrink-0" />
+                <p>{t('dashboard.statusError', 'Failed to load status. Please try again.')}</p>
             </div>
         );
     };
+
+    if (compact) {
+        if (isAggregate) {
+            return (
+                <div className="relative flex items-center gap-3">
+                    {renderError()}
+                    <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-1.5 bg-emerald-50 dark:bg-emerald-900/10 px-3 py-1.5 rounded-full border border-emerald-100 dark:border-emerald-500/10">
+                            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                            <span className="text-sm font-bold text-emerald-700 dark:text-emerald-400">
+                                {t('dashboard.openCount', { count: openCount || 0 })}
+                            </span>
+                        </div>
+                        <div className="flex items-center gap-1.5 bg-rose-50 dark:bg-rose-900/10 px-3 py-1.5 rounded-full border border-rose-100 dark:border-rose-500/10">
+                            <span className="w-2 h-2 rounded-full bg-rose-500" />
+                            <span className="text-sm font-bold text-rose-700 dark:text-rose-400">
+                                {t('dashboard.closedCount', { count: closedCount || 0 })}
+                            </span>
+                        </div>
+                    </div>
+                    {isLoading && (
+                        <div className="w-4 h-4 border-2 border-slate-200 border-t-slate-500 rounded-full animate-spin" />
+                    )}
+                </div>
+            );
+        }
+
+        return (
+            <div className="relative flex items-center gap-3">
+                {renderError()}
+                <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full border ${isOpen
+                    ? 'bg-emerald-50 dark:bg-emerald-900/10 border-emerald-100 dark:border-emerald-500/20'
+                    : 'bg-rose-50 dark:bg-rose-900/10 border-rose-100 dark:border-rose-500/20'
+                    }`}>
+                    <span className={`w-2 h-2 rounded-full ${isOpen ? 'bg-emerald-500' : 'bg-rose-500'} ${isOpen ? 'animate-pulse' : ''}`} />
+                    <span className={`text-sm font-bold ${isOpen ? 'text-emerald-700 dark:text-emerald-400' : 'text-rose-700 dark:text-rose-400'}`}>
+                        {isOpen ? t('dashboard.acceptingOrders', 'Accepting Orders') : t('dashboard.closed', 'Closed')}
+                    </span>
+                    <Switch
+                        checked={isOpen}
+                        onCheckedChange={toggleStatus}
+                        disabled={isLoading}
+                        className="scale-75 data-[state=checked]:bg-emerald-500"
+                    />
+                </div>
+                {isLoading && (
+                    <div className="w-4 h-4 border-2 border-slate-200 border-t-slate-500 rounded-full animate-spin" />
+                )}
+            </div>
+        );
+    }
 
     if (isAggregate) {
         return (

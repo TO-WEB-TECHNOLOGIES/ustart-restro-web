@@ -396,6 +396,9 @@
     "outletStatus": "Outlet Status",
     "statusOpen": "You are currently OPEN for orders",
     "statusClosed": "You are currently CLOSED for orders",
+    "open": "Open",
+    "closed": "Closed",
+    "statusError": "Failed to load status. Please try again.",
     "acceptingOrders": "Accepting Orders",
     "allLocations": "All Locations",
     "aggregatedView": "Aggregated View",
@@ -426,12 +429,42 @@
         "items": "Items",
         "amount": "Amount",
         "status": "Status"
-      },
-      "statuses": {
-        "pending": "Pending",
-        "cooking": "Cooking",
-        "ready": "Ready",
+      }
+    },
+    "orders": {
+      "tabs": {
+        "new": "New Orders",
+        "preparing": "Preparing",
+        "ready": "Ready for Pickup",
         "completed": "Completed"
+      },
+      "empty": {
+        "title": "No {{stage}} Orders",
+        "description": "Looks like everyone's full right now! Relax, we'll notify you as soon as a new order comes in."
+      },
+      "actions": {
+        "rushHour": "ACTIVATE RUSH HOUR",
+        "liveUpdates": "LIVE UPDATES ON"
+      },
+      "card": {
+        "orderedTimes": "ORDERED {{count}} TIMES",
+        "mobile": "MOBILE",
+        "new": "NEW",
+        "justNow": "Just now",
+        "minsAgo": "{{count}} mins ago",
+        "instructions": "RESTAURANT INSTRUCTIONS",
+        "giftMessage": "GIFT MESSAGE (OPT)",
+        "giftMessagePlaceholder": "Add a gift message for the customer...",
+        "prepTime": "PREP TIME",
+        "gift": "GIFT (OPT)",
+        "msg": "Msg",
+        "totalAmount": "TOTAL AMOUNT",
+        "paid": "PAID (UPI)",
+        "accept": "Accept Order",
+        "reject": "REJECT ORDER",
+        "mins": "{{count}} mins",
+        "selectTime": "Select Prep Time",
+        "distance": "{{distance}} km"
       }
     },
     "widgets": {
@@ -448,6 +481,13 @@
           "support": "Contact Partner Support"
         }
       }
+    },
+    "comingSoon": {
+      "badge": "Feature In Progress",
+      "developersAtWork": "Developers at work",
+      "title": "We're still",
+      "titleSecondary": "cooking this up.",
+      "description": "This feature isn't quite ready to be served yet. Our team is adding the final ingredients to make it perfect for you."
     }
   }
 }

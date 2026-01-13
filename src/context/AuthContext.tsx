@@ -12,6 +12,7 @@ interface AuthContextType {
     user: User | null;
     token: string | null;
     isAuthenticated: boolean;
+    isInitialized: boolean;
     isOnboardingComplete: boolean;
     status: string | null;
     login: (token: string) => void;
@@ -27,6 +28,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const [isOnboardingComplete, setIsOnboardingComplete] = useState<boolean>(false);
     const [status, setStatus] = useState<string | null>(null);
     const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
+    const [isInitialized, setIsInitialized] = useState<boolean>(false);
 
     const initializeAuth = (authToken: string) => {
         const decoded = decodeToken(authToken);
@@ -43,6 +45,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             // Invalid token
             logout();
         }
+        setIsInitialized(true);
     };
 
     // Initial load from localStorage
@@ -50,6 +53,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         const storedToken = localStorage.getItem('token');
         if (storedToken) {
             initializeAuth(storedToken);
+        } else {
+            setIsInitialized(true);
         }
     }, []);
 
@@ -75,6 +80,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             user,
             token,
             isAuthenticated,
+            isInitialized,
             isOnboardingComplete,
             status,
             login,

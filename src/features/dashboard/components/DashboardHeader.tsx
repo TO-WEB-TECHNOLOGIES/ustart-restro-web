@@ -5,6 +5,8 @@ import { useTranslation } from 'react-i18next';
 import { AddressSelector } from './AddressSelector';
 import { ThemeSelector } from '@/components/ui/theme-selector';
 
+import { OutletStatus } from './OutletStatus';
+
 interface DashboardHeaderProps {
     user: { name?: string | null };
     onMenuClick?: () => void;
@@ -13,6 +15,7 @@ interface DashboardHeaderProps {
 export const DashboardHeader = ({ user, onMenuClick }: DashboardHeaderProps) => {
     const location = useLocation();
     const { t } = useTranslation();
+    const isDashboardHome = location.pathname === '/dashboard';
 
     // Dynamic Title Logic with I18n
     const getPageTitle = (pathname: string) => {
@@ -56,18 +59,24 @@ export const DashboardHeader = ({ user, onMenuClick }: DashboardHeaderProps) => 
 
             <div className="flex items-center gap-2 md:gap-4">
                 <div className="hidden lg:flex gap-3">
-                    <Button
-                        variant="outline"
-                        className="border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 font-medium h-10 dark:hover:text-white"
-                    >
-                        {t('common.header.manageMenu')}
-                    </Button>
-                    <Button
-                        className="bg-secondary-orange hover:bg-secondary-orange/90 dark:bg-brown dark:hover:bg-brown/90 text-white font-bold gap-2 h-10 px-5 shadow-sm shadow-orange-100 dark:shadow-none"
-                    >
-                        <Plus className="w-4 h-4" />
-                        {t('common.header.createOffer')}
-                    </Button>
+                    {isDashboardHome ? (
+                        <>
+                            <Button
+                                variant="outline"
+                                className="border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 font-medium h-10 dark:hover:text-white"
+                            >
+                                {t('common.header.manageMenu')}
+                            </Button>
+                            <Button
+                                className="bg-secondary-orange hover:bg-secondary-orange/90 dark:bg-brown dark:hover:bg-brown/90 text-white font-bold gap-2 h-10 px-5 shadow-sm shadow-orange-100 dark:shadow-none"
+                            >
+                                <Plus className="w-4 h-4" />
+                                {t('common.header.createOffer')}
+                            </Button>
+                        </>
+                    ) : (
+                        <OutletStatus compact />
+                    )}
                 </div>
 
 

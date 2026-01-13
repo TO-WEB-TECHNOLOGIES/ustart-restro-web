@@ -1,26 +1,30 @@
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useRecentOrders } from '../hooks/useDashboardData';
+import { useNavigate } from 'react-router-dom';
 
 export const RecentOrders = () => {
     const { t } = useTranslation();
+    const navigate = useNavigate();
     const { orders, isLoading, currentPage, totalPages, goToPage } = useRecentOrders();
     const getStatusColor = (status: string) => {
         switch (status) {
-            case 'Pending': return 'bg-orange-100 text-orange-700 dark:bg-orange-500/10 dark:text-orange-400';
-            case 'Cooking': return 'bg-blue-100 text-blue-700 dark:bg-blue-500/10 dark:text-blue-400';
+            case 'New': return 'bg-orange-100 text-orange-700 dark:bg-orange-500/10 dark:text-orange-400';
+            case 'Preparing': return 'bg-blue-100 text-blue-700 dark:bg-blue-500/10 dark:text-blue-400';
             case 'Ready': return 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400';
             case 'Completed': return 'bg-slate-100 text-slate-700 dark:bg-slate-500/10 dark:text-slate-400';
+            case 'Rejected': return 'bg-red-100 text-red-700 dark:bg-red-500/10 dark:text-red-400';
             default: return 'bg-slate-100 text-slate-700 dark:bg-slate-500/10 dark:text-slate-400';
         }
     };
 
     const getStatusLabel = (status: string) => {
         switch (status) {
-            case 'Pending': return t('dashboard.recentOrders.statuses.pending');
-            case 'Cooking': return t('dashboard.recentOrders.statuses.cooking');
+            case 'New': return t('dashboard.recentOrders.statuses.pending'); // Reusing 'Pending' key for 'New' temporarily or add new key
+            case 'Preparing': return t('dashboard.recentOrders.statuses.cooking');
             case 'Ready': return t('dashboard.recentOrders.statuses.ready');
             case 'Completed': return t('dashboard.recentOrders.statuses.completed');
+            case 'Rejected': return 'Rejected';
             default: return status;
         }
     };
@@ -29,7 +33,7 @@ export const RecentOrders = () => {
         <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm overflow-hidden flex flex-col h-full transition-colors">
             <div className="p-6 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
                 <h3 className="font-bold text-slate-900 dark:text-white text-lg">{t('dashboard.recentOrders.title')}</h3>
-                <button className="text-sm font-semibold text-secondary-orange dark:text-orange-400 hover:text-orange-700 dark:hover:text-orange-300 transition-colors">
+                <button className="text-sm font-semibold text-secondary-orange dark:text-orange-400 hover:text-orange-700 dark:hover:text-orange-300 transition-colors" onClick={() => navigate('/dashboard/orders')}>
                     {t('dashboard.recentOrders.viewAll')}
                 </button>
             </div>
@@ -63,10 +67,10 @@ export const RecentOrders = () => {
                                         {order.id}
                                     </td>
                                     <td className="px-6 py-4 text-slate-600 dark:text-slate-400 font-medium">
-                                        {order.customerName}
+                                        {order.customer.name}
                                     </td>
                                     <td className="px-6 py-4 text-slate-500 dark:text-slate-500">
-                                        {order.items}
+                                        {order.items.map(i => `${i.quantity}x ${i.name}`).join(', ')}
                                     </td>
                                     <td className="px-6 py-4 font-medium text-slate-900 dark:text-white">
                                         ₹{order.amount.toFixed(2)}

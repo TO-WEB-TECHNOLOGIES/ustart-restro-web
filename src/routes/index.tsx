@@ -1,6 +1,7 @@
 import { createBrowserRouter } from 'react-router-dom';
 import { LandingPage } from '@/features/landing/LandingPage';
 import { Dashboard } from '@/features/dashboard/outlets/Dashboard';
+import { Orders } from '@/features/dashboard/outlets/Orders';
 import { RequireAuth, RequireOnboarding, RequirePending, PublicOnlyRoute } from './ProtectedRoute';
 import { OnboardingLayout } from '@/features/onboarding/layouts/OnboardingLayout';
 import { PersonalInfo } from '@/features/onboarding/components/PersonalInfo';
@@ -70,6 +71,10 @@ export const router = createBrowserRouter([
                             {
                                 index: true,
                                 element: <Dashboard />,
+                            },
+                            {
+                                path: 'orders',
+                                element: <Orders />,
                             },
                         ],
                     }
