@@ -392,6 +392,18 @@
         "help": "Help Centre",
         "logout": "Logout"
       }
-    }
+    },
+    "outletStatus": "Outlet Status",
+    "statusOpen": "You are currently OPEN for orders",
+    "statusClosed": "You are currently CLOSED for orders",
+    "acceptingOrders": "Accepting Orders",
+    "allLocations": "All Locations",
+    "aggregatedView": "Aggregated View",
+    "selectLocation": "Select Location",
+    "addNewLocation": "+ Add New Location",
+    "statusOverview": "Outlet Status Overview",
+    "summaryAll": "Summary across all locations",
+    "openCount": "{{count}} Open",
+    "closedCount": "{{count}} Closed"
   }
 }

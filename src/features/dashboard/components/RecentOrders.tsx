@@ -48,7 +48,7 @@ export const RecentOrders = ({ orders, isLoading }: RecentOrdersProps) => {
                                 </tr>
                             ))
                         ) : (
-                            orders.map((order) => (
+                            Array.isArray(orders) && orders.map((order) => (
                                 <tr key={order.id} className="hover:bg-slate-50/50 transition-colors">
                                     <td className="px-6 py-4 font-bold text-slate-700">
                                         {order.id}

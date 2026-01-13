@@ -391,6 +391,18 @@
         "help": "सहायता केंद्र",
         "logout": "लॉग आउट"
       }
-    }
+    },
+    "outletStatus": "आउटलेट स्थिति",
+    "statusOpen": "आप वर्तमान में ऑर्डर के लिए खुले हैं",
+    "statusClosed": "आप वर्तमान में ऑर्डर के लिए बंद हैं",
+    "acceptingOrders": "ऑर्डर स्वीकार कर रहे हैं",
+    "allLocations": "सभी स्थान",
+    "aggregatedView": "एकीकृत दृश्य",
+    "selectLocation": "स्थान चुनें",
+    "addNewLocation": "+ नया स्थान जोड़ें",
+    "statusOverview": "आउटलेट स्थिति अवलोकन",
+    "summaryAll": "सभी स्थानों का सारांश",
+    "openCount": "{{count}} खुले",
+    "closedCount": "{{count}} बंद"
   }
 }

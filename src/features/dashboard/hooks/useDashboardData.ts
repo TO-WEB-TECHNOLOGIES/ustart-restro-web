@@ -1,131 +1,212 @@
 import { useState, useEffect } from 'react';
+import {
+    mockDashboardService,
+    type StatMetric,
+    type Order,
+    type OutletStatus
+} from '../api/mockDashboard';
+import { useRestaurantStore, type RestaurantStatus } from '../store/useRestaurantStore';
 
-// Types
-export interface StatMetric {
-    id: string;
-    label: string;
-    value: string;
-    change: number; // percentage
-    trend: 'up' | 'down' | 'neutral';
-    icon?: string;
-    highlight?: boolean;
-}
+export type { StatMetric, Order, OutletStatus };
 
-export interface Order {
-    id: string;
-    customerName: string;
-    items: string;
-    amount: number;
-    status: 'Pending' | 'Cooking' | 'Ready' | 'Completed' | 'Cancelled';
-}
+// Helper to map store status to OutletStatus
+const mapStatusToOutletStatus = (status: RestaurantStatus): OutletStatus => ({
+    isOpen: status === 'open'
+});
 
-export interface OutletStatus {
-    isOpen: boolean;
-    message: string;
-}
-
-// Mock Hooks
+const EMPTY_ARRAY: any[] = [];
 
 export const useOutletStatus = () => {
-    const [status, setStatus] = useState<OutletStatus>({
-        isOpen: true,
-        message: 'You are currently OPEN for orders'
-    });
+    const selectedAddressId = useRestaurantStore(state => state.selectedAddressId);
 
-    const toggleStatus = () => {
-        setStatus(prev => ({
-            isOpen: !prev.isOpen,
-            message: !prev.isOpen
-                ? 'You are currently OPEN for orders'
-                : 'You are currently CLOSED for orders'
-        }));
+    // Select status safely
+    const storeStatus = useRestaurantStore(state =>
+        selectedAddressId && state.statuses[selectedAddressId]
+            ? state.statuses[selectedAddressId]
+            : 'open' // Default fallback
+    );
+    const updateStoreStatus = useRestaurantStore(state => state.updateStatus);
+
+    // Initialize with store data
+    const [status, setStatus] = useState<OutletStatus>(mapStatusToOutletStatus(storeStatus));
+    const [isLoading, setIsLoading] = useState(false);
+
+    // Sync local state when store changes
+    useEffect(() => {
+        setStatus(mapStatusToOutletStatus(storeStatus));
+    }, [storeStatus]);
+
+    // Revalidate on mount & when address changes
+    useEffect(() => {
+        if (!selectedAddressId) return;
+
+        const revalidate = async () => {
+            setIsLoading(true);
+            try {
+                const remoteStatus = await mockDashboardService.getOutletStatus(selectedAddressId);
+
+                // If it's an aggregate response (has openCount), we update local state directly 
+                // because our store structure assumes a simple status string for 'statuses'.
+                // Ideally, we'd refactor the store to hold richer status objects, 
+                // but for now, we'll bypass the store for the aggregate view or force a status.
+
+                if ('openCount' in remoteStatus && remoteStatus.openCount !== undefined) {
+                    // It's an aggregate status
+                    setStatus({
+                        isOpen: remoteStatus.isOpen, // General open status
+                        openCount: remoteStatus.openCount,
+                        closedCount: remoteStatus.closedCount
+                    });
+                } else {
+                    // Regular status
+                    const mappedStatus: RestaurantStatus = remoteStatus.isOpen ? 'open' : 'closed';
+                    // Update store only for single outlets to keep other components in sync
+                    updateStoreStatus(selectedAddressId, mappedStatus);
+                    setStatus(mapStatusToOutletStatus(mappedStatus));
+                }
+
+            } catch (error) {
+                console.error("Failed to revalidate status", error);
+            } finally {
+                setIsLoading(false);
+            }
+        };
+        revalidate();
+    }, [selectedAddressId]); // Depend on addressId only
+
+    const toggleStatus = async () => {
+        if (!selectedAddressId) return;
+
+        setIsLoading(true);
+        try {
+            const newStatus = await mockDashboardService.updateOutletStatus(selectedAddressId, !status.isOpen);
+            updateStoreStatus(selectedAddressId, newStatus.isOpen ? 'open' : 'closed');
+        } catch (error) {
+            console.error("Failed to update status", error);
+        } finally {
+            setIsLoading(false);
+        }
     };
 
-    return { status, toggleStatus };
+    return { status, toggleStatus, isLoading };
 };
 
 export const useStats = () => {
-    const [stats, setStats] = useState<StatMetric[]>([]);
-    const [isLoading, setIsLoading] = useState(true);
+    const selectedAddressId = useRestaurantStore(state => state.selectedAddressId);
+    const stats = useRestaurantStore(state =>
+        selectedAddressId ? state.stats[selectedAddressId] || EMPTY_ARRAY : EMPTY_ARRAY
+    );
+    const setStats = useRestaurantStore(state => state.setStats);
+    const [isLoading, setIsLoading] = useState(stats.length === 0);
 
     useEffect(() => {
-        // Simulate API call
-        const timer = setTimeout(() => {
-            setStats([
-                {
-                    id: 'revenue',
-                    label: "Today's Revenue",
-                    value: '₹1,250.00',
-                    change: 12,
-                    trend: 'up',
-                    highlight: true
-                },
-                {
-                    id: 'orders',
-                    label: 'Daily Orders',
-                    value: '45',
-                    change: 5,
-                    trend: 'up'
-                },
-                {
-                    id: 'ticket',
-                    label: 'Avg Ticket Size',
-                    value: '₹27.50',
-                    change: 2,
-                    trend: 'up'
-                },
-                {
-                    id: 'rating',
-                    label: 'Customer Rating',
-                    value: '4.8',
-                    change: 0,
-                    trend: 'neutral'
+        if (!selectedAddressId) return;
+
+        const fetchStats = async () => {
+            try {
+                const data = await mockDashboardService.getStats(selectedAddressId);
+                // Simple check to avoid unnecessary updates if deep equal
+                if (JSON.stringify(data) !== JSON.stringify(stats)) {
+                    setStats(selectedAddressId, data);
                 }
-            ]);
-            setIsLoading(false);
-        }, 500);
+            } catch (err) {
+                console.error("Failed to fetch stats", err);
+            } finally {
+                setIsLoading(false);
+            }
+        };
+        fetchStats();
+    }, [selectedAddressId]); // stats omitted from deps intentionally
 
-        return () => clearTimeout(timer);
-    }, []);
-
-    return { stats, isLoading };
+    return { stats: stats as StatMetric[], isLoading };
 };
 
 export const useRecentOrders = () => {
-    const [orders, setOrders] = useState<Order[]>([]);
+    const selectedAddressId = useRestaurantStore(state => state.selectedAddressId);
+    const orders = useRestaurantStore(state =>
+        selectedAddressId ? state.recentOrders[selectedAddressId] || EMPTY_ARRAY : EMPTY_ARRAY
+    );
+    const setRecentOrders = useRestaurantStore(state => state.setRecentOrders);
+    const [isLoading, setIsLoading] = useState(orders.length === 0);
+
+    useEffect(() => {
+        if (!selectedAddressId) return;
+
+        const fetchOrders = async () => {
+            try {
+                const data = await mockDashboardService.getRecentOrders(selectedAddressId);
+                if (JSON.stringify(data) !== JSON.stringify(orders)) {
+                    setRecentOrders(selectedAddressId, data);
+                }
+            } catch (err) {
+                console.error("Failed to fetch orders", err);
+            } finally {
+                setIsLoading(false);
+            }
+        };
+        fetchOrders();
+    }, [selectedAddressId]);
+
+    return { orders: orders as Order[], isLoading };
+};
+
+export const useRestaurantDetails = () => {
+    const { setRestaurantName, setAddresses } = useRestaurantStore();
     const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
-        // Simulate API call
+        const fetchDetails = async () => {
+            try {
+                const data = await mockDashboardService.getRestaurantDetails();
+                setRestaurantName(data.name);
+                setAddresses(data.addresses);
+            } catch (err) {
+                console.error("Failed to fetch restaurant details", err);
+            } finally {
+                setIsLoading(false);
+            }
+        };
+        fetchDetails();
+    }, []);
+    return { isLoading };
+};
+
+export const useAddressSearch = () => {
+    const [query, setQuery] = useState('');
+    const [page, setPage] = useState(1);
+    const [results, setResults] = useState<{ id: string; label: string; address: string }[]>([]);
+    const [totalPages, setTotalPages] = useState(0);
+    const [isLoading, setIsLoading] = useState(false);
+
+    useEffect(() => {
+        const fetchAddresses = async () => {
+            setIsLoading(true);
+            try {
+                const data = await mockDashboardService.searchAddresses(query, page, 5);
+                setResults(data.addresses);
+                setTotalPages(data.totalPages);
+            } catch (err) {
+                console.error("Failed to search addresses", err);
+            } finally {
+                setIsLoading(false);
+            }
+        };
+
+        // Debounce search
         const timer = setTimeout(() => {
-            setOrders([
-                {
-                    id: '#ORD-2931',
-                    customerName: 'Sarah Connor',
-                    items: '2x Pizza, 1x Coke',
-                    amount: 32.00,
-                    status: 'Pending'
-                },
-                {
-                    id: '#ORD-2930',
-                    customerName: 'John Wick',
-                    items: '1x Pasta Carbonara',
-                    amount: 18.50,
-                    status: 'Cooking'
-                },
-                {
-                    id: '#ORD-2929',
-                    customerName: 'Ellen Ripley',
-                    items: '3x Tiramisu',
-                    amount: 24.00,
-                    status: 'Ready'
-                }
-            ]);
-            setIsLoading(false);
-        }, 600);
+            fetchAddresses();
+        }, query ? 300 : 0);
 
         return () => clearTimeout(timer);
-    }, []);
+    }, [query, page]);
 
-    return { orders, isLoading };
+    return {
+        query,
+        setQuery,
+        page,
+        setPage,
+        results,
+        totalPages,
+        isLoading
+    };
 };

@@ -1,13 +1,6 @@
 import { TrendingUp, GripHorizontal, ShoppingBag, Receipt, Star, ArrowUpRight, ArrowDownRight } from 'lucide-react';
 
-interface StatMetric {
-    id: string;
-    label: string;
-    value: string;
-    change: number; // percentage
-    trend: 'up' | 'down' | 'neutral';
-    highlight?: boolean;
-}
+import { type StatMetric } from '../hooks/useDashboardData';
 
 interface StatsCardsProps {
     stats: StatMetric[];
@@ -47,7 +40,7 @@ export const StatsCards = ({ stats, isLoading }: StatsCardsProps) => {
 
     return (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {stats.map((stat) => (
+            {Array.isArray(stats) && stats.map((stat) => (
                 <div key={stat.id} className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm hover:shadow-md transition-shadow">
                     <div className="flex justify-between items-start mb-4">
                         <span className="text-slate-500 text-sm font-medium">{stat.label}</span>

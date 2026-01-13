@@ -22,7 +22,7 @@ export const Stats = () => {
     // ];
 
     return (
-        <section className="bg-[#1A202C] py-20 text-white">
+        <section className="bg-slate-900 py-20 text-white">
             <div className="container mx-auto px-6">
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-12 text-center">
                     {/* {stats.map((stat) => (

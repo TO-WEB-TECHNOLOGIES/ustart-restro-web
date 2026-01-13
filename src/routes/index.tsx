@@ -1,7 +1,6 @@
 import { createBrowserRouter } from 'react-router-dom';
 import { LandingPage } from '@/features/landing/LandingPage';
-import { Dashboard } from '@/features/dashboard/components/Dashboard';
-import { AppLayout } from '@/layouts/AppLayout';
+import { Dashboard } from '@/features/dashboard/outlets/Dashboard';
 import { RequireAuth, RequireOnboarding, RequirePending, PublicOnlyRoute } from './ProtectedRoute';
 import { OnboardingLayout } from '@/features/onboarding/layouts/OnboardingLayout';
 import { PersonalInfo } from '@/features/onboarding/components/PersonalInfo';
@@ -9,8 +8,9 @@ import { Navigate } from 'react-router-dom';
 import { RestaurantInfo } from '@/features/onboarding/components/RestaurantInfo';
 import { AboutRestaurant } from '@/features/onboarding/components/AboutRestaurant';
 import { Verification } from '@/features/onboarding/components/Verification';
-import { HelpCenter } from '@/features/help-center/components/HelpCenter';
+import { HelpCenter } from '@/pages/HelpCenter';
 import { NotFound } from '@/pages/NotFound';
+import { DashboardLayout } from '@/features/dashboard/layouts/DashboardLayout';
 
 export const router = createBrowserRouter([
     {
@@ -65,7 +65,7 @@ export const router = createBrowserRouter([
                 children: [
                     {
                         path: '/dashboard',
-                        element: <AppLayout />,
+                        element: <DashboardLayout />,
                         children: [
                             {
                                 index: true,

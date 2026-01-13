@@ -1,22 +1,33 @@
-import { useState, type ReactNode } from 'react';
+import { useAuth } from '@/context/AuthContext';
+import { useRestaurantDetails } from '../hooks/useDashboardData';
+import { Outlet, useNavigate } from 'react-router-dom';
+import { useState } from 'react';
 import { DashboardSidebar } from '../components/DashboardSidebar';
 import { DashboardHeader } from '../components/DashboardHeader';
-import { useAuth } from '@/context/AuthContext';
+import { LogoutConfirmationModal } from '@/components/ui/logout-confirmation-modal';
 
-interface DashboardLayoutProps {
-    children: ReactNode;
-}
-
-export const DashboardLayout = ({ children }: DashboardLayoutProps) => {
-    const { user } = useAuth();
+export const DashboardLayout = () => {
+    const { user, logout } = useAuth();
+    const navigate = useNavigate();
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+    const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
+
+    // Initial Data Fetch
+    useRestaurantDetails();
+
+    const handleLogout = () => {
+        logout();
+        navigate('/');
+        setShowLogoutConfirm(false);
+    };
 
     return (
-        <div className="min-h-screen bg-orange-50/30 dark:bg-slate-950 md:flex transition-colors duration-300">
+        <div className="min-h-screen bg-orange-50/30 dark:bg-slate-950 md:flex transition-colors duration-300 relative">
             {/* Desktop & Mobile Sidebar */}
             <DashboardSidebar
                 isOpen={isMobileMenuOpen}
                 onClose={() => setIsMobileMenuOpen(false)}
+                onLogoutClick={() => setShowLogoutConfirm(true)}
             />
 
             <div className="flex-1 flex flex-col min-h-screen">
@@ -28,9 +39,15 @@ export const DashboardLayout = ({ children }: DashboardLayoutProps) => {
 
                 {/* Main Content */}
                 <main className="flex-1 overflow-y-auto p-4 md:p-6 transition-all duration-300 ease-in-out">
-                    {children}
+                    <Outlet />
                 </main>
             </div>
+
+            <LogoutConfirmationModal
+                isOpen={showLogoutConfirm}
+                onClose={() => setShowLogoutConfirm(false)}
+                onConfirm={handleLogout}
+            />
         </div>
     );
 };
