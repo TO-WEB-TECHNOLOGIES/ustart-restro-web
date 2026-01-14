@@ -122,7 +122,7 @@ export const DashboardSidebar = ({
   }, [user, restaurantName, setRestaurantName]);
 
   const partnershipText = useMemo(() => {
-    return restaurantName ? `X ${restaurantName}` : "X";
+    return restaurantName ? `${restaurantName}` : "";
   }, [restaurantName]);
 
   const { hasPendingOrders } = usePendingOrders();
@@ -165,8 +165,9 @@ export const DashboardSidebar = ({
             <Logo color={isDark ? "#FFFFFF" : "var(--color-primary-blue)"} />
           </div>
           {partnershipText && (
-            <div className="mt-2 text-sm font-bold text-slate-500 dark:text-slate-400">
-              {partnershipText}
+            <div className="text-md font-bold text-secondary-orange flex items-center gap-2">
+              <span className="font-miniver text-3xl lowercase leading-none text-primary-blue">x</span>
+              <span className="text-xl opacity-90"><i>{partnershipText}</i></span>
             </div>
           )}
         </div>

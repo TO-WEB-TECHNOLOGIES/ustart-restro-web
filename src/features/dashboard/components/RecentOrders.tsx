@@ -8,25 +8,42 @@ export const RecentOrders = () => {
     const navigate = useNavigate();
     const { orders, isLoading, currentPage, totalPages, goToPage } = useRecentOrders();
     const getStatusColor = (status: string) => {
-        switch (status) {
-            case 'New': return 'bg-orange-100 text-orange-700 dark:bg-orange-500/10 dark:text-orange-400';
-            case 'Preparing': return 'bg-blue-100 text-blue-700 dark:bg-blue-500/10 dark:text-blue-400';
-            case 'Ready': return 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400';
-            case 'Completed': return 'bg-slate-100 text-slate-700 dark:bg-slate-500/10 dark:text-slate-400';
-            case 'Rejected': return 'bg-red-100 text-red-700 dark:bg-red-500/10 dark:text-red-400';
-            default: return 'bg-slate-100 text-slate-700 dark:bg-slate-500/10 dark:text-slate-400';
+        if (['PENDING', 'APPROVED_PAYMENT_PENDING', 'ORDER_CREATED_BY_CUSTOMER'].includes(status)) {
+            return 'bg-orange-100 text-orange-700 dark:bg-orange-500/10 dark:text-orange-400';
         }
+        if (['ORDER_APPROVED_BY_RESTRO', 'DELIVERY_PARTNER_ASSIGNED', 'TIME_EXTENDED_BY_RESTRO'].includes(status)) {
+            return 'bg-blue-100 text-blue-700 dark:bg-blue-500/10 dark:text-blue-400';
+        }
+        if (['ORDER_READY_BY_RESTRO', 'DELIVERY_PARTNER_AT_RESTRO'].includes(status)) {
+            return 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400';
+        }
+        if (['ORDER_PICKED', 'DELIVERY_PARTNER_AT_STATION', 'DELIVERED'].includes(status)) {
+            return 'bg-slate-100 text-slate-700 dark:bg-slate-500/10 dark:text-slate-400';
+        }
+        if (['CUSTOMER_NOT_RESPONDING', 'UNDELIVERABLE_BY_DELIVER_PARTNER', 'CANCELLED_BY_CUSTOMER', 'CANCELLED_BY_RESTRO', 'CANCELLED_BY_USTART', 'ORDER_REJECTED_BY_RESTRO'].includes(status)) {
+            return 'bg-red-100 text-red-700 dark:bg-red-500/10 dark:text-red-400';
+        }
+        return 'bg-slate-100 text-slate-700 dark:bg-slate-500/10 dark:text-slate-400';
     };
 
     const getStatusLabel = (status: string) => {
-        switch (status) {
-            case 'New': return t('dashboard.recentOrders.statuses.pending'); // Reusing 'Pending' key for 'New' temporarily or add new key
-            case 'Preparing': return t('dashboard.recentOrders.statuses.cooking');
-            case 'Ready': return t('dashboard.recentOrders.statuses.ready');
-            case 'Completed': return t('dashboard.recentOrders.statuses.completed');
-            case 'Rejected': return 'Rejected';
-            default: return status;
+        // Map granular statuses to user-friendly labels
+        if (['PENDING', 'APPROVED_PAYMENT_PENDING', 'ORDER_CREATED_BY_CUSTOMER'].includes(status)) {
+            return t('dashboard.recentOrders.statuses.pending');
         }
+        if (['ORDER_APPROVED_BY_RESTRO', 'DELIVERY_PARTNER_ASSIGNED', 'TIME_EXTENDED_BY_RESTRO'].includes(status)) {
+            return t('dashboard.recentOrders.statuses.cooking');
+        }
+        if (['ORDER_READY_BY_RESTRO', 'DELIVERY_PARTNER_AT_RESTRO'].includes(status)) {
+            return t('dashboard.recentOrders.statuses.ready');
+        }
+        if (['ORDER_PICKED', 'DELIVERY_PARTNER_AT_STATION', 'DELIVERED'].includes(status)) {
+            return t('dashboard.recentOrders.statuses.completed');
+        }
+        if (['CUSTOMER_NOT_RESPONDING', 'UNDELIVERABLE_BY_DELIVER_PARTNER', 'CANCELLED_BY_CUSTOMER', 'CANCELLED_BY_RESTRO', 'CANCELLED_BY_USTART', 'ORDER_REJECTED_BY_RESTRO'].includes(status)) {
+            return 'Rejected/Cancelled';
+        }
+        return status.replace(/_/g, ' ');
     };
 
     return (

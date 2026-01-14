@@ -429,6 +429,12 @@
         "items": "Items",
         "amount": "Amount",
         "status": "Status"
+      },
+      "statuses": {
+        "pending": "Pending",
+        "cooking": "Cooking",
+        "ready": "Ready",
+        "completed": "Completed"
       }
     },
     "orders": {
@@ -448,6 +454,7 @@
       },
       "card": {
         "orderedTimes": "ORDERED {{count}} TIMES",
+        "newCustomer": "NEW CUSTOMER",
         "mobile": "MOBILE",
         "new": "NEW",
         "justNow": "Just now",
@@ -459,7 +466,8 @@
         "gift": "GIFT (OPT)",
         "msg": "Msg",
         "totalAmount": "TOTAL AMOUNT",
-        "paid": "PAID (UPI)",
+        "paid": "PAID",
+        "cod": "CASH ON DELIVERY",
         "accept": "Accept Order",
         "reject": "REJECT ORDER",
         "mins": "{{count}} mins",

@@ -4,7 +4,6 @@ import {
     mockDashboardService,
     type StatMetric,
     type Order,
-    type LiveOrder,
     type OutletStatus
 } from '../api/mockDashboard';
 import { useRestaurantStore, ALL_LOCATIONS_ID, type RestaurantStatus } from '../store/useRestaurantStore';
@@ -242,7 +241,9 @@ export const usePendingOrders = () => {
     );
 
     const hasPendingOrders = Object.values(recentOrders).some(orders =>
-        orders.some(order => order.status === 'New')
+        orders.some(order =>
+            order.status === 'ORDER_CREATED_BY_CUSTOMER'
+        )
     );
 
     return { hasPendingOrders };
@@ -254,26 +255,46 @@ export const useLiveOrders = () => {
     const selectedAddressId = useRestaurantStore(state => state.selectedAddressId);
     const recentOrders = useRestaurantStore(
         useShallow(state =>
-            selectedAddressId ? state.recentOrders[selectedAddressId] || (EMPTY_ARRAY as LiveOrder[]) : (EMPTY_ARRAY as LiveOrder[])
+            selectedAddressId ? state.recentOrders[selectedAddressId] || (EMPTY_ARRAY as Order[]) : (EMPTY_ARRAY as Order[])
         )
     );
     const setRecentOrders = useRestaurantStore(state => state.setRecentOrders);
     const [activeTab, setActiveTab] = useState<OrderTab>('New');
 
+    // Helper functions for status grouping
+    const isNew = (s: string) => ['ORDER_CREATED_BY_CUSTOMER'].includes(s);
+
+    const isPreparing = (s: string) => [
+        'ORDER_APPROVED_BY_RESTRO',
+        'DELIVERY_PARTNER_ASSIGNED',
+        'TIME_EXTENDED_BY_RESTRO',
+        'DELIVERY_PARTNER_AT_RESTRO'
+    ].includes(s);
+
+    const isReady = (s: string) => ['ORDER_READY_BY_RESTRO'].includes(s);
+
+    const isCompleted = (s: string) => [
+        'ORDER_PICKED',
+        'DELIVERY_PARTNER_AT_STATION',
+        'DELIVERED',
+        'CUSTOMER_NOT_RESPONDING',
+        'UNDELIVERABLE_BY_DELIVER_PARTNER'
+    ].includes(s);
+
     // Counts for tabs
     const counts = {
-        New: recentOrders.filter(o => o.status === 'New').length,
-        Preparing: recentOrders.filter(o => o.status === 'Preparing').length,
-        Ready: recentOrders.filter(o => o.status === 'Ready').length,
-        Completed: recentOrders.filter(o => o.status === 'Completed' || o.status === 'Rejected').length,
+        New: recentOrders.filter(o => isNew(o.status)).length,
+        Preparing: recentOrders.filter(o => isPreparing(o.status)).length,
+        Ready: recentOrders.filter(o => isReady(o.status)).length,
+        Completed: recentOrders.filter(o => isCompleted(o.status)).length,
     };
 
     // Filtered orders based on active tab
     const filteredOrders = recentOrders.filter(order => {
-        if (activeTab === 'New') return order.status === 'New';
-        if (activeTab === 'Preparing') return order.status === 'Preparing';
-        if (activeTab === 'Ready') return order.status === 'Ready';
-        if (activeTab === 'Completed') return order.status === 'Completed' || order.status === 'Rejected';
+        if (activeTab === 'New') return isNew(order.status);
+        if (activeTab === 'Preparing') return isPreparing(order.status);
+        if (activeTab === 'Ready') return isReady(order.status);
+        if (activeTab === 'Completed') return isCompleted(order.status);
         return false;
     });
 
@@ -285,22 +306,22 @@ export const useLiveOrders = () => {
     };
 
     const acceptOrder = async (orderId: string, prepTime: number) => {
-        const success = await mockDashboardService.updateOrderStatus(orderId, 'Preparing', prepTime);
+        const success = await mockDashboardService.updateOrderStatus(orderId, 'ORDER_APPROVED_BY_RESTRO', prepTime);
         if (success) refreshOrders();
     };
 
     const rejectOrder = async (orderId: string) => {
-        const success = await mockDashboardService.updateOrderStatus(orderId, 'Rejected');
+        const success = await mockDashboardService.updateOrderStatus(orderId, 'ORDER_REJECTED_BY_RESTRO');
         if (success) refreshOrders();
     };
 
     const markReady = async (orderId: string) => {
-        const success = await mockDashboardService.updateOrderStatus(orderId, 'Ready');
+        const success = await mockDashboardService.updateOrderStatus(orderId, 'ORDER_READY_BY_RESTRO');
         if (success) refreshOrders();
     };
 
     const markCompleted = async (orderId: string) => {
-        const success = await mockDashboardService.updateOrderStatus(orderId, 'Completed');
+        const success = await mockDashboardService.updateOrderStatus(orderId, 'ORDER_PICKED');
         if (success) refreshOrders();
     };
 

@@ -12,12 +12,31 @@ export interface OrderItem {
     name: string;
     quantity: number;
     price: number;
+    description?: string;
+    itemType?: 'veg' | 'egg' | 'non_veg';
     variant?: string;
     addons?: string[];
     instruction?: string;
 }
 
-export interface LiveOrder {
+export type OrderStatus =
+    | 'ORDER_CREATED_BY_CUSTOMER'
+    | 'ORDER_APPROVED_BY_RESTRO'
+    | 'ORDER_REJECTED_BY_RESTRO'
+    | 'DELIVERY_PARTNER_ASSIGNED'
+    | 'TIME_EXTENDED_BY_RESTRO'
+    | 'DELIVERY_PARTNER_AT_RESTRO'
+    | 'ORDER_READY_BY_RESTRO'
+    | 'ORDER_PICKED'
+    | 'DELIVERY_PARTNER_AT_STATION'
+    | 'CUSTOMER_NOT_RESPONDING'
+    | 'DELIVERED'
+    | 'CANCELLED_BY_CUSTOMER'
+    | 'UNDELIVERABLE_BY_DELIVER_PARTNER'
+    | 'CANCELLED_BY_RESTRO'
+    | 'CANCELLED_BY_USTART';
+
+export interface Order {
     id: string;
     customer: {
         name: string;
@@ -28,16 +47,18 @@ export interface LiveOrder {
     };
     items: OrderItem[];
     amount: number;
-    status: 'New' | 'Preparing' | 'Ready' | 'Completed' | 'Rejected';
-    placedAt: number; // Timestamp
+    status: OrderStatus;
+    createdAt: number; // Timestamp
+    paymentMethod: 'PAID' | 'CASH_ON_DELIVERY';
+    deliveryAddress: string;
+    distanceFromRestroToCustomer: number; // in km
     isRush?: boolean;
     isGift?: boolean;
     giftMessage?: string;
     restaurantInstructions?: string;
     prepTime?: number; // Minutes
+    logs?: { status: OrderStatus; timestamp: number }[];
 }
-
-export type Order = LiveOrder; // Maintain backward compatibility if needed, or refactor usages
 
 export interface OutletStatus {
     isOpen: boolean;
@@ -69,19 +90,27 @@ const MOCK_STATS: Record<string, StatMetric[]> = {
     ]
 };
 
-const MOCK_ORDERS: Record<string, LiveOrder[]> = {
+const MOCK_ORDERS: Record<string, Order[]> = {
     'addr_123': [
         {
             id: '#ORD-2933',
             customer: { name: 'James Sullivan', phone: '+91 98765 43210', totalOrders: 5, avatarColor: 'bg-orange-100 text-orange-600' },
             items: [
-                { name: 'Margherita Pizza (L)', quantity: 1, price: 450, variant: 'Large' },
-                { name: 'Garlic Bread', quantity: 2, price: 240 }
+                { name: 'Margherita Pizza (L)', quantity: 1, price: 450, variant: 'Large', description: 'Classic cheese pizza with fresh basil and tomatoes', itemType: 'veg' },
+                { name: 'Garlic Bread', quantity: 2, price: 240, description: 'Golden brown bread with buttery garlic spread', itemType: 'veg' },
+                { name: 'Chicken Wings (6pcs)', quantity: 1, price: 450, description: 'Spicy buffalo wings served with ranch', itemType: 'non_veg' },
+                { name: 'Egg Fried Rice', quantity: 2, price: 240, description: 'Fried rice with scrambled eggs and spring onions', itemType: 'egg' },
             ],
             amount: 690.00,
-            status: 'New',
-            placedAt: Date.now() - 1000 * 60 * 2, // 2 mins ago
+            status: 'ORDER_CREATED_BY_CUSTOMER',
+            createdAt: Date.now() - 1000 * 60 * 2, // 2 mins ago
+            paymentMethod: 'PAID',
+            deliveryAddress: '42, Green Avenue, Near Central Park, Sector 5',
+            distanceFromRestroToCustomer: 2.4,
             restaurantInstructions: "Please make the pizza extra spicy and don't add oregano on garlic bread.",
+            logs: [
+                { status: 'ORDER_CREATED_BY_CUSTOMER', timestamp: Date.now() - 1000 * 60 * 2 }
+            ]
         },
         {
             id: '#ORD-2932',
@@ -90,8 +119,11 @@ const MOCK_ORDERS: Record<string, LiveOrder[]> = {
                 { name: 'Truffle Pasta', quantity: 1, price: 380 }
             ],
             amount: 380.00,
-            status: 'New',
-            placedAt: Date.now() - 1000 * 60 * 15, // 15 mins ago
+            status: 'ORDER_CREATED_BY_CUSTOMER',
+            createdAt: Date.now() - 1000 * 60 * 5, // 15 mins ago
+            paymentMethod: 'CASH_ON_DELIVERY',
+            deliveryAddress: '101, Blue Heights, Hill Road',
+            distanceFromRestroToCustomer: 5.1,
             isRush: true, // Priority Delivery
         },
         {
@@ -101,9 +133,16 @@ const MOCK_ORDERS: Record<string, LiveOrder[]> = {
                 { name: 'Pasta Carbonara', quantity: 1, price: 350 }
             ],
             amount: 350.00,
-            status: 'Preparing',
-            placedAt: Date.now() - 1000 * 60 * 25,
+            status: 'ORDER_APPROVED_BY_RESTRO',
+            createdAt: Date.now() - 1000 * 60 * 25,
+            paymentMethod: 'PAID',
+            deliveryAddress: 'Continental Hotel, Room 303',
+            distanceFromRestroToCustomer: 1.2,
             prepTime: 12, // 12 mins left
+            logs: [
+                { status: 'ORDER_CREATED_BY_CUSTOMER', timestamp: Date.now() - 1000 * 60 * 30 },
+                { status: 'ORDER_APPROVED_BY_RESTRO', timestamp: Date.now() - 1000 * 60 * 25 }
+            ]
         },
         {
             id: '#ORD-2928',
@@ -112,8 +151,11 @@ const MOCK_ORDERS: Record<string, LiveOrder[]> = {
                 { name: 'Chicken Burger', quantity: 2, price: 520 }
             ],
             amount: 520.00,
-            status: 'Preparing',
-            placedAt: Date.now() - 1000 * 60 * 45,
+            status: 'ORDER_APPROVED_BY_RESTRO',
+            createdAt: Date.now() - 1000 * 60 * 45,
+            paymentMethod: 'CASH_ON_DELIVERY',
+            deliveryAddress: 'Flat 4B, Sunrise Apartments',
+            distanceFromRestroToCustomer: 3.5,
             prepTime: 0, // Delayed
         },
         {
@@ -121,8 +163,16 @@ const MOCK_ORDERS: Record<string, LiveOrder[]> = {
             customer: { name: 'Robert Fox', phone: '+91 99999 88888', avatarColor: 'bg-pink-100 text-pink-600' },
             items: [{ name: 'Veg Thali', quantity: 1, price: 250 }],
             amount: 250.00,
-            status: 'Ready',
-            placedAt: Date.now() - 1000 * 60 * 50,
+            status: 'ORDER_READY_BY_RESTRO',
+            createdAt: Date.now() - 1000 * 60 * 50,
+            paymentMethod: 'PAID',
+            deliveryAddress: 'House No. 12, Rose Colony',
+            distanceFromRestroToCustomer: 0.8,
+            logs: [
+                { status: 'ORDER_CREATED_BY_CUSTOMER', timestamp: Date.now() - 1000 * 60 * 60 },
+                { status: 'ORDER_APPROVED_BY_RESTRO', timestamp: Date.now() - 1000 * 60 * 55 },
+                { status: 'ORDER_READY_BY_RESTRO', timestamp: Date.now() - 1000 * 60 * 50 }
+            ]
         }
     ],
     'addr_456': [
@@ -131,8 +181,11 @@ const MOCK_ORDERS: Record<string, LiveOrder[]> = {
             customer: { name: 'Sneha P.', phone: '+91 98798 76543', avatarColor: 'bg-yellow-100 text-yellow-600' },
             items: [{ name: 'Burger Meal', quantity: 1, price: 250 }],
             amount: 250.00,
-            status: 'Completed',
-            placedAt: Date.now() - 1000 * 60 * 120
+            status: 'DELIVERED',
+            createdAt: Date.now() - 1000 * 60 * 120,
+            paymentMethod: 'PAID',
+            deliveryAddress: 'Tech Park, Building C',
+            distanceFromRestroToCustomer: 1.5,
         }
     ],
     'addr_789': []
@@ -249,7 +302,7 @@ export const mockDashboardService = {
         await delay(800);
         console.log("Fetching restaurant details...");
         return {
-            name: "Spicy Bites",
+            name: "Spicy Bites Pvt Lts.",
             addresses: ALL_ADDRESSES.slice(0, 5) // Return first 5 by default
         };
     },
@@ -274,7 +327,7 @@ export const mockDashboardService = {
         };
     },
 
-    updateOrderStatus: async (orderId: string, status: LiveOrder['status'], prepTime?: number): Promise<boolean> => {
+    updateOrderStatus: async (orderId: string, status: Order['status'], prepTime?: number): Promise<boolean> => {
         await delay(400);
         console.log(`Updating order ${orderId} to ${status}`);
 

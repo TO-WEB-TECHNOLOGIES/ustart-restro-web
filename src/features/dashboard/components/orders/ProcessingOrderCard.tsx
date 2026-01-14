@@ -1,13 +1,13 @@
 import { Clock, UtensilsCrossed } from 'lucide-react';
-import type { LiveOrder } from '../../api/mockDashboard';
+import type { Order } from '../../api/mockDashboard';
 
 interface ProcessingOrderCardProps {
-    order: LiveOrder;
+    order: Order;
     onAction: (orderId: string) => void;
 }
 
 export const ProcessingOrderCard = ({ order, onAction }: ProcessingOrderCardProps) => {
-    const isReady = order.status === 'Ready';
+    const isReady = order.status === 'ORDER_READY_BY_RESTRO';
     const isDelayed = order.prepTime === 0;
 
     return (
@@ -22,8 +22,8 @@ export const ProcessingOrderCard = ({ order, onAction }: ProcessingOrderCardProp
 
                     {!isReady && (
                         <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold ${isDelayed
-                                ? 'bg-red-50 text-red-600 dark:bg-red-500/10 dark:text-red-400'
-                                : 'bg-emerald-50 text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-400'
+                            ? 'bg-red-50 text-red-600 dark:bg-red-500/10 dark:text-red-400'
+                            : 'bg-emerald-50 text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-400'
                             }`}>
                             {isDelayed ? (
                                 <>
@@ -52,6 +52,7 @@ export const ProcessingOrderCard = ({ order, onAction }: ProcessingOrderCardProp
                         <div>
                             <p className="font-bold text-slate-900 dark:text-white text-sm leading-tight">{order.customer.name}</p>
                             <p className="text-xs text-slate-500 dark:text-slate-400">
+                                {new Date(order.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                             </p>
                         </div>
                     </div>
@@ -80,8 +81,8 @@ export const ProcessingOrderCard = ({ order, onAction }: ProcessingOrderCardProp
             <button
                 onClick={() => onAction(order.id)}
                 className={`w-full py-3 rounded-xl font-bold text-sm shadow-lg hover:shadow-xl transition-all active:scale-95 ${isReady
-                        ? 'bg-emerald-600 text-white hover:bg-emerald-700'
-                        : 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-500/20'
+                    ? 'bg-emerald-600 text-white hover:bg-emerald-700'
+                    : 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-500/20'
                     }`}
             >
                 {isReady ? 'Mark as Completed' : 'Mark as Ready'}

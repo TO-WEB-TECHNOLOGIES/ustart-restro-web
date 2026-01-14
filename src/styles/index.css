@@ -1,3 +1,4 @@
+@import url("https://fonts.googleapis.com/css2?family=Miniver&display=swap");
 @import "tailwindcss";
 @variant dark (&:where(.dark, .dark *));
 
@@ -10,6 +11,7 @@
   --color-slate: #545d6a;
   --color-dark-gray: #443d38;
   --color-terracotta-green: #539987;
+  --font-miniver: "Miniver", cursive;
 }
 
 @layer utilities {
@@ -19,5 +21,22 @@
   .no-scrollbar {
     -ms-overflow-style: none;
     scrollbar-width: none;
+  }
+
+  @keyframes urgent-pulse {
+    0% {
+      box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4);
+    }
+    50% {
+      box-shadow: 0 0 0 8px rgba(239, 68, 68, 0.1);
+    }
+    100% {
+      box-shadow: 0 0 0 0 rgba(239, 68, 68, 0);
+    }
+  }
+
+  .animate-urgent {
+    animation: urgent-pulse 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+    border-color: rgb(239 68 68 / 0.5) !important;
   }
 }

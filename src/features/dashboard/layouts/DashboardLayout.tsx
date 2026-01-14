@@ -22,7 +22,7 @@ export const DashboardLayout = () => {
     };
 
     return (
-        <div className="min-h-screen bg-orange-50/30 dark:bg-slate-950 md:flex transition-colors duration-300 relative">
+        <div className="min-h-screen bg-orange-50/30 dark:bg-slate-950 md:flex transition-colors duration-300 relative w-screen overflow-hidden">
             {/* Desktop & Mobile Sidebar */}
             <DashboardSidebar
                 isOpen={isMobileMenuOpen}
@@ -30,7 +30,7 @@ export const DashboardLayout = () => {
                 onLogoutClick={() => setShowLogoutConfirm(true)}
             />
 
-            <div className="flex-1 flex flex-col min-h-screen">
+            <div className="flex-1 flex flex-col min-h-screen min-w-0 w-screen">
                 {/* Fixed/Sticky Header */}
                 <DashboardHeader
                     user={user || { name: 'Partner' }}
@@ -38,7 +38,7 @@ export const DashboardLayout = () => {
                 />
 
                 {/* Main Content */}
-                <main className="flex-1 overflow-y-auto p-4 md:p-6 transition-all duration-300 ease-in-out flex">
+                <main className="flex-1 w-full overflow-x-hidden overflow-y-auto p-4 md:p-6 transition-all duration-300 ease-in-out flex flex-col">
                     <Outlet />
                 </main>
             </div>
