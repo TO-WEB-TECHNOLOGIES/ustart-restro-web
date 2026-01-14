@@ -120,6 +120,7 @@ export const Orders = () => {
                                                     () => { }
                                         }
                                         onExtendTime={(minutes) => actions.extendTime(order.id, minutes)}
+                                        onCancel={(reason: string) => actions.cancelOrder(order.id, reason)}
                                         onShowMore={setSelectedOrderForItems}
                                     />
                                 </div>

@@ -39,4 +39,35 @@
     animation: urgent-pulse 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite;
     border-color: rgb(239 68 68 / 0.5) !important;
   }
+
+  .ticket-bottom-edge {
+    background-image: radial-gradient(
+      circle at 10px 0px,
+      transparent 6px,
+      #ffffff 6.5px
+    );
+    background-size: 20px 10px;
+    background-repeat: repeat-x;
+  }
+
+  .dark .ticket-bottom-edge {
+    background-image: radial-gradient(
+      circle at 10px 0px,
+      transparent 6px,
+      #f4f4f5 6.5px
+    );
+  }
+
+  .animate-spin-slow {
+    animation: spin-slow 3s linear infinite;
+  }
+
+  @keyframes spin-slow {
+    from {
+      transform: rotate(0deg);
+    }
+    to {
+      transform: rotate(360deg);
+    }
+  }
 }

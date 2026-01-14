@@ -335,6 +335,14 @@ export const useLiveOrders = () => {
         if (success) refreshOrders();
     };
 
+    const cancelOrder = async (orderId: string, reason: string) => {
+        const success = await mockDashboardService.updateOrderStatus(orderId, 'CANCELLED_BY_RESTRO', undefined, undefined, reason);
+        if (success && selectedAddressId) {
+            useRestaurantStore.getState().removeOrder(selectedAddressId, orderId);
+            refreshOrders();
+        }
+    };
+
     const extendTime = async (orderId: string, additionalMinutes: number) => {
         const success = await mockDashboardService.updateOrderStatus(orderId, 'TIME_EXTENDED_BY_RESTRO', additionalMinutes);
         if (success) refreshOrders();
@@ -350,6 +358,7 @@ export const useLiveOrders = () => {
             rejectOrder,
             markReady,
             markCompleted,
+            cancelOrder,
             extendTime
         }
     };

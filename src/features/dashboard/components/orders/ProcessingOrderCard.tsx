@@ -1,19 +1,27 @@
 import { useState, useEffect } from 'react';
-import { Clock, UtensilsCrossed, Store, Phone, ChevronDown, Loader2 } from 'lucide-react';
+import { Clock, UtensilsCrossed, Store, Phone, ChevronDown, Loader2, AlertCircle } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import type { Order } from '../../api/mockDashboard';
 import { useRestaurantStore, ALL_LOCATIONS_ID } from '../../store/useRestaurantStore';
+import { CancelOrderModal } from './CancelOrderModal';
+import { DelayedOrderModal } from './DelayedOrderModal';
 
 interface ProcessingOrderCardProps {
     order: Order;
     onAction: (orderId: string) => void;
     onExtendTime: (minutes: number) => void;
+    onCancel: (reason: string) => void;
     onShowMore: (order: Order) => void;
 }
 
-export const ProcessingOrderCard = ({ order, onAction, onExtendTime, onShowMore }: ProcessingOrderCardProps) => {
+export const ProcessingOrderCard = ({ order, onAction, onExtendTime, onCancel, onShowMore }: ProcessingOrderCardProps) => {
+    const { t } = useTranslation();
     const selectedAddressId = useRestaurantStore(state => state.selectedAddressId);
     const [isProcessing, setIsProcessing] = useState(false);
     const [isExtending, setIsExtending] = useState(false);
+    const [isCancelling, setIsCancelling] = useState(false);
+    const [showCancelModal, setShowCancelModal] = useState(false);
+    const [showDelayedModal, setShowDelayedModal] = useState(false);
     const [extensionMinutes, setExtensionMinutes] = useState('5');
     const isReady = order.status === 'ORDER_READY_BY_RESTRO';
 
@@ -29,6 +37,12 @@ export const ProcessingOrderCard = ({ order, onAction, onExtendTime, onShowMore 
 
     const [timeLeft, setTimeLeft] = useState(calculateTimeLeft());
     const isDelayed = timeLeft === 0;
+
+    useEffect(() => {
+        if (isDelayed && !isReady && !showDelayedModal) {
+            setShowDelayedModal(true);
+        }
+    }, [isDelayed, isReady]);
 
     useEffect(() => {
         if (isReady || isProcessing) return;
@@ -71,6 +85,16 @@ export const ProcessingOrderCard = ({ order, onAction, onExtendTime, onShowMore 
         }
     };
 
+    const handleConfirmCancel = async (reason: string) => {
+        setIsCancelling(true);
+        try {
+            await onCancel(reason);
+            setShowCancelModal(false);
+        } finally {
+            setIsCancelling(false);
+        }
+    };
+
     const displayedItems = order.items.slice(0, 4);
 
     return (
@@ -92,7 +116,7 @@ export const ProcessingOrderCard = ({ order, onAction, onExtendTime, onShowMore 
                     <div className="flex justify-between items-start mb-4 border-b-2 border-dashed border-slate-300 pb-3">
                         <div className="flex items-center gap-2 text-slate-700 font-bold text-xs uppercase tracking-wide">
                             <UtensilsCrossed className="w-3.5 h-3.5" />
-                            <span>{isReady ? 'Pickup' : 'Prep'}</span>
+                            <span>{isReady ? t('dashboard.recentOrders.statuses.ready') : t('dashboard.recentOrders.statuses.cooking')}</span>
                         </div>
 
                         {!isReady && (
@@ -103,12 +127,12 @@ export const ProcessingOrderCard = ({ order, onAction, onExtendTime, onShowMore 
                                 {isDelayed ? (
                                     <>
                                         <Clock className="w-3 h-3" />
-                                        <span>Delayed</span>
+                                        <span>{t('dashboard.orders.card.delayed')}</span>
                                     </>
                                 ) : (
                                     <>
                                         <Clock className={`w-3 h-3 ${isUrgent ? 'animate-spin-slow' : ''}`} />
-                                        <span>{Math.ceil(timeLeft / 60)}m</span>
+                                        <span>{t('dashboard.orders.card.minsShort', { count: Math.ceil(timeLeft / 60) })}</span>
                                     </>
                                 )}
                             </div>
@@ -165,7 +189,7 @@ export const ProcessingOrderCard = ({ order, onAction, onExtendTime, onShowMore 
                                 onClick={() => onShowMore(order)}
                                 className="w-full py-1.5 flex items-center justify-center gap-1 text-[10px] font-black text-slate-400 uppercase tracking-widest hover:text-slate-600 transition-colors border border-dashed border-slate-200 rounded mt-2"
                             >
-                                <>+ {order.items.length - 4} More Items <ChevronDown className="w-3 h-3" /></>
+                                <> {t('dashboard.orders.card.moreItems', { count: order.items.length - 4 })} <ChevronDown className="w-3 h-3" /></>
                             </button>
                         )}
                     </div>
@@ -177,59 +201,72 @@ export const ProcessingOrderCard = ({ order, onAction, onExtendTime, onShowMore 
                                 <select
                                     value={extensionMinutes}
                                     onChange={(e) => setExtensionMinutes(e.target.value)}
-                                    disabled={isExtending || isProcessing}
+                                    disabled={isExtending || isProcessing || isCancelling}
                                     className="w-full appearance-none bg-slate-50 border border-slate-200 rounded-md py-2 px-3 pr-8 text-[10px] font-black uppercase tracking-wider text-slate-700 outline-none focus:ring-1 focus:ring-slate-300 transition-all disabled:opacity-50"
                                 >
                                     {[5, 10, 15, 20].map(mins => (
-                                        <option key={mins} value={mins}>+ {mins} Mins</option>
+                                        <option key={mins} value={mins}>{t('dashboard.orders.card.minsPlus', { count: mins })}</option>
                                     ))}
                                 </select>
                                 <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 text-slate-400 pointer-events-none" />
                             </div>
                             <button
                                 onClick={handleExtendTime}
-                                disabled={isExtending || isProcessing}
+                                disabled={isExtending || isProcessing || isCancelling}
                                 className="px-4 bg-slate-800 text-white rounded-md text-[10px] font-black uppercase tracking-wider hover:bg-slate-900 transition-colors disabled:opacity-50 flex items-center justify-center min-w-[100px]"
                             >
-                                {isExtending ? <Loader2 className="w-3 h-3 animate-spin" /> : 'Extend Time'}
+                                {isExtending ? <Loader2 className="w-3 h-3 animate-spin" /> : t('dashboard.orders.card.extendTime')}
                             </button>
                         </div>
                     )}
 
-                    {/* Action Button */}
-                    <button
-                        onClick={handleAction}
-                        disabled={isProcessing || isExtending}
-                        className={`group relative w-full overflow-hidden py-3 rounded-md font-black text-xs uppercase tracking-[0.2em] transition-all hover:translate-y-0.5 active:translate-y-1 ${isReady
-                            ? 'bg-emerald-600 text-background-white shadow-[0_4px_0_0_#047857] active:shadow-none'
-                            : isDelayed
-                                ? 'bg-red-600 text-background-white shadow-[0_4px_0_0_#991b1b] active:shadow-none'
-                                : 'bg-slate-900 text-background-white shadow-[0_4px_0_0_#1e293b] active:shadow-none'
-                            }`}
-                    >
-                        {/* Progress Bar Background Overlay (only for Preparing orders that aren't delayed) */}
-                        {!isReady && !isDelayed && !isProcessing && (
-                            <div
-                                className={`absolute inset-y-0 left-0 ${isUrgent ? 'bg-orange-600/30' : 'bg-slate-700/30'} transition-all duration-1000 ease-linear`}
-                                style={{ width: `${progressPercentage}%` }}
-                            />
-                        )}
-
-                        <span className="relative z-10 flex items-center justify-center gap-2">
-                            {isProcessing ? (
-                                <Loader2 className="w-4 h-4 animate-spin" />
-                            ) : (
-                                <>
-                                    <span>{isReady ? 'Complete' : 'Mark Ready'}</span>
-                                    {!isReady && !isDelayed && (
-                                        <span className="bg-white/10 px-1.5 py-0.5 rounded text-[10px] font-bold backdrop-blur-sm border border-white/5">
-                                            {formatTime(timeLeft)}
-                                        </span>
-                                    )}
-                                </>
+                    {/* Action Buttons Container */}
+                    <div className="space-y-3">
+                        {/* Main Action Button */}
+                        <button
+                            onClick={handleAction}
+                            disabled={isProcessing || isExtending || isCancelling}
+                            className={`group relative w-full overflow-hidden py-3 rounded-md font-black text-xs uppercase tracking-[0.2em] transition-all hover:translate-y-0.5 active:translate-y-1 ${isReady
+                                ? 'bg-emerald-600 text-background-white shadow-[0_4px_0_0_#047857] active:shadow-none'
+                                : isDelayed
+                                    ? 'bg-red-600 text-background-white shadow-[0_4px_0_0_#991b1b] active:shadow-none'
+                                    : 'bg-slate-900 text-background-white shadow-[0_4px_0_0_#1e293b] active:shadow-none'
+                                }`}
+                        >
+                            {/* Progress Bar Background Overlay (only for Preparing orders that aren't delayed) */}
+                            {!isReady && !isDelayed && !isProcessing && (
+                                <div
+                                    className={`absolute inset-y-0 left-0 ${isUrgent ? 'bg-orange-600/30' : 'bg-slate-700/30'} transition-all duration-1000 ease-linear`}
+                                    style={{ width: `${progressPercentage}%` }}
+                                />
                             )}
-                        </span>
-                    </button>
+
+                            <span className="relative z-10 flex items-center justify-center gap-2">
+                                {isProcessing ? (
+                                    <Loader2 className="w-4 h-4 animate-spin" />
+                                ) : (
+                                    <>
+                                        <span>{isReady ? t('dashboard.orders.card.complete') : t('dashboard.orders.card.markReady')}</span>
+                                        {!isReady && !isDelayed && (
+                                            <span className="bg-white/10 px-1.5 py-0.5 rounded text-[10px] font-bold backdrop-blur-sm border border-white/5">
+                                                {formatTime(timeLeft)}
+                                            </span>
+                                        )}
+                                    </>
+                                )}
+                            </span>
+                        </button>
+
+                        {/* Cancel Order Button */}
+                        <button
+                            onClick={() => setShowCancelModal(true)}
+                            disabled={isProcessing || isExtending || isCancelling}
+                            className="w-full py-1 flex items-center justify-center gap-1.5 text-[10px] font-black text-rose-500 uppercase tracking-widest hover:text-rose-700 transition-colors disabled:opacity-50"
+                        >
+                            <AlertCircle className="w-3 h-3" />
+                            {t('dashboard.orders.card.cancelOrder')}
+                        </button>
+                    </div>
                 </div>
 
                 {/* Sawtooth Bottom Edge */}
@@ -253,6 +290,23 @@ export const ProcessingOrderCard = ({ order, onAction, onExtendTime, onShowMore 
                 `}} />
                 <div className="w-full h-3 absolute -bottom-3 left-0 z-10 ticket-bottom-edge overflow-hidden drop-shadow-sm"></div>
             </div>
+
+            <CancelOrderModal
+                isOpen={showCancelModal}
+                onClose={() => setShowCancelModal(false)}
+                onConfirm={handleConfirmCancel}
+                isProcessing={isCancelling}
+                order={order}
+            />
+
+            <DelayedOrderModal
+                isOpen={showDelayedModal}
+                order={order}
+                onExtendTime={async (mins) => {
+                    await onExtendTime(mins);
+                    setShowDelayedModal(false);
+                }}
+            />
         </div>
     );
 };

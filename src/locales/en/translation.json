@@ -470,6 +470,8 @@
         "cod": "CASH ON DELIVERY",
         "accept": "Accept Order",
         "reject": "REJECT ORDER",
+        "markReady": "Mark Ready",
+        "complete": "Complete",
         "mins": "{{count}} mins",
         "selectTime": "Select Prep Time",
         "distance": "{{distance}} km",
@@ -497,6 +499,31 @@
           "totalAmount": "Total Amount",
           "variant": "Variant",
           "items": "Items"
+        },
+        "cancelOrder": "Cancel Order",
+        "cancelModal": {
+          "title": "Cancel Order",
+          "penaltyWarning": "Please note that cancelling an order after accepting it may attract a penalty.",
+          "confirm": "Cancel Order",
+          "reasonPlaceholder": "Why are you cancelling this order?",
+          "suggestions": {
+            "outOfStock": "Out of stock",
+            "busy": "Too busy to prepare",
+            "closing": "Restaurant closing"
+          }
+        },
+        "extendTime": "Extend Time",
+        "minsPlus": "+ {{count}} Mins",
+        "delayed": "Delayed",
+        "minsShort": "{{count}}m",
+        "moreItems": "+ {{count}} More Items",
+        "delayedModal": {
+          "title": "Order Delayed",
+          "warning": "This order is currently delayed by {{mins}} minutes.",
+          "instruction": "Please extend the preparation time to notify the customer and delivery partner.",
+          "selectNewTime": "Select Additional Time",
+          "readyIn": "Ready in {{mins}} mins",
+          "confirm": "Extend & Notify"
         }
       }
     },
