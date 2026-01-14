@@ -52,6 +52,7 @@ interface RestaurantState {
     setRecentOrders: (addressId: string, orders: Order[]) => void;
     setOrderPagination: (addressId: string, pagination: { current: number; total: number }) => void;
     setLoading: (type: 'status' | 'stats' | 'orders', id: string, isLoading: boolean) => void;
+    removeOrder: (addressId: string, orderId: string) => void;
     reset: () => void;
 }
 
@@ -103,6 +104,21 @@ export const useRestaurantStore = create<RestaurantState>()(
                     [type]: { ...state.loading[type], [id]: isLoading }
                 }
             })),
+            removeOrder: (addressId, orderId) => set((state) => {
+                const updatedOrders = { ...state.recentOrders };
+                if (addressId === ALL_LOCATIONS_ID) {
+                    // If all is selected, we might need to remove it from the specific branch too
+                    // but for simplicity in mock, we'll just remove it from 'all'
+                    updatedOrders[ALL_LOCATIONS_ID] = (updatedOrders[ALL_LOCATIONS_ID] || []).filter(o => o.id !== orderId);
+                } else {
+                    updatedOrders[addressId] = (updatedOrders[addressId] || []).filter(o => o.id !== orderId);
+                    // Also remove from 'all' if present
+                    if (updatedOrders[ALL_LOCATIONS_ID]) {
+                        updatedOrders[ALL_LOCATIONS_ID] = updatedOrders[ALL_LOCATIONS_ID].filter(o => o.id !== orderId);
+                    }
+                }
+                return { recentOrders: updatedOrders };
+            }),
             reset: () => set(initialState),
         }),
         {

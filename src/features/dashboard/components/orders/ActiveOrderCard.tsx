@@ -1,18 +1,23 @@
 import { useState, useEffect } from 'react';
-import { Clock, Phone, Utensils, MapPin, Loader2 } from 'lucide-react';
+import { Clock, Phone, Utensils, MapPin, Loader2, Store } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import type { Order } from '../../api/mockDashboard';
+import { RejectOrderModal } from './RejectOrderModal';
+import { useRestaurantStore, ALL_LOCATIONS_ID } from '../../store/useRestaurantStore';
 
 interface ActiveOrderCardProps {
     order: Order;
-    onAccept: (orderId: string, prepTime: number) => Promise<void> | void;
-    onReject: (orderId: string) => Promise<void> | void;
+    onAccept: (orderId: string, prepTime: number, giftMessage?: string) => Promise<void> | void;
+    onReject: (orderId: string, reason: string) => Promise<void> | void;
 }
 
 export const ActiveOrderCard = ({ order, onAccept, onReject }: ActiveOrderCardProps) => {
+    const selectedAddressId = useRestaurantStore(state => state.selectedAddressId);
     const { t } = useTranslation();
     const [prepTime, setPrepTime] = useState<string>('');
+    const [giftMessage, setGiftMessage] = useState<string>('');
     const [isProcessing, setIsProcessing] = useState(false);
+    const [isRejectModalOpen, setIsRejectModalOpen] = useState(false);
     const INITIAL_TIME = 600; // 10 minutes in seconds
 
     const calculateTimeLeft = () => {
@@ -29,16 +34,21 @@ export const ActiveOrderCard = ({ order, onAccept, onReject }: ActiveOrderCardPr
         setTimeLeft(calculateTimeLeft());
 
         if (calculateTimeLeft() <= 0) {
-            onReject(order.id);
+            onReject(order.id, 'Timeout');
             return;
         }
 
-        const timer = setInterval(() => {
+        const timer = setInterval(async () => {
             const remaining = calculateTimeLeft();
             setTimeLeft(remaining);
             if (remaining <= 0) {
-                onReject(order.id);
                 clearInterval(timer);
+                setIsProcessing(true);
+                try {
+                    await onReject(order.id, 'Timeout');
+                } finally {
+                    setIsProcessing(false);
+                }
             }
         }, 1000);
 
@@ -49,21 +59,28 @@ export const ActiveOrderCard = ({ order, onAccept, onReject }: ActiveOrderCardPr
         if (prepTime) {
             setIsProcessing(true);
             try {
-                await onAccept(order.id, parseInt(prepTime));
+                await onAccept(order.id, parseInt(prepTime), giftMessage);
             } catch (error) {
-                setIsProcessing(false);
                 console.error("Failed to accept order:", error);
+            } finally {
+                setIsProcessing(false);
             }
         }
     };
 
-    const handleRejectClick = async () => {
+    const handleRejectClick = () => {
+        setIsRejectModalOpen(true);
+    };
+
+    const handleConfirmReject = async (reason: string) => {
+        setIsRejectModalOpen(false);
         setIsProcessing(true);
         try {
-            await onReject(order.id);
+            await onReject(order.id, reason);
         } catch (error) {
-            setIsProcessing(false);
             console.error("Failed to reject order:", error);
+        } finally {
+            setIsProcessing(false);
         }
     };
 
@@ -124,6 +141,14 @@ export const ActiveOrderCard = ({ order, onAccept, onReject }: ActiveOrderCardPr
             <div className={`w-full md:w-[50%] p-5 flex flex-col border-r ${isUrgent ? 'border-red-100 dark:border-red-900/30' : 'border-slate-100 dark:border-slate-800'}`}>
                 <div className="flex justify-between items-start mb-4">
                     <div>
+                        {selectedAddressId === ALL_LOCATIONS_ID && order.recipientAddress && (
+                            <div className="flex items-center gap-1.5 mb-2 px-1.5 py-0.5 rounded border border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50 w-fit">
+                                <Store className="w-3 h-3 text-slate-400" />
+                                <div className="text-[9px] font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wide leading-none">
+                                    {order.recipientAddress.label}
+                                </div>
+                            </div>
+                        )}
                         <div className="flex items-center gap-2 mb-1">
                             <span className="text-xl font-black text-slate-900 dark:text-white tracking-tighter">
                                 {order.id}
@@ -138,7 +163,8 @@ export const ActiveOrderCard = ({ order, onAccept, onReject }: ActiveOrderCardPr
                         </div>
                     </div>
 
-                    <div className="text-right">
+                    <div className="text-right flex flex-col items-end">
+
                         <p className="text-[9px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-[0.1em] mb-0.5">{t('dashboard.orders.card.totalAmount')}</p>
                         <p className="text-2xl font-black text-slate-900 dark:text-white tracking-tighter tabular-nums leading-none">₹{order.amount.toFixed(2)}</p>
                         <div className={`mt-1.5 inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md border ${order.paymentMethod === 'PAID'
@@ -181,7 +207,7 @@ export const ActiveOrderCard = ({ order, onAccept, onReject }: ActiveOrderCardPr
 
                                 <div className="flex flex-col gap-0.5">
                                     <div className="flex items-center gap-2">
-                                        <span className={`px-1.5 py-0.5 flex items-center justify-center ${isUrgent ? 'bg-red-50 dark:bg-red-900/30 text-red-700 dark:text-red-400' : 'bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white'} rounded font-black transition-colors group-hover:bg-orange-500 group-hover:text-white text-md`}>
+                                        <span className={`px-1.5 py-0.5 flex items-center justify-center ${isUrgent ? 'bg-red-50 dark:bg-red-900/30 text-red-700 dark:text-red-400' : 'bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white'} rounded font-black text-md`}>
                                             {item.quantity}x
                                         </span>
                                         <p className="font-bold text-slate-900 dark:text-white text-xs leading-tight">{item.name}</p>
@@ -232,6 +258,8 @@ export const ActiveOrderCard = ({ order, onAccept, onReject }: ActiveOrderCardPr
                         </label>
                         <input
                             type="text"
+                            value={giftMessage}
+                            onChange={(e) => setGiftMessage(e.target.value)}
                             disabled={isProcessing}
                             placeholder={t('dashboard.orders.card.giftMessagePlaceholder')}
                             className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg p-2 text-xs focus:ring-2 focus:ring-orange-500 outline-none transition-all placeholder:text-slate-400 shadow-sm disabled:opacity-50"
@@ -291,7 +319,7 @@ export const ActiveOrderCard = ({ order, onAccept, onReject }: ActiveOrderCardPr
                         </span>
 
                         {!isProcessing && (
-                            <span className={`relative z-10 ${isUrgent ? 'bg-white/20' : 'bg-white/10'} px-2.5 py-1 rounded-md text-xs font-bold backdrop-blur-sm border border-white/5 ${isUrgent ? 'animate-pulse' : ''}`}>
+                            <span className={`relative z-10 ${isUrgent ? 'bg-white/20' : 'bg-white/10'} px-2.5 py-1 rounded-md text-xs font-bold backdrop-blur-sm border border-white/5 dark:text-slate-100 ${isUrgent ? 'animate-pulse' : ''}`}>
                                 {formatTime(timeLeft)}
                             </span>
                         )}
@@ -305,6 +333,14 @@ export const ActiveOrderCard = ({ order, onAccept, onReject }: ActiveOrderCardPr
                     </button>
                 </div>
             </div>
+
+            <RejectOrderModal
+                isOpen={isRejectModalOpen}
+                onClose={() => setIsRejectModalOpen(false)}
+                onConfirm={handleConfirmReject}
+                isProcessing={isProcessing}
+                order={order}
+            />
         </div>
     );
 };

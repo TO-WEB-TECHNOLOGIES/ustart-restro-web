@@ -472,7 +472,32 @@
         "reject": "REJECT ORDER",
         "mins": "{{count}} mins",
         "selectTime": "Select Prep Time",
-        "distance": "{{distance}} km"
+        "distance": "{{distance}} km",
+        "processing": "Processing...",
+        "rejectModal": {
+          "title": "Reject Order",
+          "reasonPlaceholder": "Why are you rejecting this order?",
+          "suggestions": {
+            "outOfStock": "Out of stock",
+            "closingSoon": "Closing soon",
+            "busy": "Too busy"
+          },
+          "confirm": "Reject Order",
+          "cancel": "Don't Reject",
+          "lostSale": "You will lose a sale of ₹{{amount}}",
+          "viewMenu": "View Menu",
+          "hideMenu": "Hide Menu",
+          "impactNotice": "Rejections impact your restaurant's ranking and visibility.",
+          "outOfStockAdvice": "Please update menu and remove the stock to prevent further orders",
+          "busyAdvice": "Please stop accepting orders to prevent further orders"
+        },
+        "orderId": "Order ID",
+        "itemsModal": {
+          "title": "Order Details",
+          "totalAmount": "Total Amount",
+          "variant": "Variant",
+          "items": "Items"
+        }
       }
     },
     "widgets": {

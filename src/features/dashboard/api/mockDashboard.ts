@@ -58,6 +58,8 @@ export interface Order {
     restaurantInstructions?: string;
     prepTime?: number; // Minutes
     logs?: { status: OrderStatus; timestamp: number }[];
+    recipientAddress?: { id: string; label: string; address: string }; // Address receiving the order
+    rejectionReason?: string;
 }
 
 export interface OutletStatus {
@@ -100,17 +102,20 @@ const MOCK_ORDERS: Record<string, Order[]> = {
                 { name: 'Garlic Bread', quantity: 2, price: 240, description: 'Golden brown bread with buttery garlic spread', itemType: 'veg' },
                 { name: 'Chicken Wings (6pcs)', quantity: 1, price: 450, description: 'Spicy buffalo wings served with ranch', itemType: 'non_veg' },
                 { name: 'Egg Fried Rice', quantity: 2, price: 240, description: 'Fried rice with scrambled eggs and spring onions', itemType: 'egg' },
+                { name: 'Garlic Bread', quantity: 2, price: 240, description: 'Golden brown bread with buttery garlic spread', itemType: 'veg' },
+                { name: 'Chicken Wings (6pcs)', quantity: 1, price: 450, description: 'Spicy buffalo wings served with ranch', itemType: 'non_veg' },
             ],
             amount: 690.00,
             status: 'ORDER_CREATED_BY_CUSTOMER',
-            createdAt: Date.now() - 1000 * 60 * 2, // 2 mins ago
+            createdAt: Date.now() - 1000 * 60 * 9, // 2 mins ago
             paymentMethod: 'PAID',
             deliveryAddress: '42, Green Avenue, Near Central Park, Sector 5',
             distanceFromRestroToCustomer: 2.4,
             restaurantInstructions: "Please make the pizza extra spicy and don't add oregano on garlic bread.",
             logs: [
                 { status: 'ORDER_CREATED_BY_CUSTOMER', timestamp: Date.now() - 1000 * 60 * 2 }
-            ]
+            ],
+            recipientAddress: { id: 'addr_123', label: 'Main Branch', address: '123 Food Street, Mumbai' }
         },
         {
             id: '#ORD-2932',
@@ -125,6 +130,7 @@ const MOCK_ORDERS: Record<string, Order[]> = {
             deliveryAddress: '101, Blue Heights, Hill Road',
             distanceFromRestroToCustomer: 5.1,
             isRush: true, // Priority Delivery
+            recipientAddress: { id: 'addr_123', label: 'Main Branch', address: '123 Food Street, Mumbai' }
         },
         {
             id: '#ORD-2930',
@@ -133,16 +139,16 @@ const MOCK_ORDERS: Record<string, Order[]> = {
                 { name: 'Pasta Carbonara', quantity: 1, price: 350 }
             ],
             amount: 350.00,
-            status: 'ORDER_APPROVED_BY_RESTRO',
-            createdAt: Date.now() - 1000 * 60 * 25,
+            status: 'ORDER_CREATED_BY_CUSTOMER',
+            createdAt: Date.now() - 1000 * 60 * 5,
             paymentMethod: 'PAID',
             deliveryAddress: 'Continental Hotel, Room 303',
             distanceFromRestroToCustomer: 1.2,
-            prepTime: 12, // 12 mins left
             logs: [
                 { status: 'ORDER_CREATED_BY_CUSTOMER', timestamp: Date.now() - 1000 * 60 * 30 },
                 { status: 'ORDER_APPROVED_BY_RESTRO', timestamp: Date.now() - 1000 * 60 * 25 }
-            ]
+            ],
+            recipientAddress: { id: 'addr_123', label: 'Main Branch', address: '123 Food Street, Mumbai' }
         },
         {
             id: '#ORD-2928',
@@ -156,7 +162,8 @@ const MOCK_ORDERS: Record<string, Order[]> = {
             paymentMethod: 'CASH_ON_DELIVERY',
             deliveryAddress: 'Flat 4B, Sunrise Apartments',
             distanceFromRestroToCustomer: 3.5,
-            prepTime: 0, // Delayed
+            prepTime: 20,
+            recipientAddress: { id: 'addr_123', label: 'Main Branch', address: '123 Food Street, Mumbai' }
         },
         {
             id: '#ORD-2900',
@@ -172,7 +179,8 @@ const MOCK_ORDERS: Record<string, Order[]> = {
                 { status: 'ORDER_CREATED_BY_CUSTOMER', timestamp: Date.now() - 1000 * 60 * 60 },
                 { status: 'ORDER_APPROVED_BY_RESTRO', timestamp: Date.now() - 1000 * 60 * 55 },
                 { status: 'ORDER_READY_BY_RESTRO', timestamp: Date.now() - 1000 * 60 * 50 }
-            ]
+            ],
+            recipientAddress: { id: 'addr_123', label: 'Main Branch', address: '123 Food Street, Mumbai' }
         }
     ],
     'addr_456': [
@@ -186,6 +194,7 @@ const MOCK_ORDERS: Record<string, Order[]> = {
             paymentMethod: 'PAID',
             deliveryAddress: 'Tech Park, Building C',
             distanceFromRestroToCustomer: 1.5,
+            recipientAddress: { id: 'addr_456', label: 'City Center', address: 'Shop 45, City Mall, Pune' }
         }
     ],
     'addr_789': []
@@ -327,9 +336,9 @@ export const mockDashboardService = {
         };
     },
 
-    updateOrderStatus: async (orderId: string, status: Order['status'], prepTime?: number): Promise<boolean> => {
+    updateOrderStatus: async (orderId: string, status: Order['status'], prepTime?: number, giftMessage?: string, rejectionReason?: string): Promise<boolean> => {
         await delay(400);
-        console.log(`Updating order ${orderId} to ${status}`);
+        console.log(`Updating order ${orderId} to ${status}. PrepTime: ${prepTime}, GiftMessage: ${giftMessage}, Reason: ${rejectionReason}`);
 
         // In a real app, this would update the backend.
         // For mock, we'll iterate through all Mock Orders and update the matching one.
@@ -337,9 +346,24 @@ export const mockDashboardService = {
         Object.keys(MOCK_ORDERS).forEach(key => {
             const orderIndex = MOCK_ORDERS[key].findIndex(o => o.id === orderId);
             if (orderIndex !== -1) {
-                MOCK_ORDERS[key][orderIndex].status = status;
-                if (prepTime !== undefined) {
-                    MOCK_ORDERS[key][orderIndex].prepTime = prepTime;
+                if (status === 'ORDER_REJECTED_BY_RESTRO') {
+                    // Remove the order from the mock list entirely on rejection
+                    MOCK_ORDERS[key].splice(orderIndex, 1);
+                } else {
+                    MOCK_ORDERS[key][orderIndex].status = status;
+                    if (!MOCK_ORDERS[key][orderIndex].logs) {
+                        MOCK_ORDERS[key][orderIndex].logs = [];
+                    }
+                    MOCK_ORDERS[key][orderIndex].logs?.push({ status, timestamp: Date.now() });
+
+                    if (status === 'TIME_EXTENDED_BY_RESTRO') {
+                        MOCK_ORDERS[key][orderIndex].prepTime = (MOCK_ORDERS[key][orderIndex].prepTime || 0) + (prepTime || 0);
+                    } else if (prepTime !== undefined) {
+                        MOCK_ORDERS[key][orderIndex].prepTime = prepTime;
+                    }
+                    if (giftMessage !== undefined) {
+                        MOCK_ORDERS[key][orderIndex].giftMessage = giftMessage;
+                    }
                 }
                 orderFound = true;
             }

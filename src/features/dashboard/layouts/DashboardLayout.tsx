@@ -22,7 +22,7 @@ export const DashboardLayout = () => {
     };
 
     return (
-        <div className="min-h-screen bg-orange-50/30 dark:bg-slate-950 md:flex transition-colors duration-300 relative w-screen overflow-hidden">
+        <div className="min-h-screen bg-orange-50/30 dark:bg-slate-950 md:flex transition-colors duration-300 relative w-screen overflow-hidden sm:max-h-screen">
             {/* Desktop & Mobile Sidebar */}
             <DashboardSidebar
                 isOpen={isMobileMenuOpen}

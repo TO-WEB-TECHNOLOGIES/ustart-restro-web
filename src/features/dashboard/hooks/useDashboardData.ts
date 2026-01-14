@@ -305,14 +305,24 @@ export const useLiveOrders = () => {
         setRecentOrders(selectedAddressId, data.orders);
     };
 
-    const acceptOrder = async (orderId: string, prepTime: number) => {
-        const success = await mockDashboardService.updateOrderStatus(orderId, 'ORDER_APPROVED_BY_RESTRO', prepTime);
-        if (success) refreshOrders();
+    useEffect(() => {
+        refreshOrders();
+    }, [selectedAddressId]);
+
+    const acceptOrder = async (orderId: string, prepTime: number, giftMessage?: string) => {
+        const success = await mockDashboardService.updateOrderStatus(orderId, 'ORDER_APPROVED_BY_RESTRO', prepTime, giftMessage);
+        if (success && selectedAddressId) {
+            useRestaurantStore.getState().removeOrder(selectedAddressId, orderId);
+            refreshOrders();
+        }
     };
 
-    const rejectOrder = async (orderId: string) => {
-        const success = await mockDashboardService.updateOrderStatus(orderId, 'ORDER_REJECTED_BY_RESTRO');
-        if (success) refreshOrders();
+    const rejectOrder = async (orderId: string, reason: string) => {
+        const success = await mockDashboardService.updateOrderStatus(orderId, 'ORDER_REJECTED_BY_RESTRO', undefined, undefined, reason);
+        if (success && selectedAddressId) {
+            useRestaurantStore.getState().removeOrder(selectedAddressId, orderId);
+            refreshOrders();
+        }
     };
 
     const markReady = async (orderId: string) => {
@@ -325,6 +335,11 @@ export const useLiveOrders = () => {
         if (success) refreshOrders();
     };
 
+    const extendTime = async (orderId: string, additionalMinutes: number) => {
+        const success = await mockDashboardService.updateOrderStatus(orderId, 'TIME_EXTENDED_BY_RESTRO', additionalMinutes);
+        if (success) refreshOrders();
+    };
+
     return {
         activeTab,
         setActiveTab,
@@ -334,7 +349,8 @@ export const useLiveOrders = () => {
             acceptOrder,
             rejectOrder,
             markReady,
-            markCompleted
+            markCompleted,
+            extendTime
         }
     };
 };
