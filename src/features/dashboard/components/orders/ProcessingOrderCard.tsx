@@ -98,7 +98,7 @@ export const ProcessingOrderCard = ({ order, onAction, onExtendTime, onCancel, o
     const displayedItems = order.items.slice(0, 4);
 
     return (
-        <div className="relative pt-3 pb-2 group mx-auto w-full transition-transform duration-300 hover:rotate-1 hover:scale-[1.01] origin-top">
+        <div className="relative pt-3 pb-2 group mx-auto w-full transition-transform duration-300 hover:rotate-1 hover:scale-[1.01] origin-top transform-gpu backface-hidden">
             {/* The Clip - Visual connecting to the rope */}
             <div className="absolute -top-3 left-1/2 -translate-x-1/2 z-20 flex flex-col items-center">
                 <div className="w-1.5 h-6 bg-zinc-400 rounded-full mb-[-8px] relative z-0 shadow-sm"></div>
