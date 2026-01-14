@@ -168,7 +168,7 @@ export const LoginForm = () => {
                             </div>
                             {mobileErrors.mobile && <p className="text-red-500 text-xs ">{mobileErrors.mobile.message}</p>}
                         </div>
-                        <Button type="submit" className="w-full bg-secondary-orange hover:bg-secondary-orange/90 text-white font-bold h-12 rounded-4xl" disabled={loading}>
+                        <Button type="submit" className="w-full bg-secondary-orange hover:bg-secondary-orange/90 text-background-white font-bold h-12 rounded-4xl" disabled={loading}>
                             {loading ? t('auth.login.sending') : t('auth.login.submitButton')}
                         </Button>
                     </form>
@@ -201,7 +201,7 @@ export const LoginForm = () => {
                                 )}
                             </div>
                         </div>
-                        <Button onClick={onVerifyOtp} className="w-full bg-secondary-orange hover:bg-secondary-orange/90 text-white font-bold h-12 rounded-4xl" disabled={loading}>
+                        <Button onClick={onVerifyOtp} className="w-full bg-secondary-orange hover:bg-secondary-orange/90 text-background-white font-bold h-12 rounded-4xl" disabled={loading}>
                             {loading ? t('auth.otp.verifying') : t('auth.otp.verifyButton')}
                         </Button>
                     </div>

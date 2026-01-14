@@ -162,11 +162,11 @@ export const DashboardSidebar = ({
       >
         <div className="p-6">
           <div className="w-32">
-            <Logo color={isDark ? "#FFFFFF" : "var(--color-primary-blue)"} />
+            <Logo color={isDark ? "var(--color-background-white)" : "var(--color-primary-blue)"} />
           </div>
           {partnershipText && (
             <div className="text-md font-bold text-secondary-orange flex items-center gap-2">
-              <span className="font-miniver text-3xl lowercase leading-none text-primary-blue">x</span>
+              <span className="font-miniver text-3xl lowercase leading-none text-primary-blue dark:text-background-white">x</span>
               <span className="text-xl opacity-90"><i>{partnershipText}</i></span>
             </div>
           )}

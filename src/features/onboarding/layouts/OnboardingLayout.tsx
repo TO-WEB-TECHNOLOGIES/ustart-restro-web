@@ -91,7 +91,7 @@ export const OnboardingLayout = () => {
     return (
         <div className="flex min-h-screen font-sans">
             {/* Sidebar */}
-            <div className="w-80 bg-primary-blue text-white p-8 flex flex-col fixed h-full z-10 hidden md:flex">
+            <div className="w-80 bg-primary-blue text-background-white p-8 flex flex-col fixed h-full z-10 hidden md:flex">
                 <div className="flex items-center gap-2 mb-12">
                     <Logo color='#FFFFFF' />
                 </div>
@@ -108,8 +108,8 @@ export const OnboardingLayout = () => {
                             <div key={step.id} className={`flex items-start gap-4 ${isActive || isCompleted ? 'opacity-100' : 'opacity-90'}`}>
                                 <div className={`
                                     w-8 h-8 rounded-full flex items-center justify-center shrink-0 border-2 transition-colors
-                                    ${isActive ? 'bg-secondary-orange border-secondary-orange text-white' :
-                                        isCompleted ? 'bg-green-500 border-green-500 text-white' :
+                                    ${isActive ? 'bg-secondary-orange border-secondary-orange text-background-white' :
+                                        isCompleted ? 'bg-green-500 border-green-500 text-background-white' :
                                             'bg-primary-blue border-slate-600 text-slate-400 opacity-100'}
                                 `}>
                                     {isCompleted ? (
@@ -119,7 +119,7 @@ export const OnboardingLayout = () => {
                                     )}
                                 </div>
                                 <div>
-                                    <h3 className={`font-medium ${isActive ? 'text-white' : 'text-slate-300'}`}>
+                                    <h3 className={`font-medium ${isActive ? 'text-background-white' : 'text-slate-300'}`}>
                                         {step.label}
                                     </h3>
                                     <p className="text-xs text-slate-400">{step.subLabel}</p>
@@ -135,10 +135,10 @@ export const OnboardingLayout = () => {
                             {/* Mock avatars */}
                             <div className="w-6 h-6 rounded-full bg-green-200"></div>
                             <div className="w-6 h-6 rounded-full bg-blue-200"></div>
-                            <div className="w-6 h-6 rounded-full bg-secondary-orange text-[10px] flex items-center justify-center font-bold text-white">+5k</div>
+                            <div className="w-6 h-6 rounded-full bg-secondary-orange text-[10px] flex items-center justify-center font-bold text-background-white">+5k</div>
                         </div>
                         <div>
-                            <p className="text-xs font-bold text-white">Trusted by 50,000+ Partners</p>
+                            <p className="text-xs font-bold text-background-white">Trusted by 50,000+ Partners</p>
                             <p className="text-[10px] text-slate-400">"USTART helped us grow our revenue by 40% in just 3 months."</p>
                         </div>
                     </div>
@@ -148,7 +148,7 @@ export const OnboardingLayout = () => {
             {/* Main Content */}
             <div className="flex-1 md:ml-80 bg-[#f8fafc] flex flex-col">
                 {/* Header */}
-                <div className="h-16 bg-white flex items-center justify-end px-8 gap-6 sticky top-0 z-20 shadow-sm">
+                <div className="h-16 bg-background-white flex items-center justify-end px-8 gap-6 sticky top-0 z-20 shadow-sm">
                     <Button variant="ghost" className="text-slate-500 hover:text-slate-900 gap-2 text-sm font-medium" onClick={() => navigate('/help')}>
                         <HelpCircle className="w-4 h-4" />
                         {t('onboarding.header.help')}

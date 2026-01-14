@@ -10,7 +10,7 @@ export const Loader = () => {
     return (
         <div className="flex items-center justify-center min-h-screen bg-background-white dark:bg-[#0A121E]">
             <svg
-                className={`animate-spin h-10 w-10 ${isDark ? 'text-white' : 'text-primary-blue'}`}
+                className={`animate-spin h-10 w-10 ${isDark ? 'text-background-white' : 'text-primary-blue'}`}
                 xmlns="http://www.w3.org/2000/svg"
                 fill="none"
                 viewBox="0 0 24 24"

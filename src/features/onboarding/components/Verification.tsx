@@ -50,7 +50,7 @@ export const Verification = () => {
                             onClick={handleEditClick}
                             className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors w-fit ${supportInfo.isEditLocked
                                 ? 'bg-slate-100 text-slate-400 cursor-not-allowed'
-                                : 'bg-primary-blue text-white hover:bg-primary-blue/90'
+                                : 'bg-primary-blue text-background-white hover:bg-primary-blue/90'
                                 }`}
                         >
                             <Pencil className="w-4 h-4" />
@@ -68,15 +68,15 @@ export const Verification = () => {
                 <div className="hidden md:block relative shrink-0 mr-4 lg:mr-12">
                     <div className="absolute inset-0 bg-secondary-orange/5 blur-3xl rounded-full" />
                     <div className="relative">
-                        <div className="w-32 h-32 bg-white rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] -rotate-3 flex items-center justify-center border border-slate-50">
+                        <div className="w-32 h-32 bg-background-white rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] -rotate-3 flex items-center justify-center border border-slate-50">
                             <div className="w-16 h-16 bg-gradient-to-br from-secondary-orange to-[#ff8c24] rounded-2xl flex items-center justify-center shadow-inner">
-                                <ClipboardCheck className="w-9 h-9 text-white" />
+                                <ClipboardCheck className="w-9 h-9 text-background-white" />
                             </div>
                         </div>
 
                         {/* Notification Badge */}
-                        <div className="absolute -top-3 -right-3 w-12 h-12 bg-primary-blue rounded-full border-[3px] border-white flex items-center justify-center shadow-lg z-10">
-                            <span className="text-white font-bold text-xl">!</span>
+                        <div className="absolute -top-3 -right-3 w-12 h-12 bg-primary-blue rounded-full border-[3px] border-background-white flex items-center justify-center shadow-lg z-10">
+                            <span className="text-background-white font-bold text-xl">!</span>
                         </div>
                     </div>
                 </div>
@@ -120,7 +120,7 @@ export const Verification = () => {
                             {t('onboarding.restaurant.verification.supportDesc')}
                         </p>
 
-                        <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-4 space-y-4">
+                        <div className="bg-background-white rounded-2xl border border-slate-100 shadow-sm p-4 space-y-4">
                             <a href={`mailto:${supportInfo.email}`} className="flex items-center gap-4 p-2 hover:bg-slate-50 rounded-xl transition-colors cursor-pointer group">
                                 <div className="w-10 h-10 bg-slate-100 rounded-full flex items-center justify-center group-hover:bg-primary-blue/10 transition-colors">
                                     <Mail className="w-5 h-5 text-slate-600 group-hover:text-primary-blue" />
@@ -147,7 +147,7 @@ export const Verification = () => {
                         </div>
 
                         <div className="flex items-center gap-2 mt-4 text-xs text-slate-400 px-2">
-                            <div className="w-4 h-4 bg-slate-200 rounded-full flex items-center justify-center text-[10px] font-bold text-white font-serif">i</div>
+                            <div className="w-4 h-4 bg-slate-200 rounded-full flex items-center justify-center text-[10px] font-bold text-background-white font-serif">i</div>
                             <span>Reference ID: <span className="font-mono text-slate-600">{supportInfo.supportId}</span></span>
                         </div>
                     </div>

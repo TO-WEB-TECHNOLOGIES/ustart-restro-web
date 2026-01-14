@@ -63,9 +63,9 @@ export const HelpCenter = () => {
     );
 
     return (
-        <div className="min-h-screen bg-white flex flex-col">
+        <div className="min-h-screen bg-background-white flex flex-col">
             {/* Top Navigation */}
-            <nav className="border-b border-slate-100 bg-white sticky top-0 z-50">
+            <nav className="border-b border-slate-100 bg-background-white sticky top-0 z-50">
                 <div className="container mx-auto px-4 h-16 flex items-center justify-between">
                     {/* Left: Logo */}
                     <div className="flex items-center gap-4">
@@ -121,7 +121,7 @@ export const HelpCenter = () => {
                         ) : (
                             <Button
                                 onClick={() => navigate('/')}
-                                className="bg-secondary-orange hover:bg-secondary-orange/90 text-white gap-2 font-semibold ml-2"
+                                className="bg-secondary-orange hover:bg-secondary-orange/90 text-background-white gap-2 font-semibold ml-2"
                             >
                                 <LogIn className="w-4 h-4" />
                                 <span className="hidden md:inline">{t('help.loginSignup')}</span>
@@ -135,7 +135,7 @@ export const HelpCenter = () => {
             {/* Language Modal (Mobile) */}
             {showLanguageModal && (
                 <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-                    <div className="bg-white text-slate-900 rounded-xl p-6 w-full max-w-sm shadow-2xl relative animate-in fade-in zoom-in-95 duration-200">
+                    <div className="bg-background-white text-slate-900 rounded-xl p-6 w-full max-w-sm shadow-2xl relative animate-in fade-in zoom-in-95 duration-200">
                         <button
                             onClick={() => setShowLanguageModal(false)}
                             className="absolute top-4 right-4 text-slate-400 hover:text-slate-600"
@@ -170,7 +170,7 @@ export const HelpCenter = () => {
                 <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-purple-500/10 rounded-full blur-3xl translate-y-1/2" />
 
                 <div className="relative z-10 max-w-3xl mx-auto space-y-6">
-                    <h1 className="text-4xl md:text-5xl font-bold text-white tracking-tight">
+                    <h1 className="text-4xl md:text-5xl font-bold text-background-white tracking-tight">
                         {t('help.title', 'How can we help you today?')}
                     </h1>
                     <p className="text-slate-400 text-lg">
@@ -183,11 +183,11 @@ export const HelpCenter = () => {
                             <Input
                                 type="text"
                                 placeholder={t('help.searchPlaceholder')}
-                                className="w-full pl-12 pr-32 h-14 rounded-full bg-white text-slate-900 border-none ring-offset-0 focus-visible:ring-2 focus-visible:ring-secondary-orange placeholder:text-slate-400 shadow-sm"
+                                className="w-full pl-12 pr-32 h-14 rounded-full bg-background-white text-slate-900 border-none ring-offset-0 focus-visible:ring-2 focus-visible:ring-secondary-orange placeholder:text-slate-400 shadow-sm"
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
                             />
-                            <Button className="absolute right-1.5 top-1/2 -translate-y-1/2 h-11 rounded-full bg-secondary-orange hover:bg-secondary-orange/90 text-white px-6 font-bold transition-all">
+                            <Button className="absolute right-1.5 top-1/2 -translate-y-1/2 h-11 rounded-full bg-secondary-orange hover:bg-secondary-orange/90 text-background-white px-6 font-bold transition-all">
                                 {t('help.searchButton')}
                             </Button>
                         </div>
@@ -200,7 +200,7 @@ export const HelpCenter = () => {
                 <div className="max-w-4xl mx-auto">
 
                     {/* FAQ Card Container */}
-                    <div className="bg-white rounded-3xl shadow-xl p-8 md:p-12 mb-12">
+                    <div className="bg-background-white rounded-3xl shadow-xl p-8 md:p-12 mb-12">
                         <div className="flex items-center gap-4 mb-8">
                             <div className="w-10 h-1 bg-secondary-orange rounded-full" />
                             <h2 className="text-2xl md:text-3xl font-bold text-slate-900">
@@ -248,7 +248,7 @@ export const HelpCenter = () => {
                         </div>
 
                         <div className="flex flex-col md:flex-row gap-6 justify-center mt-8">
-                            <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex items-center gap-4 text-left min-w-[280px] hover:shadow-md transition-shadow">
+                            <div className="bg-background-white p-6 rounded-2xl shadow-sm border border-slate-100 flex items-center gap-4 text-left min-w-[280px] hover:shadow-md transition-shadow">
                                 <div className="w-12 h-12 bg-orange-50 rounded-full flex items-center justify-center text-secondary-orange">
                                     <Mail className="w-5 h-5" />
                                 </div>
@@ -260,7 +260,7 @@ export const HelpCenter = () => {
                                 </div>
                             </div>
 
-                            <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex items-center gap-4 text-left min-w-[280px] hover:shadow-md transition-shadow">
+                            <div className="bg-background-white p-6 rounded-2xl shadow-sm border border-slate-100 flex items-center gap-4 text-left min-w-[280px] hover:shadow-md transition-shadow">
                                 <div className="w-12 h-12 bg-orange-50 rounded-full flex items-center justify-center text-secondary-orange">
                                     <Phone className="w-5 h-5" />
                                 </div>

@@ -20,7 +20,7 @@ export const Header = () => {
 
     return (
         <>
-            <header className="flex items-center justify-between px-6 py-4 bg-primary-blue text-white">
+            <header className="flex items-center justify-between px-6 py-4 bg-primary-blue text-background-white">
                 <div className="flex items-center gap-2">
                     <div className="px-2 rounded-md">
                         <Logo color="#FFFFFF" />
@@ -29,17 +29,17 @@ export const Header = () => {
                 </div>
 
                 <nav className="hidden md:flex gap-8 text-sm font-medium text-slate-300">
-                    <a href="#" className="hover:text-white transition-colors">{t('landing.nav.howItWorks')}</a>
-                    <a href="#" className="hover:text-white transition-colors">{t('landing.nav.benefits')}</a>
-                    <a href="#" className="hover:text-white transition-colors">{t('landing.nav.pricing')}</a>
-                    <a href="/help" className="hover:text-white transition-colors">{t('landing.nav.support')}</a>
+                    <a href="#" className="hover:text-background-white transition-colors">{t('landing.nav.howItWorks')}</a>
+                    <a href="#" className="hover:text-background-white transition-colors">{t('landing.nav.benefits')}</a>
+                    <a href="#" className="hover:text-background-white transition-colors">{t('landing.nav.pricing')}</a>
+                    <a href="/help" className="hover:text-background-white transition-colors">{t('landing.nav.support')}</a>
                 </nav>
 
                 <div className="flex items-center">
                     {/* Mobile Button: Opens Modal */}
                     <Button
                         variant="outline"
-                        className="md:hidden bg-transparent border-slate-600 text-slate-300 hover:bg-slate-800 hover:text-white gap-2 rounded-full px-3"
+                        className="md:hidden bg-transparent border-slate-600 text-slate-300 hover:bg-slate-800 hover:text-background-white gap-2 rounded-full px-3"
                         onClick={() => setShowLanguageModal(true)}
                     >
                         <Globe className="w-4 h-4" />
@@ -48,7 +48,7 @@ export const Header = () => {
                     {/* Desktop Button: Toggles Language */}
                     <Button
                         variant="outline"
-                        className="hidden md:flex bg-transparent border-slate-600 text-slate-300 hover:bg-slate-800 hover:text-white gap-2 rounded-full px-4"
+                        className="hidden md:flex bg-transparent border-slate-600 text-slate-300 hover:bg-slate-800 hover:text-background-white gap-2 rounded-full px-4"
                         onClick={toggleLanguage}
                     >
                         <Globe className="w-4 h-4" />
@@ -60,7 +60,7 @@ export const Header = () => {
             {/* Language Modal */}
             {showLanguageModal && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
-                    <div className="bg-white text-slate-900 rounded-xl p-6 w-full max-w-sm shadow-2xl relative animate-in fade-in zoom-in-95 duration-200">
+                    <div className="bg-background-white text-slate-900 rounded-xl p-6 w-full max-w-sm shadow-2xl relative animate-in fade-in zoom-in-95 duration-200">
                         <button
                             onClick={() => setShowLanguageModal(false)}
                             className="absolute top-4 right-4 text-slate-400 hover:text-slate-600"

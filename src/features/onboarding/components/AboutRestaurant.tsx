@@ -146,7 +146,7 @@ export const AboutRestaurant = () => {
             type="button"
             onClick={onClick}
             className={`flex items-center gap-2 px-4 py-2 rounded-xl border transition-all ${isSelected
-                ? 'bg-white border-slate-300 shadow-sm'
+                ? 'bg-background-white border-slate-300 shadow-sm'
                 : 'bg-slate-50 border-slate-100 text-slate-500 hover:bg-slate-100'
                 }`}
         >
@@ -456,7 +456,7 @@ export const AboutRestaurant = () => {
                                     <Input
                                         id="accountNumber"
                                         {...registerDocs('accountNumber')}
-                                        className="h-12 bg-white border-slate-200"
+                                        className="h-12 bg-background-white border-slate-200"
                                         placeholder={t('onboarding.restaurant.documents.accountNumberPlaceholder')}
                                     />
                                     {errorsDocs.accountNumber && <p className="text-red-500 text-xs">{errorsDocs.accountNumber.message}</p>}
@@ -469,7 +469,7 @@ export const AboutRestaurant = () => {
                                         <Input
                                             id="ifscCode"
                                             {...registerDocs('ifscCode')}
-                                            className="h-12 bg-white border-slate-200 uppercase"
+                                            className="h-12 bg-background-white border-slate-200 uppercase"
                                             placeholder={t('onboarding.restaurant.documents.ifscPlaceholder')}
                                         />
                                     </div>
@@ -484,7 +484,7 @@ export const AboutRestaurant = () => {
                                         <Input
                                             id="accountHolderName"
                                             {...registerDocs('accountHolderName')}
-                                            className="h-12 pl-10 bg-white border-slate-100"
+                                            className="h-12 pl-10 bg-background-white border-slate-100"
                                             placeholder={t('onboarding.restaurant.documents.holderNamePlaceholder')}
                                         />
                                     </div>
@@ -499,7 +499,7 @@ export const AboutRestaurant = () => {
                                         <Input
                                             id="bankName"
                                             {...registerDocs('bankName')}
-                                            className="h-12 pl-10 bg-white border-slate-100"
+                                            className="h-12 pl-10 bg-background-white border-slate-100"
                                             placeholder={t('onboarding.restaurant.documents.bankNamePlaceholder')}
                                         />
                                     </div>
@@ -514,7 +514,7 @@ export const AboutRestaurant = () => {
                                         <Input
                                             id="branchName"
                                             {...registerDocs('branchName')}
-                                            className="h-12 pl-10 bg-white border-slate-100"
+                                            className="h-12 pl-10 bg-background-white border-slate-100"
                                             placeholder={t('onboarding.restaurant.documents.branchNamePlaceholder')}
                                         />
                                     </div>
@@ -532,7 +532,7 @@ export const AboutRestaurant = () => {
                         type="submit"
                         form="about-restaurant-form"
                         disabled={!isValid}
-                        className="w-full h-12 bg-secondary-orange hover:bg-secondary-orange/90 text-white font-bold text-lg rounded-xl shadow-lg shadow-secondary-orange/20 transition-all"
+                        className="w-full h-12 bg-secondary-orange hover:bg-secondary-orange/90 text-background-white font-bold text-lg rounded-xl shadow-lg shadow-secondary-orange/20 transition-all"
                     >
                         {t('Continue')} →
                     </Button>
@@ -554,11 +554,11 @@ export const AboutRestaurant = () => {
                         type="submit"
                         form="documents-form"
                         disabled={!isValidDocs || isSubmitting}
-                        className="w-full h-12 bg-secondary-orange hover:bg-secondary-orange/90 text-white font-bold text-lg rounded-xl shadow-lg shadow-secondary-orange/20 transition-all gap-2"
+                        className="w-full h-12 bg-secondary-orange hover:bg-secondary-orange/90 text-background-white font-bold text-lg rounded-xl shadow-lg shadow-secondary-orange/20 transition-all gap-2"
                     >
                         {isSubmitting ? (
                             <>
-                                <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                                <div className="w-5 h-5 border-2 border-background-white/30 border-t-background-white rounded-full animate-spin" />
                                 {t('Processing...')}
                             </>
                         ) : (

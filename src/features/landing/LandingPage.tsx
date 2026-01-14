@@ -10,14 +10,14 @@ export const LandingPage = () => {
     const { t } = useTranslation();
 
     return (
-        <div className="bg-primary-blue text-white flex flex-col">
+        <div className="bg-primary-blue text-background-white flex flex-col">
             <div className="min-h-screen flex flex-col">
                 <Header />
 
                 <main className="flex-1 container mx-auto px-6 py-12 flex flex-col-reverse lg:flex-row items-center justify-around gap-12">
                     {/* Left Side: Hero Text */}
                     <div className="flex-1 space-y-8 max-w-3xl">
-                        <div className="inline-flex items-center gap-2 bg-white/10 px-4 py-1.5 rounded-full text-sm font-medium border border-white/20">
+                        <div className="inline-flex items-center gap-2 bg-background-white/10 px-4 py-1.5 rounded-full text-sm font-medium border border-background-white/20">
                             <span className="w-2 h-2 rounded-full bg-secondary-orange animate-pulse"></span>
                             {t('landing.hero.badge')}
                         </div>

@@ -46,7 +46,7 @@ export const NotFound = () => {
 
                 <div className="relative max-w-2xl w-full text-center z-10">
                     <div className="relative inline-block mb-12">
-                        <div className="w-64 h-64 md:w-80 md:h-80 rounded-full border-8 border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900 shadow-2xl flex items-center justify-center relative transform hover:rotate-6 transition-transform duration-500">
+                        <div className="w-64 h-64 md:w-80 md:h-80 rounded-full border-8 border-gray-100 dark:border-gray-800 bg-background-white dark:bg-gray-900 shadow-2xl flex items-center justify-center relative transform hover:rotate-6 transition-transform duration-500">
                             <div className="font-serif italic text-8xl md:text-9xl text-secondary-orange select-none flex space-x-2 items-center">
                                 <span>4</span>
                                 <div className="relative w-16 h-16 md:w-20 md:h-20 border-8 border-secondary-orange rounded-full mt-4 md:mt-6 opacity-80"></div>
@@ -69,7 +69,7 @@ export const NotFound = () => {
                         </div>
                     </div>
 
-                    <h1 className="text-4xl md:text-6xl font-extrabold text-primary-blue dark:text-white mb-6 leading-tight">
+                    <h1 className="text-4xl md:text-6xl font-extrabold text-primary-blue dark:text-background-white mb-6 leading-tight">
                         Oops! Looks like this dish is <span className="text-secondary-orange">off the menu.</span>
                     </h1>
 
@@ -80,7 +80,7 @@ export const NotFound = () => {
                     <div className="flex flex-col sm:flex-row items-center justify-center space-y-4 sm:space-y-0 sm:space-x-6">
                         <button
                             onClick={() => navigate('/')}
-                            className="bg-secondary-orange hover:bg-orange-500 text-white px-8 py-4 rounded-full font-bold text-lg transition-all shadow-lg hover:shadow-orange-200 dark:hover:shadow-none transform hover:-translate-y-1 flex items-center"
+                            className="bg-secondary-orange hover:bg-orange-500 text-background-white px-8 py-4 rounded-full font-bold text-lg transition-all shadow-lg hover:shadow-orange-200 dark:hover:shadow-none transform hover:-translate-y-1 flex items-center"
                         >
                             <Home className="mr-2 w-5 h-5" />
                             Back to Homepage

@@ -119,7 +119,7 @@ export const RestaurantInfo = () => {
                     <div className="flex gap-6 w-full max-w-lg justify-center">
                         <div
                             onClick={() => handleCinSelection(true)}
-                            className="flex-1 aspect-[4/3] rounded-3xl border-2 border-slate-200 bg-white hover:border-slate-300 hover:scale-105 cursor-pointer transition-all duration-200 flex flex-col items-center justify-center gap-4 group"
+                            className="flex-1 aspect-[4/3] rounded-3xl border-2 border-slate-200 bg-background-white hover:border-slate-300 hover:scale-105 cursor-pointer transition-all duration-200 flex flex-col items-center justify-center gap-4 group"
                         >
                             <div className="w-16 h-16 rounded-full flex items-center justify-center text-slate-400 group-hover:text-secondary-orange transition-colors">
                                 <Check className="w-8 h-8 stroke-[3]" />
@@ -129,7 +129,7 @@ export const RestaurantInfo = () => {
 
                         <div
                             onClick={() => handleCinSelection(false)}
-                            className="flex-1 aspect-[4/3] rounded-3xl border-2 border-slate-200 bg-white hover:border-slate-300 hover:scale-105 cursor-pointer transition-all duration-200 flex flex-col items-center justify-center gap-4 group"
+                            className="flex-1 aspect-[4/3] rounded-3xl border-2 border-slate-200 bg-background-white hover:border-slate-300 hover:scale-105 cursor-pointer transition-all duration-200 flex flex-col items-center justify-center gap-4 group"
                         >
                             <div className="w-16 h-16 rounded-full flex items-center justify-center text-slate-400 group-hover:text-secondary-orange transition-colors">
                                 <X className="w-8 h-8 stroke-[3]" />
@@ -175,7 +175,7 @@ export const RestaurantInfo = () => {
                                 <Input
                                     id="companyName"
                                     {...register('companyName')}
-                                    className="h-12 bg-white border-slate-200"
+                                    className="h-12 bg-background-white border-slate-200"
                                     placeholder={t('onboarding.restaurant.form.companyNamePlaceholder')}
                                 />
                                 {errors.companyName && <p className="text-red-500 text-xs">{errors.companyName?.message}</p>}
@@ -189,7 +189,7 @@ export const RestaurantInfo = () => {
                                         <Input
                                             id="brandName"
                                             {...register('brandName')}
-                                            className="h-12 bg-white border-slate-200"
+                                            className="h-12 bg-background-white border-slate-200"
                                             placeholder={t('onboarding.restaurant.form.brandNamePlaceholder')}
                                         />
                                     </div>
@@ -215,7 +215,7 @@ export const RestaurantInfo = () => {
                                     <Input
                                         id="cinNumber"
                                         {...register('cinNumber')}
-                                        className="h-12 bg-white border-slate-200 uppercase"
+                                        className="h-12 bg-background-white border-slate-200 uppercase"
                                         placeholder={t('onboarding.restaurant.form.cinPlaceholder')}
                                     />
                                     {errors.cinNumber && <p className="text-red-500 text-xs">{errors.cinNumber?.message}</p>}
@@ -225,7 +225,7 @@ export const RestaurantInfo = () => {
                                     <Input
                                         id="panNumber"
                                         {...register('panNumber')}
-                                        className="h-12 bg-white border-slate-200 uppercase"
+                                        className="h-12 bg-background-white border-slate-200 uppercase"
                                         placeholder={t('onboarding.restaurant.form.panPlaceholder')}
                                     />
                                     {errors.panNumber && <p className="text-red-500 text-xs">{errors.panNumber?.message}</p>}
@@ -238,7 +238,7 @@ export const RestaurantInfo = () => {
                                 <Input
                                     id="gstNumber"
                                     {...register('gstNumber')}
-                                    className="h-12 bg-white border-slate-200 uppercase"
+                                    className="h-12 bg-background-white border-slate-200 uppercase"
                                     placeholder={t('onboarding.restaurant.form.gstPlaceholder')}
                                 />
                                 {errors.gstNumber && <p className="text-red-500 text-xs">{errors.gstNumber?.message}</p>}
@@ -250,7 +250,7 @@ export const RestaurantInfo = () => {
                                 <Textarea
                                     id="registeredAddress"
                                     {...register('registeredAddress')}
-                                    className="min-h-[100px] bg-white border-slate-200 resize-none p-4"
+                                    className="min-h-[100px] bg-background-white border-slate-200 resize-none p-4"
                                     placeholder={t('onboarding.restaurant.form.addressPlaceholder')}
                                 />
                                 {errors.registeredAddress && <p className="text-red-500 text-xs">{errors.registeredAddress?.message}</p>}
@@ -265,7 +265,7 @@ export const RestaurantInfo = () => {
                                 <Input
                                     id="restaurantName"
                                     {...register('restaurantName')}
-                                    className="h-12 bg-white border-slate-200"
+                                    className="h-12 bg-background-white border-slate-200"
                                     placeholder={t('onboarding.restaurant.form.restaurantNamePlaceholder')}
                                 />
                                 {errors.restaurantName && <p className="text-red-500 text-xs">{errors.restaurantName?.message}</p>}
@@ -277,7 +277,7 @@ export const RestaurantInfo = () => {
                                 <Input
                                     id="panNumber"
                                     {...register('panNumber')}
-                                    className="h-12 bg-white border-slate-200 uppercase"
+                                    className="h-12 bg-background-white border-slate-200 uppercase"
                                     placeholder={t('onboarding.restaurant.form.panPlaceholder')}
                                 />
                                 <p className="text-[10px] text-slate-500 flex items-center gap-1">
@@ -293,7 +293,7 @@ export const RestaurantInfo = () => {
                                 <Input
                                     id="gstNumber"
                                     {...register('gstNumber')}
-                                    className="h-12 bg-white border-slate-200 uppercase"
+                                    className="h-12 bg-background-white border-slate-200 uppercase"
                                     placeholder={t('onboarding.restaurant.form.gstPlaceholder')}
                                 />
                                 <p className="text-[10px] text-slate-500">{t('onboarding.restaurant.form.gstHint')}</p>
@@ -306,7 +306,7 @@ export const RestaurantInfo = () => {
                                 <Textarea
                                     id="restaurantAddress"
                                     {...register('restaurantAddress')}
-                                    className="min-h-[100px] bg-white border-slate-200 resize-none p-4"
+                                    className="min-h-[100px] bg-background-white border-slate-200 resize-none p-4"
                                     placeholder={t('onboarding.restaurant.form.restaurantAddressPlaceholder')}
                                 />
                                 {errors.restaurantAddress && <p className="text-red-500 text-xs">{errors.restaurantAddress?.message}</p>}
@@ -363,7 +363,7 @@ export const RestaurantInfo = () => {
                                 <Input
                                     id="googleMapsLink"
                                     {...register('googleMapsLink')}
-                                    className="h-12 bg-white border-slate-200"
+                                    className="h-12 bg-background-white border-slate-200"
                                     placeholder={t('onboarding.restaurant.form.mapsLinkPlaceholder')}
                                 />
                                 {errors.googleMapsLink && <p className="text-red-500 text-xs">{errors.googleMapsLink?.message}</p>}
@@ -388,7 +388,7 @@ export const RestaurantInfo = () => {
                     type="submit"
                     form="restaurant-info-form"
                     disabled={!isValid}
-                    className="w-full h-12 bg-secondary-orange hover:bg-secondary-orange/90 text-white font-bold text-lg rounded-xl shadow-lg shadow-secondary-orange/20 transition-all hover:scale-[1.01]"
+                    className="w-full h-12 bg-secondary-orange hover:bg-secondary-orange/90 text-background-white font-bold text-lg rounded-xl shadow-lg shadow-secondary-orange/20 transition-all hover:scale-[1.01]"
                 >
                     {t('onboarding.restaurant.form.continue')} →
                 </Button>

@@ -178,7 +178,7 @@ export const PersonalInfo = () => {
                                     <Input
                                         id="fullName"
                                         {...register('fullName')}
-                                        className="pl-10 h-12 bg-white border-slate-200"
+                                        className="pl-10 h-12 bg-background-white border-slate-200"
                                         placeholder={t('onboarding.personal.fullNamePlaceholder')}
                                         disabled={showOtpInput}
                                     />
@@ -215,7 +215,7 @@ export const PersonalInfo = () => {
                                         <Input
                                             id="email"
                                             {...register('email')}
-                                            className="pl-10 h-12 bg-white border-slate-200"
+                                            className="pl-10 h-12 bg-background-white border-slate-200"
                                             placeholder={t('onboarding.personal.emailPlaceholder')}
                                             disabled={showOtpInput || isEmailVerified}
                                         />
@@ -237,7 +237,7 @@ export const PersonalInfo = () => {
                                         <Input
                                             id="whatsapp"
                                             {...register('whatsapp')}
-                                            className="pl-14 h-12 bg-white border-slate-200"
+                                            className="pl-14 h-12 bg-background-white border-slate-200"
                                             placeholder={t('onboarding.personal.whatsappPlaceholder')}
                                             readOnly={isSameAsMobile}
                                             disabled={showOtpInput}
@@ -287,7 +287,7 @@ export const PersonalInfo = () => {
                                 <Button
                                     onClick={onVerifyOtp}
                                     disabled={otp.length !== 6 || isLoading}
-                                    className="w-full h-12 bg-secondary-orange hover:bg-secondary-orange/90 text-white font-bold rounded-xl"
+                                    className="w-full h-12 bg-secondary-orange hover:bg-secondary-orange/90 text-background-white font-bold rounded-xl"
                                 >
                                     {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : t('onboarding.personal.emailValidation.verifyButton')}
                                 </Button>
@@ -318,7 +318,7 @@ export const PersonalInfo = () => {
                                 type="submit"
                                 form="personal-info-form"
                                 disabled={isLoading}
-                                className="w-full h-12 bg-secondary-orange hover:bg-secondary-orange/90 text-white font-bold text-lg rounded-xl shadow-lg shadow-secondary-orange/20 transition-all hover:scale-[1.01]"
+                                className="w-full h-12 bg-secondary-orange hover:bg-secondary-orange/90 text-background-white font-bold text-lg rounded-xl shadow-lg shadow-secondary-orange/20 transition-all hover:scale-[1.01]"
                             >
                                 {isLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : <>{t('onboarding.personal.continueButton')} →</>}
                             </Button>

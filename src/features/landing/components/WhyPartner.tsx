@@ -26,7 +26,7 @@ export const WhyPartner = () => {
     ];
 
     return (
-        <section className="py-20 bg-white">
+        <section className="py-20 bg-background-white">
             <div className="container mx-auto px-6">
                 <div className="text-center max-w-3xl mx-auto mb-16">
                     <h2 className="text-4xl font-bold text-gray-900 mb-6">
@@ -39,7 +39,7 @@ export const WhyPartner = () => {
 
                 <div className="grid md:grid-cols-3 gap-8">
                     {features.map((feature) => (
-                        <div key={feature.key} className="bg-white rounded-3xl border border-gray-100 shadow-sm p-8 hover:shadow-md transition-shadow">
+                        <div key={feature.key} className="bg-background-white rounded-3xl border border-gray-100 shadow-sm p-8 hover:shadow-md transition-shadow">
                             <div className={`w-12 h-12 rounded-full ${feature.iconColor} flex items-center justify-center mb-6`}>
                                 <feature.icon className="w-6 h-6" />
                             </div>

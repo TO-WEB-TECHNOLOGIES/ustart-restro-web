@@ -13,7 +13,7 @@ export const Footer = () => {
                 <div className="grid grid-cols-1 lg:grid-cols-4 gap-12 mb-16">
                     {/* Brand Column */}
                     <div className="space-y-6">
-                        <div className="flex items-center gap-2 text-white">
+                        <div className="flex items-center gap-2 text-background-white">
                             <Logo color="#FFFFFF" />
                         </div>
                         <p className="text-sm leading-relaxed max-w-xs">
@@ -29,7 +29,7 @@ export const Footer = () => {
                                 <a
                                     key={index}
                                     href={href}
-                                    className="w-10 h-10 rounded-full bg-slate-800 flex items-center justify-center hover:bg-secondary-orange hover:text-white transition-colors"
+                                    className="w-10 h-10 rounded-full bg-slate-800 flex items-center justify-center hover:bg-secondary-orange hover:text-background-white transition-colors"
                                 >
                                     <Icon className="w-5 h-5" />
                                 </a>
@@ -39,7 +39,7 @@ export const Footer = () => {
 
                     {/* Address Column */}
                     <div className="space-y-6">
-                        <h3 className="text-white font-bold text-lg">{t('landing.footer.address.title')}</h3>
+                        <h3 className="text-background-white font-bold text-lg">{t('landing.footer.address.title')}</h3>
                         <div className="bg-[#132845] rounded-3xl p-6 flex items-start gap-4">
                             <div className="mt-1">
                                 <div className="w-8 h-8 rounded-full bg-blue-500/20 flex items-center justify-center text-blue-400">
@@ -58,7 +58,7 @@ export const Footer = () => {
 
                     {/* Contact Column */}
                     <div className="space-y-6">
-                        <h3 className="text-white font-bold text-lg">{t('landing.footer.contact.title')}</h3>
+                        <h3 className="text-background-white font-bold text-lg">{t('landing.footer.contact.title')}</h3>
                         <div className="bg-[#132845] rounded-3xl p-6 flex items-start gap-4">
                             <div className="mt-1">
                                 <div className="w-8 h-8 rounded-full bg-orange-500/20 flex items-center justify-center text-secondary-orange">
@@ -69,7 +69,7 @@ export const Footer = () => {
                                 <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">
                                     {t('landing.footer.contact.emailLabel')}
                                 </p>
-                                <a href={`mailto:${t('landing.footer.contact.emailValue')}`} className="text-white font-medium hover:text-secondary-orange transition-colors">
+                                <a href={`mailto:${t('landing.footer.contact.emailValue')}`} className="text-background-white font-medium hover:text-secondary-orange transition-colors">
                                     {t('landing.footer.contact.emailValue')}
                                 </a>
                             </div>
@@ -78,7 +78,7 @@ export const Footer = () => {
 
                     {/* Links Column */}
                     <div className="space-y-6">
-                        <h3 className="text-white font-bold text-lg relative inline-block">
+                        <h3 className="text-background-white font-bold text-lg relative inline-block">
                             {t('landing.footer.links.title')}
                             <span className="absolute -bottom-2 left-0 w-1/2 h-1 bg-secondary-orange rounded-full"></span>
                         </h3>
@@ -98,7 +98,7 @@ export const Footer = () => {
                         </ul>
 
                         <div className="pt-4 space-y-4">
-                            <h4 className="text-white font-bold text-sm">
+                            <h4 className="text-background-white font-bold text-sm">
                                 {t('landing.footer.download.title')}
                             </h4>
                             <div className="flex flex-col md:flex-row gap-4">
