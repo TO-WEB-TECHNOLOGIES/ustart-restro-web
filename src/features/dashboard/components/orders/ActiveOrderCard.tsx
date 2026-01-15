@@ -120,9 +120,11 @@ export const ActiveOrderCard = ({ order, onAccept, onReject }: ActiveOrderCardPr
                         <span className="text-3xl font-black text-slate-900 dark:text-white tracking-tighter">
                             {order.id}
                         </span>
-                        <span className="px-2 py-0.5 bg-[#ff9f43] text-white text-[10px] font-black rounded-md shadow-md shadow-orange-200 dark:shadow-none uppercase tracking-wider">
-                            {t('dashboard.orders.card.new')}
-                        </span>
+                        {(Date.now() - order.createdAt) < 5 * 60 * 1000 && (
+                            <span className="px-2 py-0.5 bg-[#ff9f43] text-white text-[10px] font-black rounded-md shadow-md shadow-orange-200 dark:shadow-none uppercase tracking-wider">
+                                {t('dashboard.orders.card.new')}
+                            </span>
+                        )}
                     </div>
                     <div className={`flex items-center gap-1.5 ${isUrgent ? 'text-red-600 dark:text-red-400' : 'text-slate-500 dark:text-slate-400'} text-[11px] font-bold`}>
                         <Clock className={`w-3.5 h-3.5 stroke-[2px] ${isUrgent ? 'animate-pulse' : ''}`} />

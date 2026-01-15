@@ -236,25 +236,18 @@ export const useAddressSearch = () => {
 };
 
 export const usePendingOrders = () => {
-    const recentOrders = useRestaurantStore(
-        useShallow(state => state.recentOrders)
+    const selectedAddressId = useRestaurantStore(state => state.selectedAddressId);
+    const orders = useRestaurantStore(
+        useShallow(state =>
+            selectedAddressId ? state.recentOrders[selectedAddressId] || (EMPTY_ARRAY as Order[]) : (EMPTY_ARRAY as Order[])
+        )
     );
 
-    // Filter to get only "New" orders across all branches
-    // We use a Set of order IDs to avoid duplicate counting if an order appears in both 'all' and a specific branch
-    const newOrderIds = new Set<string>();
-
-    Object.values(recentOrders).forEach(orders => {
-        orders.forEach(order => {
-            if (order.status === 'ORDER_CREATED_BY_CUSTOMER') {
-                newOrderIds.add(order.id);
-            }
-        });
-    });
+    const pendingCount = orders.filter(o => o.status === 'ORDER_CREATED_BY_CUSTOMER').length;
 
     return {
-        hasPendingOrders: newOrderIds.size > 0,
-        pendingCount: newOrderIds.size
+        hasPendingOrders: pendingCount > 0,
+        pendingCount
     };
 };
 
