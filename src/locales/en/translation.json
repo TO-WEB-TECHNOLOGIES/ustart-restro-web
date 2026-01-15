@@ -434,7 +434,22 @@
         "pending": "Pending",
         "cooking": "Cooking",
         "ready": "Ready",
-        "completed": "Completed"
+        "completed": "Completed",
+        "ORDER_CREATED_BY_CUSTOMER": "Order Created",
+        "ORDER_APPROVED_BY_RESTRO": "Order Accepted",
+        "ORDER_REJECTED_BY_RESTRO": "Order Rejected",
+        "DELIVERY_PARTNER_ASSIGNED": "Delivery Partner Assigned",
+        "TIME_EXTENDED_BY_RESTRO": "Time Extended",
+        "DELIVERY_PARTNER_AT_RESTRO": "Partner at Restaurant",
+        "ORDER_READY_BY_RESTRO": "Order Ready",
+        "ORDER_PICKED": "Order Picked Up",
+        "DELIVERY_PARTNER_AT_STATION": "Partner at Station",
+        "CUSTOMER_NOT_RESPONDING": "Customer Not Responding",
+        "DELIVERED": "Order Delivered",
+        "CANCELLED_BY_CUSTOMER": "Cancelled by Customer",
+        "UNDELIVERABLE_BY_DELIVER_PARTNER": "Undeliverable",
+        "CANCELLED_BY_RESTRO": "Cancelled by Restaurant",
+        "CANCELLED_BY_USTART": "Cancelled by USTART"
       }
     },
     "orders": {
@@ -532,7 +547,12 @@
           "mobile": "Mobile",
           "distance": "Distance",
           "assigned": "Delivery Partner Assigned"
-        }
+        },
+        "orderTimeline": "Order Timeline",
+        "viewTimeline": "View Timeline",
+        "showCustomerDetails": "Customer Details",
+        "extend": "Extend Time",
+        "call": "Call"
       }
     },
     "widgets": {

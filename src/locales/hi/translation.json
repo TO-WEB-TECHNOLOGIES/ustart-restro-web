@@ -433,7 +433,22 @@
         "pending": "लंबित",
         "cooking": "तैयार हो रहा है",
         "ready": "तैयार",
-        "completed": "पूरा हुआ"
+        "completed": "पूरा हुआ",
+        "ORDER_CREATED_BY_CUSTOMER": "ऑर्डर बनाया गया",
+        "ORDER_APPROVED_BY_RESTRO": "ऑर्डर स्वीकार किया गया",
+        "ORDER_REJECTED_BY_RESTRO": "ऑर्डर अस्वीकार किया गया",
+        "DELIVERY_PARTNER_ASSIGNED": "डिलीवरी पार्टनर नियुक्त",
+        "TIME_EXTENDED_BY_RESTRO": "समय बढ़ाया गया",
+        "DELIVERY_PARTNER_AT_RESTRO": "पार्टनर रेस्टोरेंट पर है",
+        "ORDER_READY_BY_RESTRO": "ऑर्डर तैयार है",
+        "ORDER_PICKED": "ऑर्डर पिकअप हो गया",
+        "DELIVERY_PARTNER_AT_STATION": "पार्टनर स्टेशन पर है",
+        "CUSTOMER_NOT_RESPONDING": "ग्राहक जवाब नहीं दे रहा है",
+        "DELIVERED": "ऑर्डर डिलीवर हो गया",
+        "CANCELLED_BY_CUSTOMER": "ग्राहक द्वारा रद्द किया गया",
+        "UNDELIVERABLE_BY_DELIVER_PARTNER": "डिलीवर नहीं किया जा सका",
+        "CANCELLED_BY_RESTRO": "रेस्टोरेंट द्वारा रद्द किया गया",
+        "CANCELLED_BY_USTART": "USTART द्वारा रद्द किया गया"
       }
     },
     "orders": {
@@ -531,7 +546,12 @@
           "mobile": "मोबाइल",
           "distance": "दूरी",
           "assigned": "डिलीवरी पार्टनर नियुक्त"
-        }
+        },
+        "orderTimeline": "ऑर्डर टाइमलाइन",
+        "viewTimeline": "टाइमलाइन देखें",
+        "showCustomerDetails": "ग्राहक विवरण",
+        "extend": "समय बढ़ाएं",
+        "call": "कॉल"
       }
     },
     "widgets": {
