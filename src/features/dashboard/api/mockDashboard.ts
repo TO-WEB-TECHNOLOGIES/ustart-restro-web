@@ -64,7 +64,10 @@ export interface Order {
         name: string;
         phone: string;
         distanceFromRestro: number; // in km
+        otp?: string;
     };
+    discountAmount?: number;
+    discountCoupon?: string;
 }
 
 export interface OutletStatus {
@@ -147,6 +150,8 @@ const MOCK_ORDERS: Record<string, Order[]> = {
             status: 'ORDER_CREATED_BY_CUSTOMER',
             createdAt: Date.now() - 1000 * 60 * 5,
             paymentMethod: 'PAID',
+            discountAmount: 50,
+            discountCoupon: 'USTART50',
             deliveryAddress: 'Continental Hotel, Room 303',
             distanceFromRestroToCustomer: 1.2,
             logs: [
@@ -165,6 +170,8 @@ const MOCK_ORDERS: Record<string, Order[]> = {
             status: 'ORDER_APPROVED_BY_RESTRO',
             createdAt: Date.now() - 1000 * 60 * 45,
             paymentMethod: 'CASH_ON_DELIVERY',
+            discountAmount: 40,
+            discountCoupon: 'WELCOME40',
             deliveryAddress: 'Flat 4B, Sunrise Apartments',
             distanceFromRestroToCustomer: 3.5,
             prepTime: 120,
@@ -172,13 +179,69 @@ const MOCK_ORDERS: Record<string, Order[]> = {
             deliveryPartner: {
                 name: 'Rahul Sharma',
                 phone: '+91 91234 56789',
-                distanceFromRestro: 0.8
+                distanceFromRestro: 0.8,
+                otp: '4521'
             },
             logs: [
                 { status: 'ORDER_CREATED_BY_CUSTOMER', timestamp: Date.now() - 1000 * 60 * 45 },
                 { status: 'ORDER_APPROVED_BY_RESTRO', timestamp: Date.now() - 1000 * 60 * 40 },
-                { status: 'DELIVERY_PARTNER_ASSIGNED', timestamp: Date.now() - 1000 * 60 * 35 }
+                { status: 'DELIVERY_PARTNER_ASSIGNED', timestamp: Date.now() - 1000 * 60 * 35 },
+                { status: 'DELIVERY_PARTNER_AT_RESTRO', timestamp: Date.now() - 1000 * 60 * 30 }
             ]
+        },
+        {
+            id: '#ORD-2925',
+            customer: { name: 'Sarah Connor', phone: '+91 98989 88888', avatarColor: 'bg-red-100 text-red-600' },
+            items: [
+                { name: 'Veggie Supreme (M)', quantity: 2, price: 320, itemType: 'veg' },
+                { name: 'Coke 500ml', quantity: 2, price: 60 }
+            ],
+            amount: 760.00,
+            status: 'ORDER_READY_BY_RESTRO',
+            createdAt: Date.now() - 1000 * 60 * 40,
+            paymentMethod: 'PAID',
+            deliveryAddress: 'Cyber City, Phase 2, Tower A',
+            distanceFromRestroToCustomer: 4.2,
+            deliveryPartner: {
+                name: 'Amit Kumar',
+                phone: '+91 98765 00000',
+                distanceFromRestro: 0.2,
+                otp: '8892'
+            },
+            logs: [
+                { status: 'ORDER_CREATED_BY_CUSTOMER', timestamp: Date.now() - 1000 * 60 * 40 },
+                { status: 'ORDER_APPROVED_BY_RESTRO', timestamp: Date.now() - 1000 * 60 * 35 },
+                { status: 'ORDER_READY_BY_RESTRO', timestamp: Date.now() - 1000 * 60 * 15 },
+                { status: 'DELIVERY_PARTNER_AT_RESTRO', timestamp: Date.now() - 1000 * 60 * 5 }
+            ],
+            recipientAddress: { id: 'addr_123', label: 'Main Branch', address: '123 Food Street, Mumbai' }
+        },
+        {
+            id: '#ORD-2920',
+            customer: { name: 'David Gandy', phone: '+91 91111 22222', totalOrders: 12, avatarColor: 'bg-indigo-100 text-indigo-600' },
+            items: [
+                { name: 'Chicken Tikka Masala', quantity: 1, price: 420, itemType: 'non_veg' },
+                { name: 'Butter Naan', quantity: 3, price: 45, itemType: 'veg' }
+            ],
+            amount: 555.00,
+            status: 'DELIVERED',
+            createdAt: Date.now() - 1000 * 60 * 90,
+            paymentMethod: 'PAID',
+            deliveryAddress: 'Skyline View, Apt 902',
+            distanceFromRestroToCustomer: 6.8,
+            deliveryPartner: {
+                name: 'Suresh Raina',
+                phone: '+91 88888 77777',
+                distanceFromRestro: 0.1
+            },
+            logs: [
+                { status: 'ORDER_CREATED_BY_CUSTOMER', timestamp: Date.now() - 1000 * 60 * 90 },
+                { status: 'ORDER_APPROVED_BY_RESTRO', timestamp: Date.now() - 1000 * 60 * 80 },
+                { status: 'ORDER_READY_BY_RESTRO', timestamp: Date.now() - 1000 * 60 * 60 },
+                { status: 'ORDER_PICKED', timestamp: Date.now() - 1000 * 60 * 55 },
+                { status: 'DELIVERED', timestamp: Date.now() - 1000 * 60 * 30 }
+            ],
+            recipientAddress: { id: 'addr_123', label: 'Main Branch', address: '123 Food Street, Mumbai' }
         },
         {
             id: '#ORD-2900',
@@ -190,6 +253,12 @@ const MOCK_ORDERS: Record<string, Order[]> = {
             paymentMethod: 'PAID',
             deliveryAddress: 'House No. 12, Rose Colony',
             distanceFromRestroToCustomer: 0.8,
+            deliveryPartner: {
+                name: 'Karan Singh',
+                phone: '+91 77777 66666',
+                distanceFromRestro: 1.2,
+                otp: '1234'
+            },
             logs: [
                 { status: 'ORDER_CREATED_BY_CUSTOMER', timestamp: Date.now() - 1000 * 60 * 60 },
                 { status: 'ORDER_APPROVED_BY_RESTRO', timestamp: Date.now() - 1000 * 60 * 55 },

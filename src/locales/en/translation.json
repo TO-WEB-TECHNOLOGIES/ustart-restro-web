@@ -480,7 +480,7 @@
         "prepTime": "PREP TIME",
         "gift": "GIFT (OPT)",
         "msg": "Msg",
-        "totalAmount": "TOTAL AMOUNT",
+        "totalAmount": "Total Bill",
         "paid": "PAID",
         "cod": "CASH ON DELIVERY",
         "accept": "Accept Order",
@@ -490,6 +490,8 @@
         "mins": "{{count}} mins",
         "selectTime": "Select Prep Time",
         "distance": "{{distance}} km",
+        "distanceUnit": "km",
+        "orderItems": "Order Items",
         "processing": "Processing...",
         "rejectModal": {
           "title": "Reject Order",
@@ -567,6 +569,18 @@
           "operatingHours": "How to update operating hours",
           "refunds": "Managing customer refunds",
           "support": "Contact Partner Support"
+        },
+        "supportModal": {
+          "title": "Support Request",
+          "raiseTitle": "Raise a Support Case",
+          "instruction": "Please enter the complete details of your issue. Our customer support executive will contact you within 24 hours after raising the query.",
+          "descriptionLabel": "Case Description",
+          "placeholder": "Tell us what went wrong with this order...",
+          "submit": "Submit Case",
+          "successTitle": "Case Raised Successfully",
+          "successMessage": "Thank you for reaching out. Our customer support executive will contact you within 24 hours on your registered mobile number.",
+          "close": "Close Window",
+          "minCharsError": "Description must be at least 10 characters long"
         }
       }
     },

@@ -104,87 +104,77 @@ export const ActiveOrderCard = ({ order, onAccept, onReject }: ActiveOrderCardPr
 
     return (
         <div className={`bg-white dark:bg-slate-900 rounded-2xl border ${isUrgent ? 'border-red-500 animate-urgent' : 'border-slate-100 dark:border-slate-800'} shadow-sm hover:shadow-md transition-all overflow-hidden flex flex-col md:flex-row min-h-[300px]`}>
-            {/* 1st Column: Customer Info (20% width) */}
-            <div className={`w-full md:w-[20%] border-r ${isUrgent ? 'border-red-100 dark:border-red-900/30' : 'border-slate-100 dark:border-slate-800'} p-4 flex flex-col items-center justify-between bg-slate-50/30 dark:bg-slate-800/10`}>
-                <div className="flex flex-col items-center text-center space-y-3 w-full">
-                    <div className={`w-14 h-14 rounded-full flex items-center justify-center text-xl font-black shadow-inner ${order.customer.avatarColor || 'bg-orange-100 text-orange-600'}`}>
-                        {order.customer.name.split(' ').map(n => n[0]).join('').toUpperCase()}
+            {/* 1st Column: Order Info & Customer Summary (25% width) */}
+            <div className={`w-full md:w-[25%] border-r ${isUrgent ? 'border-red-100 dark:border-red-900/30' : 'border-slate-100 dark:border-slate-800'} p-5 flex flex-col bg-slate-50/30 dark:bg-slate-800/10`}>
+                {/* 1.1 Top: Order ID & Time */}
+                <div className="mb-6">
+                    {selectedAddressId === ALL_LOCATIONS_ID && order.recipientAddress && (
+                        <div className="flex items-center gap-1.5 mb-2 px-1.5 py-0.5 rounded border border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-800 w-fit shadow-sm">
+                            <Store className="w-3 h-3 text-slate-400" />
+                            <div className="text-[9px] font-black text-slate-600 dark:text-slate-300 uppercase tracking-wide leading-none">
+                                {order.recipientAddress.label}
+                            </div>
+                        </div>
+                    )}
+                    <div className="flex items-center gap-2 mb-1">
+                        <span className="text-3xl font-black text-slate-900 dark:text-white tracking-tighter">
+                            {order.id}
+                        </span>
+                        <span className="px-2 py-0.5 bg-[#ff9f43] text-white text-[10px] font-black rounded-md shadow-md shadow-orange-200 dark:shadow-none uppercase tracking-wider">
+                            {t('dashboard.orders.card.new')}
+                        </span>
                     </div>
-                    <div>
-                        <h4 className="text-sm font-black text-slate-900 dark:text-white leading-tight">{order.customer.name}</h4>
-                        <div className="mt-2 flex flex-col items-center gap-1.5">
-                            {order.customer.totalOrders && order.customer.totalOrders > 1 ? (
-                                <span className="px-2.5 py-1 bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400 text-[10px] font-black uppercase rounded-lg border border-emerald-100 dark:border-emerald-500/20 shadow-sm">
-                                    {t('dashboard.orders.card.orderedTimes', { count: order.customer.totalOrders })}
-                                </span>
-                            ) : (
-                                <span className="px-2.5 py-1 bg-indigo-50 text-indigo-700 dark:bg-indigo-500/10 dark:text-indigo-400 text-[10px] font-black uppercase rounded-lg border border-indigo-100 dark:border-indigo-500/20 shadow-sm">
-                                    {t('dashboard.orders.card.newCustomer')}
-                                </span>
-                            )}
+                    <div className={`flex items-center gap-1.5 ${isUrgent ? 'text-red-600 dark:text-red-400' : 'text-slate-500 dark:text-slate-400'} text-[11px] font-bold`}>
+                        <Clock className={`w-3.5 h-3.5 stroke-[2px] ${isUrgent ? 'animate-pulse' : ''}`} />
+                        <span>{getRelativeTime()} ({new Date(order.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })})</span>
+                    </div>
+                </div>
+
+                {/* 1.2 Middle: Customer Details */}
+                <div className="flex flex-col items-start gap-4 hover:bg-slate-50/50 dark:hover:bg-slate-800/20 p-3 rounded-xl transition-all -mx-3 mb-6">
+                    <div className="flex items-center justify-between w-full gap-4">
+                        <h4 className="text-xl font-black text-slate-900 dark:text-white leading-tight tracking-tight">{order.customer.name}</h4>
+                        {order.customer.totalOrders && order.customer.totalOrders > 1 ? (
+                            <span className="shrink-0 px-2.5 py-1 bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400 text-[10px] font-black uppercase rounded-lg border border-emerald-100 dark:border-emerald-500/20 shadow-sm">
+                                {t('dashboard.orders.card.orderedTimes', { count: order.customer.totalOrders })}
+                            </span>
+                        ) : (
+                            <span className="shrink-0 px-2.5 py-1 bg-indigo-50 text-indigo-700 dark:bg-indigo-500/10 dark:text-indigo-400 text-[10px] font-black uppercase rounded-lg border border-indigo-100 dark:border-indigo-500/20 shadow-sm">
+                                {t('dashboard.orders.card.newCustomer')}
+                            </span>
+                        )}
+                    </div>
+
+                    <div className="flex items-start gap-2.5 text-slate-500 dark:text-slate-400">
+                        <MapPin className={`w-4 h-4 mt-0.5 shrink-0 ${isUrgent ? 'text-red-500' : 'text-orange-600'}`} />
+                        <div className="flex flex-col gap-1">
+                            <span className="text-[11px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest leading-none">{order.distanceFromRestroToCustomer} {t('dashboard.orders.card.distanceUnit') || 'km'}</span>
+                            <span className="text-[13px] font-bold text-slate-900 dark:text-slate-200 leading-snug line-clamp-2">{order.deliveryAddress}</span>
                         </div>
                     </div>
                 </div>
 
-                <div className={`w-full mt-4 bg-white dark:bg-slate-900 border ${isUrgent ? 'border-red-100 dark:border-red-900/50' : 'border-slate-100 dark:border-slate-800'} rounded-lg p-2.5 flex justify-between items-center shadow-sm`}>
-                    <div>
-                        <p className="text-[8px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-0.5">{t('dashboard.orders.card.mobile')}</p>
-                        <p className="font-bold text-slate-900 dark:text-white text-[12px] font-mono">{order.customer.phone}</p>
+                {/* 1.3 Bottom: Phone */}
+                <div className="mt-auto pt-5 border-t border-dashed border-slate-200 dark:border-slate-800">
+                    <div className="flex items-center justify-between group">
+                        <div>
+                            <p className="text-[8px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest leading-none mb-1.5">{t('dashboard.orders.card.mobile')}</p>
+                            <p className="font-bold text-slate-900 dark:text-white text-[14px] font-mono leading-none">{order.customer.phone}</p>
+                        </div>
+                        <button className="p-2 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-400 group-hover:bg-emerald-50 dark:group-hover:bg-emerald-500/10 group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-all">
+                            <Phone className="w-4 h-4" />
+                        </button>
                     </div>
-                    <button className="p-1.5 rounded-full bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-100 dark:hover:bg-emerald-500/20 transition-all">
-                        <Phone className="w-3.5 h-3.5" />
-                    </button>
                 </div>
             </div>
 
-            {/* 2nd Column: Order Details (50% width) */}
-            <div className={`w-full md:w-[50%] p-5 flex flex-col border-r ${isUrgent ? 'border-red-100 dark:border-red-900/30' : 'border-slate-100 dark:border-slate-800'}`}>
-                <div className="flex justify-between items-start mb-4">
-                    <div>
-                        {selectedAddressId === ALL_LOCATIONS_ID && order.recipientAddress && (
-                            <div className="flex items-center gap-1.5 mb-2 px-1.5 py-0.5 rounded border border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50 w-fit">
-                                <Store className="w-3 h-3 text-slate-400" />
-                                <div className="text-[9px] font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wide leading-none">
-                                    {order.recipientAddress.label}
-                                </div>
-                            </div>
-                        )}
-                        <div className="flex items-center gap-2 mb-1">
-                            <span className="text-xl font-black text-slate-900 dark:text-white tracking-tighter">
-                                {order.id}
-                            </span>
-                            <span className="px-2 py-0.5 bg-[#ff9f43] text-white text-[9px] font-black rounded-md shadow-md shadow-orange-200 dark:shadow-none uppercase tracking-wider">
-                                {t('dashboard.orders.card.new')}
-                            </span>
-                        </div>
-                        <div className={`flex items-center gap-1.5 ${isUrgent ? 'text-red-600 dark:text-red-400' : 'text-slate-500 dark:text-slate-400'} text-[11px] font-bold`}>
-                            <Clock className={`w-3.5 h-3.5 stroke-[2px] ${isUrgent ? 'animate-pulse' : ''}`} />
-                            <span>{getRelativeTime()} ({new Date(order.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })})</span>
-                        </div>
-                    </div>
-
-                    <div className="text-right flex flex-col items-end">
-
-                        <p className="text-[9px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-[0.1em] mb-0.5">{t('dashboard.orders.card.totalAmount')}</p>
-                        <p className="text-2xl font-black text-slate-900 dark:text-white tracking-tighter tabular-nums leading-none">₹{order.amount.toFixed(2)}</p>
-                        <div className={`mt-1.5 inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md border ${order.paymentMethod === 'PAID'
-                            ? 'bg-emerald-50 border-emerald-100 text-emerald-700 dark:bg-emerald-500/10 dark:border-emerald-500/20 dark:text-emerald-400'
-                            : 'bg-orange-50 border-orange-100 text-orange-700 dark:bg-orange-500/10 dark:border-orange-500/20 dark:text-orange-400'
-                            }`}>
-                            {order.paymentMethod === 'PAID' ? (
-                                <div className="w-2.5 h-2.5 rounded-full bg-emerald-500 flex items-center justify-center">
-                                    <svg className="w-1.5 h-1.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={5} d="M5 13l4 4L19 7" />
-                                    </svg>
-                                </div>
-                            ) : (
-                                <Clock className="w-2.5 h-2.5 text-orange-500 stroke-[4]" />
-                            )}
-                            <span className="text-[8px] font-black uppercase tracking-tight">
-                                {order.paymentMethod === 'PAID' ? t('dashboard.orders.card.paid') : t('dashboard.orders.card.cod')}
-                            </span>
-                        </div>
-                    </div>
+            {/* 2nd Column: Order Details (45% width) */}
+            <div className={`w-full md:w-[45%] p-5 flex flex-col border-r ${isUrgent ? 'border-red-100 dark:border-red-900/30' : 'border-slate-100 dark:border-slate-800'}`}>
+                <div className="flex items-center gap-2 mb-4 pb-3 border-b border-dashed border-slate-100 dark:border-slate-800">
+                    <Utensils className="w-4 h-4 text-slate-400" />
+                    <h3 className="text-xs font-black text-slate-400 uppercase tracking-[0.2em]">
+                        {t('dashboard.orders.card.orderItems') || 'Order Items'}
+                    </h3>
                 </div>
 
                 {/* Items List */}
@@ -210,7 +200,7 @@ export const ActiveOrderCard = ({ order, onAccept, onReject }: ActiveOrderCardPr
                                         <span className={`px-1.5 py-0.5 flex items-center justify-center ${isUrgent ? 'bg-red-50 dark:bg-red-900/30 text-red-700 dark:text-red-400' : 'bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white'} rounded font-black text-md`}>
                                             {item.quantity}x
                                         </span>
-                                        <p className="font-bold text-slate-900 dark:text-white text-xs leading-tight">{item.name}</p>
+                                        <p className="font-bold text-slate-900 dark:text-white text-xl leading-tight">{item.name}</p>
                                     </div>
 
                                     {item.description && (
@@ -224,9 +214,19 @@ export const ActiveOrderCard = ({ order, onAccept, onReject }: ActiveOrderCardPr
                                     )}
                                 </div>
                             </div>
-                            <span className="font-bold text-slate-900 dark:text-white text-xs font-mono">₹{item.price}</span>
+                            <span className="font-bold text-slate-900 dark:text-white text-xl font-mono">₹{item.price}</span>
                         </div>
                     ))}
+                    {order.discountAmount && (
+                        <div className="flex justify-between items-start pt-3 border-t border-dashed border-slate-100 dark:border-slate-800 mt-2">
+                            <div className="flex items-center gap-2">
+                                <span className="text-xs text-slate-500 dark:text-slate-400 tracking-tight">Promo {'  '}
+                                    {'('}{order.discountCoupon}{')'}
+                                </span>
+                            </div>
+                            <span className="text-xs text-slate-500 dark:text-slate-400 font-mono leading-none">-₹{order.discountAmount}</span>
+                        </div>
+                    )}
                 </div>
 
                 {/* Instructions */}
@@ -241,10 +241,31 @@ export const ActiveOrderCard = ({ order, onAccept, onReject }: ActiveOrderCardPr
                     </div>
                 )}
 
-                {/* Address Footer */}
-                <div className={`mt-4 pt-3 border-t ${isUrgent ? 'border-red-100 dark:border-red-900/30' : 'border-slate-100 dark:border-slate-800'} flex items-center gap-2 text-slate-400 dark:text-slate-500 text-[10px] font-semibold`}>
-                    <MapPin className={`w-3.5 h-3.5 ${isUrgent ? 'text-red-500' : 'text-orange-600'}`} />
-                    <span className="truncate">{t('dashboard.orders.card.distance', { distance: order.distanceFromRestroToCustomer })} • {order.deliveryAddress}</span>
+                {/* Bottom Amount Section */}
+                <div className="mt-auto pt-4 border-t border-dashed border-slate-200 dark:border-slate-800">
+                    <div className="flex items-center justify-between w-full">
+                        <div className="flex items-center gap-3">
+                            <div className="relative">
+                                <p className="text-sm font-bold text-slate-700 dark:text-slate-300">
+                                    {t('dashboard.orders.card.totalAmount')}
+                                </p>
+                                <div className="absolute -bottom-1 left-0 w-full border-b border-dashed border-slate-300 dark:border-slate-600" />
+                            </div>
+
+                            <div className={`px-2 py-0.5 rounded-md border text-[10px] font-black uppercase tracking-wider ${order.paymentMethod === 'PAID'
+                                ? 'bg-emerald-50/50 border-emerald-500/30 text-emerald-600 dark:bg-emerald-500/10 dark:border-emerald-500/40 dark:text-emerald-400'
+                                : 'bg-orange-50/50 border-orange-500/30 text-orange-600 dark:bg-orange-500/10 dark:border-orange-500/40 dark:text-orange-400'
+                                }`}>
+                                {order.paymentMethod === 'PAID' ? t('dashboard.orders.card.paid') : t('dashboard.orders.card.cod')}
+                            </div>
+                        </div>
+
+                        <div className="text-right flex flex-col items-end">
+                            <p className="text-2xl font-black text-slate-900 dark:text-white tracking-tighter tabular-nums">
+                                ₹{order.amount.toFixed(2)}
+                            </p>
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -253,7 +274,7 @@ export const ActiveOrderCard = ({ order, onAccept, onReject }: ActiveOrderCardPr
                 <div className="space-y-4 flex-1">
                     {/* Gift (Opt) Input */}
                     <div>
-                        <label className="text-[8px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-1.5 block">
+                        <label className="text-[11px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-1.5 block">
                             {t('dashboard.orders.card.giftMessage')}
                         </label>
                         <input
@@ -268,7 +289,7 @@ export const ActiveOrderCard = ({ order, onAccept, onReject }: ActiveOrderCardPr
 
                     <div className="grid grid-cols-1">
                         <div>
-                            <label className="text-[8px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-1.5 block">
+                            <label className="text-[11px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-1.5 block">
                                 {t('dashboard.orders.card.prepTime')}
                             </label>
                             <div className="relative group">
@@ -294,7 +315,7 @@ export const ActiveOrderCard = ({ order, onAccept, onReject }: ActiveOrderCardPr
                     <button
                         onClick={handleAccept}
                         disabled={!prepTime || isProcessing}
-                        className={`group relative w-full overflow-hidden py-3 rounded-xl font-black text-base tracking-tight transition-all active:scale-[0.98] flex items-center justify-center gap-3 shadow-lg ${prepTime && !isProcessing
+                        className={`group relative w-full overflow-hidden py-3 rounded-xl font-black text-xl tracking-tight transition-all active:scale-[0.98] flex items-center justify-center gap-3 shadow-lg ${prepTime && !isProcessing
                             ? (isUrgent ? 'bg-red-600 text-white' : 'bg-[#0f172a] text-white')
                             : 'bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-600 cursor-not-allowed shadow-none'
                             }`}
