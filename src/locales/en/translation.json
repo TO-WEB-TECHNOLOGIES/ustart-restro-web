@@ -554,7 +554,12 @@
         "viewTimeline": "View Timeline",
         "showCustomerDetails": "Customer Details",
         "extend": "Extend Time",
-        "call": "Call"
+        "call": "Call",
+        "otp": "OTP",
+        "track": "Track",
+        "promo": "PROMO",
+        "partnerWaiting": "Partner waiting",
+        "partnerWaitingLong": "Partner waiting for order"
       }
     },
     "widgets": {

@@ -220,7 +220,7 @@ export const ActiveOrderCard = ({ order, onAccept, onReject }: ActiveOrderCardPr
                     {order.discountAmount && (
                         <div className="flex justify-between items-start pt-3 border-t border-dashed border-slate-100 dark:border-slate-800 mt-2">
                             <div className="flex items-center gap-2">
-                                <span className="text-xs text-slate-500 dark:text-slate-400 tracking-tight">Promo {'  '}
+                                <span className="text-xs text-slate-500 dark:text-slate-400 tracking-tight">{t('dashboard.orders.card.promo')} {'  '}
                                     {'('}{order.discountCoupon}{')'}
                                 </span>
                             </div>

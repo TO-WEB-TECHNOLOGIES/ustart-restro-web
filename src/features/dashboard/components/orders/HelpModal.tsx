@@ -96,7 +96,7 @@ export const HelpModal = ({ isOpen, onClose }: HelpModalProps) => {
                                         if (error) setError(null);
                                     }}
                                     placeholder={tKey('placeholder')}
-                                    className={`min-h-[120px] rounded-2xl border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/30 focus-visible:ring-orange-500/20 focus-visible:border-orange-500/50 resize-none px-4 py-3 text-md ${error ? 'border-red-500 dark:border-red-500/50' : ''}`}
+                                    className={`min-h-[120px] rounded-2xl border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/30 focus-visible:ring-orange-500/20 focus-visible:border-orange-500/50 resize-none px-4 py-3 text-md dark:text-white ${error ? 'border-red-500 dark:border-red-500/50' : ''}`}
                                 />
                                 {error && (
                                     <div className="flex items-center gap-1.5 mt-1 text-red-500 text-[11px] font-bold animate-in fade-in slide-in-from-top-1">
@@ -143,13 +143,6 @@ export const HelpModal = ({ isOpen, onClose }: HelpModalProps) => {
                             </Button>
                         </div>
                     )}
-                </div>
-
-                {/* Footer */}
-                <div className="px-8 py-5 bg-slate-50 dark:bg-slate-800/50 border-t border-slate-100 dark:border-slate-800 text-center">
-                    <p className="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-[0.2em]">
-                        USTART Partner Support
-                    </p>
                 </div>
             </div>
         </div>

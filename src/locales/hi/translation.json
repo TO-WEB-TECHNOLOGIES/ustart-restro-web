@@ -553,7 +553,12 @@
         "viewTimeline": "टाइमलाइन देखें",
         "showCustomerDetails": "ग्राहक विवरण",
         "extend": "समय बढ़ाएं",
-        "call": "कॉल"
+        "call": "कॉल",
+        "otp": "ओटीपी",
+        "track": "ट्रैक",
+        "promo": "प्रोमो",
+        "partnerWaiting": "पार्टनर प्रतीक्षा में",
+        "partnerWaitingLong": "पार्टनर ऑर्डर का इंतजार कर रहा है"
       }
     },
     "widgets": {

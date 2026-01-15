@@ -101,7 +101,7 @@ export const ProcessingOrderCard = ({ order, onAction, onExtendTime, onCancel, o
         }
     };
 
-    const displayedItems = order.items.slice(0, 3);
+    const displayedItems = order.items.slice(0, 2);
 
     return (
         <div className={`bg-white dark:bg-slate-900 rounded-2xl border ${isUrgent ? 'border-red-500 animate-urgent' : 'border-slate-100 dark:border-slate-800'} shadow-sm hover:shadow-md transition-all overflow-hidden flex flex-col md:flex-row min-h-[300px]`}>
@@ -241,7 +241,7 @@ export const ProcessingOrderCard = ({ order, onAction, onExtendTime, onCancel, o
                     )}
                 </div>
 
-                <div className="h-[200px] space-y-3 overflow-y-auto scrollbar-thin scrollbar-thumb-slate-200 dark:scrollbar-thumb-slate-800 scrollbar-track-transparent pr-2">
+                <div className="h-[140px] space-y-3 overflow-y-auto scrollbar-thin scrollbar-thumb-slate-200 dark:scrollbar-thumb-slate-800 scrollbar-track-transparent pr-2">
                     {displayedItems.map((item, idx) => (
                         <div key={idx} className="flex justify-between items-start group border-b border-slate-50 dark:border-slate-800/50 pb-2 last:border-0 last:pb-0">
                             <div className="flex gap-3">
@@ -276,7 +276,7 @@ export const ProcessingOrderCard = ({ order, onAction, onExtendTime, onCancel, o
                     {order.discountAmount && (
                         <div className="flex justify-between items-start pt-3 border-t border-dashed border-slate-100 dark:border-slate-800 mt-2">
                             <div className="flex items-center gap-2">
-                                <span className="text-xs text-slate-500 dark:text-slate-400 tracking-tight">Promo {'  '}
+                                <span className="text-xs text-slate-500 dark:text-slate-400 tracking-tight">{t('dashboard.orders.card.promo')} {'  '}
                                     {'('}{order.discountCoupon}{')'}
                                 </span>
                             </div>
@@ -285,12 +285,12 @@ export const ProcessingOrderCard = ({ order, onAction, onExtendTime, onCancel, o
                     )}
                 </div>
 
-                {order.items.length > 3 && (
+                {order.items.length > 2 && (
                     <button
                         onClick={() => onShowMore(order)}
                         className="w-full py-1.5 flex items-center justify-center gap-1 text-xs font-black text-slate-400 uppercase tracking-widest hover:text-slate-600 dark:hover:text-slate-300 transition-colors border border-dashed border-slate-200 dark:border-slate-800 rounded mt-2"
                     >
-                        {t('dashboard.orders.card.moreItems', { count: order.items.length - 3 })} <ChevronDown className="w-3 h-3" />
+                        {t('dashboard.orders.card.moreItems', { count: order.items.length - 2 })} <ChevronDown className="w-3 h-3" />
                     </button>
                 )}
 
@@ -375,7 +375,7 @@ export const ProcessingOrderCard = ({ order, onAction, onExtendTime, onCancel, o
                                         {t('dashboard.orders.card.deliveryPartner.name')}
                                     </p>
                                     <p className="text-md font-black text-slate-900 dark:text-white leading-none">
-                                        {isPartnerAtRestro ? "Partner waiting for order" : t('dashboard.orders.card.deliveryPartner.assigningSoon')}
+                                        {isPartnerAtRestro ? t('dashboard.orders.card.partnerWaitingLong') : t('dashboard.orders.card.deliveryPartner.assigningSoon')}
                                     </p>
                                 </div>
                             </div>
@@ -396,7 +396,7 @@ export const ProcessingOrderCard = ({ order, onAction, onExtendTime, onCancel, o
                                             {isPartnerAtRestro && (
                                                 <div className="flex items-center gap-1 mt-1">
                                                     <p className="text-[10px] font-black text-orange-600 dark:text-orange-400 uppercase tracking-wider">
-                                                        Partner waiting
+                                                        {t('dashboard.orders.card.partnerWaiting')}
                                                     </p>
                                                 </div>
                                             )}
@@ -406,7 +406,7 @@ export const ProcessingOrderCard = ({ order, onAction, onExtendTime, onCancel, o
                                         {isPartnerAtRestro && order.deliveryPartner.otp ? (
                                             <>
                                                 <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none">
-                                                    OTP
+                                                    {t('dashboard.orders.card.otp')}
                                                 </span>
                                                 <span className="text-xl font-black text-indigo-600 dark:text-indigo-400 font-mono tracking-[0.2em] leading-none">
                                                     {order.deliveryPartner.otp}
@@ -432,7 +432,7 @@ export const ProcessingOrderCard = ({ order, onAction, onExtendTime, onCancel, o
                                     <div className="flex items-center gap-1">
                                         <button className="p-1 px-2.5 rounded bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 text-[10px] font-black uppercase tracking-widest hover:bg-indigo-100 transition-colors flex items-center gap-1">
                                             <Navigation className="w-3 h-3" />
-                                            <span>Track</span>
+                                            <span>{t('dashboard.orders.card.track')}</span>
                                         </button>
                                         <button className="p-1 px-2.5 rounded bg-orange-50 dark:bg-orange-500/10 text-orange-600 dark:text-orange-400 text-[10px] font-black uppercase tracking-widest hover:bg-orange-100 transition-colors flex items-center gap-1">
                                             <Phone className="w-3 h-3" />

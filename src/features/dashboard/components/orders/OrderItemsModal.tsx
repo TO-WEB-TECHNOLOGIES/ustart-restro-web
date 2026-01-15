@@ -64,6 +64,16 @@ export const OrderItemsModal: React.FC<OrderItemsModalProps> = ({ isOpen, onClos
                             </div>
                         ))}
                     </div>
+                    {order.discountAmount && (
+                        <div className="flex justify-between items-start py-4 border-t border-dashed border-slate-100 dark:border-slate-800">
+                            <div className="flex items-center gap-2">
+                                <span className="text-sm text-slate-500 dark:text-slate-400 tracking-tight">Promo {'  '}
+                                    {'('}{order.discountCoupon}{')'}
+                                </span>
+                            </div>
+                            <span className="text-sm text-slate-500 dark:text-slate-400 font-mono leading-none">-₹{order.discountAmount}</span>
+                        </div>
+                    )}
                 </div>
 
                 <div className="flex justify-between items-center pt-6 border-t border-slate-100 dark:border-slate-800">
