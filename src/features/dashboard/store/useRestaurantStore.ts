@@ -52,6 +52,7 @@ interface RestaurantState {
     setRecentOrders: (addressId: string, orders: Order[]) => void;
     setOrderPagination: (addressId: string, pagination: { current: number; total: number }) => void;
     setLoading: (type: 'status' | 'stats' | 'orders', id: string, isLoading: boolean) => void;
+    updateOrder: (orderId: string, updates: Partial<Order>) => void;
     removeOrder: (addressId: string, orderId: string) => void;
     reset: () => void;
 }
@@ -117,6 +118,15 @@ export const useRestaurantStore = create<RestaurantState>()(
                         updatedOrders[ALL_LOCATIONS_ID] = updatedOrders[ALL_LOCATIONS_ID].filter(o => o.id !== orderId);
                     }
                 }
+                return { recentOrders: updatedOrders };
+            }),
+            updateOrder: (orderId, updates) => set((state) => {
+                const updatedOrders = { ...state.recentOrders };
+                Object.keys(updatedOrders).forEach(key => {
+                    updatedOrders[key] = (updatedOrders[key] || []).map(o =>
+                        o.id === orderId ? { ...o, ...updates } : o
+                    );
+                });
                 return { recentOrders: updatedOrders };
             }),
             reset: () => set(initialState),

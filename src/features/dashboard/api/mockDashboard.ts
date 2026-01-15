@@ -60,6 +60,11 @@ export interface Order {
     logs?: { status: OrderStatus; timestamp: number }[];
     recipientAddress?: { id: string; label: string; address: string }; // Address receiving the order
     rejectionReason?: string;
+    deliveryPartner?: {
+        name: string;
+        phone: string;
+        distanceFromRestro: number; // in km
+    };
 }
 
 export interface OutletStatus {
@@ -162,8 +167,18 @@ const MOCK_ORDERS: Record<string, Order[]> = {
             paymentMethod: 'CASH_ON_DELIVERY',
             deliveryAddress: 'Flat 4B, Sunrise Apartments',
             distanceFromRestroToCustomer: 3.5,
-            prepTime: 20,
-            recipientAddress: { id: 'addr_123', label: 'Main Branch', address: '123 Food Street, Mumbai' }
+            prepTime: 120,
+            recipientAddress: { id: 'addr_123', label: 'Main Branch', address: '123 Food Street, Mumbai' },
+            deliveryPartner: {
+                name: 'Rahul Sharma',
+                phone: '+91 91234 56789',
+                distanceFromRestro: 0.8
+            },
+            logs: [
+                { status: 'ORDER_CREATED_BY_CUSTOMER', timestamp: Date.now() - 1000 * 60 * 45 },
+                { status: 'ORDER_APPROVED_BY_RESTRO', timestamp: Date.now() - 1000 * 60 * 40 },
+                { status: 'DELIVERY_PARTNER_ASSIGNED', timestamp: Date.now() - 1000 * 60 * 35 }
+            ]
         },
         {
             id: '#ORD-2900',

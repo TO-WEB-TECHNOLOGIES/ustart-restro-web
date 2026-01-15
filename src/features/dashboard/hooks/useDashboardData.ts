@@ -240,13 +240,22 @@ export const usePendingOrders = () => {
         useShallow(state => state.recentOrders)
     );
 
-    const hasPendingOrders = Object.values(recentOrders).some(orders =>
-        orders.some(order =>
-            order.status === 'ORDER_CREATED_BY_CUSTOMER'
-        )
-    );
+    // Filter to get only "New" orders across all branches
+    // We use a Set of order IDs to avoid duplicate counting if an order appears in both 'all' and a specific branch
+    const newOrderIds = new Set<string>();
 
-    return { hasPendingOrders };
+    Object.values(recentOrders).forEach(orders => {
+        orders.forEach(order => {
+            if (order.status === 'ORDER_CREATED_BY_CUSTOMER') {
+                newOrderIds.add(order.id);
+            }
+        });
+    });
+
+    return {
+        hasPendingOrders: newOrderIds.size > 0,
+        pendingCount: newOrderIds.size
+    };
 };
 
 export type OrderTab = 'New' | 'Preparing' | 'Ready' | 'Completed';
@@ -259,6 +268,7 @@ export const useLiveOrders = () => {
         )
     );
     const setRecentOrders = useRestaurantStore(state => state.setRecentOrders);
+    const updateOrder = useRestaurantStore(state => state.updateOrder);
     const [activeTab, setActiveTab] = useState<OrderTab>('New');
 
     // Helper functions for status grouping
@@ -300,8 +310,7 @@ export const useLiveOrders = () => {
 
     const refreshOrders = async () => {
         if (!selectedAddressId) return;
-        // In a real app we might fetch specific tab data, but mock fetches all
-        const data = await mockDashboardService.getRecentOrders(selectedAddressId, 1, 100); // Fetch more for live view
+        const data = await mockDashboardService.getRecentOrders(selectedAddressId, 1, 100);
         setRecentOrders(selectedAddressId, data.orders);
     };
 
@@ -310,37 +319,34 @@ export const useLiveOrders = () => {
     }, [selectedAddressId]);
 
     const acceptOrder = async (orderId: string, prepTime: number, giftMessage?: string) => {
+        updateOrder(orderId, { status: 'ORDER_APPROVED_BY_RESTRO', prepTime });
         const success = await mockDashboardService.updateOrderStatus(orderId, 'ORDER_APPROVED_BY_RESTRO', prepTime, giftMessage);
-        if (success && selectedAddressId) {
-            useRestaurantStore.getState().removeOrder(selectedAddressId, orderId);
-            refreshOrders();
-        }
+        if (success) refreshOrders();
     };
 
     const rejectOrder = async (orderId: string, reason: string) => {
+        if (selectedAddressId) useRestaurantStore.getState().removeOrder(selectedAddressId, orderId);
         const success = await mockDashboardService.updateOrderStatus(orderId, 'ORDER_REJECTED_BY_RESTRO', undefined, undefined, reason);
-        if (success && selectedAddressId) {
-            useRestaurantStore.getState().removeOrder(selectedAddressId, orderId);
-            refreshOrders();
-        }
+        if (success) refreshOrders();
     };
 
     const markReady = async (orderId: string) => {
+        updateOrder(orderId, { status: 'ORDER_READY_BY_RESTRO' });
+        setActiveTab('Ready');
         const success = await mockDashboardService.updateOrderStatus(orderId, 'ORDER_READY_BY_RESTRO');
         if (success) refreshOrders();
     };
 
     const markCompleted = async (orderId: string) => {
+        updateOrder(orderId, { status: 'ORDER_PICKED' });
         const success = await mockDashboardService.updateOrderStatus(orderId, 'ORDER_PICKED');
         if (success) refreshOrders();
     };
 
     const cancelOrder = async (orderId: string, reason: string) => {
+        if (selectedAddressId) useRestaurantStore.getState().removeOrder(selectedAddressId, orderId);
         const success = await mockDashboardService.updateOrderStatus(orderId, 'CANCELLED_BY_RESTRO', undefined, undefined, reason);
-        if (success && selectedAddressId) {
-            useRestaurantStore.getState().removeOrder(selectedAddressId, orderId);
-            refreshOrders();
-        }
+        if (success) refreshOrders();
     };
 
     const extendTime = async (orderId: string, additionalMinutes: number) => {

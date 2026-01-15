@@ -125,19 +125,19 @@ export const DashboardSidebar = ({
     return restaurantName ? `${restaurantName}` : "";
   }, [restaurantName]);
 
-  const { hasPendingOrders } = usePendingOrders();
+  const { hasPendingOrders, pendingCount } = usePendingOrders();
 
   const menuWithBadges = useMemo(() => {
     return MENU_SECTIONS.map((section) => ({
       ...section,
       items: section.items.map((item) => {
         if (item.key === "orders" && hasPendingOrders) {
-          return { ...item, badge: "New" };
+          return { ...item, badge: pendingCount > 0 ? pendingCount : "New" };
         }
         return item;
       }),
     }));
-  }, [hasPendingOrders]);
+  }, [hasPendingOrders, pendingCount]);
 
   return (
     <>

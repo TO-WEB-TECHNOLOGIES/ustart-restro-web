@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Clock, UtensilsCrossed, Store, Phone, ChevronDown, Loader2, AlertCircle } from 'lucide-react';
+import { Clock, UtensilsCrossed, Store, Phone, ChevronDown, Loader2, AlertCircle, Bike, MapPin } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import type { Order } from '../../api/mockDashboard';
 import { useRestaurantStore, ALL_LOCATIONS_ID } from '../../store/useRestaurantStore';
@@ -191,6 +191,75 @@ export const ProcessingOrderCard = ({ order, onAction, onExtendTime, onCancel, o
                             >
                                 <> {t('dashboard.orders.card.moreItems', { count: order.items.length - 4 })} <ChevronDown className="w-3 h-3" /></>
                             </button>
+                        )}
+                    </div>
+
+                    {/* Delivery Partner Info */}
+                    <div className="mb-6 bg-slate-50 dark:bg-slate-900/50 rounded-xl p-3 border border-slate-100 dark:border-slate-800">
+                        {order.status === 'ORDER_APPROVED_BY_RESTRO' && !order.logs?.some(l => l.status === 'DELIVERY_PARTNER_ASSIGNED') ? (
+                            <div className="flex items-center gap-2 text-[10px] font-black text-slate-500 uppercase tracking-widest">
+                                <Bike className="w-3.5 h-3.5 text-slate-400" />
+                                <span>{t('dashboard.orders.card.deliveryPartner.assigningSoon')}</span>
+                            </div>
+                        ) : (
+                            <div className="space-y-3">
+                                <div className="flex justify-between items-center">
+                                    <div className="flex items-center gap-2">
+                                        <div className="w-8 h-8 rounded-full bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center">
+                                            <Bike className="w-4 h-4 text-orange-600 dark:text-orange-400" />
+                                        </div>
+                                        <div>
+                                            {order.deliveryPartner ? (
+                                                <>
+                                                    <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">
+                                                        {t('dashboard.orders.card.deliveryPartner.name')}
+                                                    </p>
+                                                    <p className="text-xs font-black text-slate-900 dark:text-white leading-none">
+                                                        {order.deliveryPartner.name}
+                                                    </p>
+                                                </>
+                                            ) : (
+                                                <p className="text-xs font-black text-slate-900 dark:text-white leading-none">
+                                                    {t('dashboard.orders.card.deliveryPartner.assigned')}
+                                                </p>
+                                            )}
+                                        </div>
+                                    </div>
+
+                                    {(order.status === 'DELIVERY_PARTNER_AT_RESTRO' || order.logs?.some(l => l.status === 'DELIVERY_PARTNER_AT_RESTRO')) && (
+                                        <div className="bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 px-2 py-1 rounded text-[8px] font-black uppercase tracking-widest animate-pulse">
+                                            {t('dashboard.orders.card.deliveryPartner.waiting')}
+                                        </div>
+                                    )}
+                                </div>
+
+                                {order.deliveryPartner && (
+                                    <div className="grid grid-cols-2 gap-3 pt-2 border-t border-slate-200 dark:border-slate-800 border-dashed">
+                                        <div className="flex items-center gap-2">
+                                            <Phone className="w-3 h-3 text-slate-400" />
+                                            <div>
+                                                <p className="text-[8px] font-black text-slate-400 uppercase tracking-[0.05em] leading-none mb-0.5">
+                                                    {t('dashboard.orders.card.deliveryPartner.mobile')}
+                                                </p>
+                                                <p className="text-[10px] font-bold text-slate-700 dark:text-slate-300 font-mono">
+                                                    {order.deliveryPartner.phone}
+                                                </p>
+                                            </div>
+                                        </div>
+                                        <div className="flex items-center gap-2">
+                                            <MapPin className="w-3 h-3 text-slate-400" />
+                                            <div>
+                                                <p className="text-[8px] font-black text-slate-400 uppercase tracking-[0.05em] leading-none mb-0.5">
+                                                    {t('dashboard.orders.card.deliveryPartner.distance')}
+                                                </p>
+                                                <p className="text-[10px] font-bold text-slate-700 dark:text-slate-300 font-mono">
+                                                    {order.deliveryPartner.distanceFromRestro} km
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
                         )}
                     </div>
 

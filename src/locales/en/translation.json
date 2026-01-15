@@ -524,6 +524,14 @@
           "selectNewTime": "Select Additional Time",
           "readyIn": "Ready in {{mins}} mins",
           "confirm": "Extend & Notify"
+        },
+        "deliveryPartner": {
+          "assigningSoon": "We will assign a delivery partner soon",
+          "waiting": "Delivery Partner is waiting",
+          "name": "Partner",
+          "mobile": "Mobile",
+          "distance": "Distance",
+          "assigned": "Delivery Partner Assigned"
         }
       }
     },
