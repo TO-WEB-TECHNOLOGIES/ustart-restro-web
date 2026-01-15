@@ -86,7 +86,7 @@ export const CancelOrderModal: React.FC<CancelOrderModalProps> = ({
                         value={reason}
                         onChange={(e) => handleReasonChange(e.target.value)}
                         placeholder={t('dashboard.orders.card.cancelModal.reasonPlaceholder')}
-                        className={`resize-none h-28 text-slate-900 dark:text-white border-slate-200 dark:border-slate-700 focus:ring-red-500/10 rounded-xl transition-all ${error ? 'border-red-500 ring-2 ring-red-500/10' : 'focus:border-red-500'}`}
+                        className={`resize-none h-28 text-slate-900 dark:text-white border-slate-200 dark:border-slate-700 focus:ring-red-500/10 rounded-xl transition-all dark:text-primary-blue ${error ? 'border-red-500 ring-2 ring-red-500/10' : 'focus:border-red-500'}`}
                     />
                 </div>
 
@@ -111,14 +111,14 @@ export const CancelOrderModal: React.FC<CancelOrderModalProps> = ({
                     <Button
                         variant="outline"
                         onClick={onClose}
-                        className="flex-1 rounded-xl h-11 font-bold text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800"
+                        className="flex-1 rounded-xl h-11 font-bold dark:text-slate-600 text-slate-400 dark:hover:text-slate-200 border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800"
                         disabled={isProcessing}
                     >
                         {t('dashboard.orders.card.rejectModal.cancel')}
                     </Button>
                     <Button
                         onClick={handleConfirm}
-                        className="flex-1 rounded-xl h-11 font-bold bg-red-600 hover:bg-red-700 text-white shadow-lg shadow-red-200 dark:shadow-none"
+                        className="flex-1 rounded-xl h-11 font-bold bg-secondary-orange/90 hover:bg-secondary-orange text-white shadow-lg shadow-secondary-orange dark:shadow-none"
                         disabled={reason.trim().length < 5 || isProcessing}
                     >
                         {isProcessing ? t('dashboard.orders.card.processing') : t('dashboard.orders.card.cancelModal.confirm')}

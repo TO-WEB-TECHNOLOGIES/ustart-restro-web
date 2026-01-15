@@ -63,13 +63,13 @@ export const RejectOrderModal: React.FC<RejectOrderModalProps> = ({
         >
             <div className="space-y-5 pt-2">
                 {/* Impact Warning */}
-                <div className="flex items-center gap-3">
-                    <AlertTriangle className="w-5 h-5 text-red-600 flex-shrink-0" />
+                <div className="bg-red-50 dark:bg-red-900/10 border border-red-100 dark:border-red-900/20 rounded-xl p-4 flex items-start gap-3">
+                    <AlertTriangle className="w-5 h-5 text-red-600 mt-0.5 flex-shrink-0" />
                     <div>
-                        <p className="text-sm font-black text-red-600">
+                        <p className="text-sm font-black text-red-900 dark:text-red-400 leading-snug">
                             {t('dashboard.orders.card.rejectModal.lostSale', { amount: order.amount.toFixed(2) })}
                         </p>
-                        <p className="text-[10px] text-slate-500 font-bold leading-tight">
+                        <p className="text-xs text-red-700/70 dark:text-red-400/70 mt-1">
                             {t('dashboard.orders.card.rejectModal.impactNotice')}
                         </p>
                     </div>
@@ -114,17 +114,12 @@ export const RejectOrderModal: React.FC<RejectOrderModalProps> = ({
                                 <span>{error}</span>
                             </div>
                         )}
-                        {!error && reason.length > 0 && reason.trim().length < 5 && (
-                            <span className="text-[10px] font-bold text-slate-400">
-                                {5 - reason.trim().length} more characters needed
-                            </span>
-                        )}
                     </div>
                     <Textarea
                         value={reason}
                         onChange={(e) => handleReasonChange(e.target.value)}
-                        placeholder="Explain why you're rejecting this order..."
-                        className={`resize-none h-28 text-slate-900 dark:text-white border-slate-200 dark:border-slate-700 focus:ring-red-500/10 rounded-xl transition-all ${error ? 'border-red-500 ring-2 ring-red-500/10' : 'focus:border-red-500'}`}
+                        placeholder={t('dashboard.orders.card.rejectModal.reasonPlaceholder')}
+                        className={`resize-none h-28 text-slate-900 dark:text-white border-slate-200 dark:border-slate-700 focus:ring-red-500/10 rounded-xl transition-all dark:text-primary-blue ${error ? 'border-red-500 ring-2 ring-red-500/10' : 'focus:border-red-500'}`}
                     />
                 </div>
 
@@ -166,14 +161,14 @@ export const RejectOrderModal: React.FC<RejectOrderModalProps> = ({
                     <Button
                         variant="outline"
                         onClick={onClose}
-                        className="flex-1 rounded-xl h-11 font-bold text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800"
+                        className="flex-1 rounded-xl h-11 font-bold dark:text-slate-600 text-slate-400 dark:hover:text-slate-200 border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800"
                         disabled={isProcessing}
                     >
                         {t('dashboard.orders.card.rejectModal.cancel')}
                     </Button>
                     <Button
                         onClick={handleConfirm}
-                        className="flex-1 rounded-xl h-11 font-bold bg-red-600 hover:bg-red-700 text-white shadow-lg shadow-red-200 dark:shadow-none"
+                        className="flex-1 rounded-xl h-11 font-bold bg-secondary-orange/90 hover:bg-secondary-orange text-white shadow-lg shadow-secondary-orange dark:shadow-none"
                         disabled={reason.trim().length < 5 || isProcessing}
                     >
                         {isProcessing ? t('dashboard.orders.card.processing') : t('dashboard.orders.card.rejectModal.confirm')}

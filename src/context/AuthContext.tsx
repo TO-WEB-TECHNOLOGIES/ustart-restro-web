@@ -33,6 +33,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const initializeAuth = (authToken: string) => {
         const decoded = decodeToken(authToken);
         if (decoded) {
+            // Check for expiration
+            const currentTime = Math.floor(Date.now() / 1000);
+            if (decoded.exp && decoded.exp < currentTime) {
+                logout();
+                setIsInitialized(true);
+                return;
+            }
+
             setToken(authToken);
             setUser(decoded.user);
             setIsOnboardingComplete(decoded.isOnboardingComplete);
@@ -57,6 +65,27 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             setIsInitialized(true);
         }
     }, []);
+
+    // Auto logout on token expiry
+    useEffect(() => {
+        if (token) {
+            const decoded = decodeToken(token);
+            if (decoded && decoded.exp) {
+                const expiryTime = decoded.exp * 1000;
+                const currentTime = Date.now();
+                const timeLeft = expiryTime - currentTime;
+
+                if (timeLeft <= 0) {
+                    logout();
+                } else {
+                    const timeoutId = setTimeout(() => {
+                        logout();
+                    }, timeLeft);
+                    return () => clearTimeout(timeoutId);
+                }
+            }
+        }
+    }, [token]);
 
     const login = (newToken: string) => {
         localStorage.setItem('token', newToken);
