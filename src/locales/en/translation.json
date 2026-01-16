@@ -452,6 +452,60 @@
         "CANCELLED_BY_USTART": "Cancelled by USTART"
       }
     },
+    "menuScore": {
+      "title": "Restaurant Menu Score & Insights",
+      "subtitle": "Track and optimize your menu performance for higher growth.",
+      "scoreCard": {
+        "title": "Your menu Score is {{status}}",
+        "tooltip": "This score is calculated based on your menu's structure, photo coverage, and descriptions.",
+        "description": "Top restaurants in your area have a menu score of {{score}}% and above.",
+        "lastUpdated": "LAST UPDATED: {{date}}"
+      },
+      "menuEditor": {
+        "title": "Go to Menu Editor",
+        "description": "Edit menu items, prices, and tax slabs"
+      },
+      "updateStock": {
+        "title": "Update Menu Stock",
+        "description": "Mark items as out of stock or back in stock"
+      },
+      "opportunities": {
+        "title": "TOP OPPORTUNITIES TO GROW YOUR BUSINESS",
+        "cards": {
+          "structure": {
+            "title": "Simplify your menu structure",
+            "description": "Easier navigation leads to 15% more conversions.",
+            "action": "View insights"
+          },
+          "photos": {
+            "title": "Your photo coverage is excellent!",
+            "description": "You have images for 92% of your menu items.",
+            "action": "View items"
+          },
+          "descriptions": {
+            "title": "Most of your items have descriptions",
+            "description": "Only 4 items are missing descriptions.",
+            "action": "View items"
+          },
+          "addons": {
+            "title": "Add relevant add-ons",
+            "description": "Increase average order value with upsells.",
+            "action": "View suggestions"
+          }
+        },
+        "comingSoon": "We are working on it and we will release it soon."
+      },
+      "sidebar": {
+        "photoshoot": {
+          "title": "Request photoshoot",
+          "description": "Professional food photography at your doorstep"
+        },
+        "videos": {
+          "title": "Add videos on menu",
+          "description": "Short clips increase customer trust by 40%"
+        }
+      }
+    },
     "orders": {
       "tabs": {
         "new": "New Orders",

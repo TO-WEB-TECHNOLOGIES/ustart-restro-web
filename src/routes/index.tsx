@@ -6,6 +6,7 @@ import { RequireAuth, RequireOnboarding, RequirePending, PublicOnlyRoute } from 
 const LandingPage = lazy(() => import('@/features/home/LandingPage').then(module => ({ default: module.LandingPage })));
 const Dashboard = lazy(() => import('@/features/dashboard/outlets/Dashboard').then(module => ({ default: module.Dashboard })));
 const Orders = lazy(() => import('@/features/dashboard/outlets/Orders').then(module => ({ default: module.Orders })));
+const MenuScore = lazy(() => import('@/features/dashboard/outlets/MenuScore').then(module => ({ default: module.MenuScore })));
 const OnboardingLayout = lazy(() => import('@/features/onboarding/layouts/OnboardingLayout').then(module => ({ default: module.OnboardingLayout })));
 const PersonalInfo = lazy(() => import('@/features/onboarding/components/PersonalInfo').then(module => ({ default: module.PersonalInfo })));
 const RestaurantInfo = lazy(() => import('@/features/onboarding/components/RestaurantInfo').then(module => ({ default: module.RestaurantInfo })));
@@ -89,6 +90,10 @@ export const router = createBrowserRouter([
                             {
                                 path: 'orders',
                                 element: withSuspense(Orders),
+                            },
+                            {
+                                path: 'menu',
+                                element: withSuspense(MenuScore),
                             },
                         ],
                     }

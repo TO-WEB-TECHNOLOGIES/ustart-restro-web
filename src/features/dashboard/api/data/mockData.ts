@@ -225,3 +225,9 @@ export const ALL_ADDRESSES = [
     { id: 'addr_111', label: 'Connaught Place', address: 'Inner Circle, Delhi' },
     { id: 'addr_112', label: 'Hadapsar', address: 'Magarpatta City, Pune' },
 ];
+export const MOCK_MENU_SCORE = {
+    score: 80,
+    thresholdScore: 90,
+    status: 'Good',
+    lastUpdated: new Date('2024-10-01T14:30:00').toISOString(),
+};
