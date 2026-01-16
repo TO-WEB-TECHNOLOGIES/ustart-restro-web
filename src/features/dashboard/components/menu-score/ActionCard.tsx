@@ -8,6 +8,7 @@ interface ActionCardProps {
     description: string;
     iconColor: string;
     variants: any;
+    onClick?: () => void;
 }
 
 export const ActionCard = ({
@@ -16,13 +17,15 @@ export const ActionCard = ({
     title,
     description,
     iconColor,
-    variants
+    variants,
+    onClick
 }: ActionCardProps) => {
     const Watermark = WatermarkIcon || Icon;
 
     return (
         <motion.div
             variants={variants}
+            onClick={onClick}
             className="bg-white dark:bg-slate-900 rounded-[32px] p-8 border border-slate-100 dark:border-slate-800 shadow-sm relative overflow-hidden h-[200px] group cursor-pointer"
         >
             {/* Faded Background Icon (Deep Background) - Watermark */}

@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
 import {
@@ -17,11 +18,13 @@ import {
 import { OpportunityCard, ActionCard, MenuScoreGauge } from '../components/menu-score';
 import { useMenuData } from '../hooks/useMenuData';
 import { useLanguage } from '@/hooks/useLanguage';
+import ComingSoonModal from '../components/orders/ComingSoonModal';
 
 export const MenuScore = () => {
     const { t } = useTranslation();
     const { language } = useLanguage();
     const { score, thresholdScore, status, lastUpdated, isLoading } = useMenuData();
+    const [showComingSoon, setShowComingSoon] = useState(false);
 
     // Format date based on current language
     const formatDate = (dateStr: string) => {
@@ -194,17 +197,19 @@ export const MenuScore = () => {
                         description={t('dashboard.menuScore.sidebar.photoshoot.description')}
                         iconColor="text-[var(--color-terracotta-green)]"
                         variants={itemVariants}
+                        onClick={() => setShowComingSoon(true)}
                     />
 
                     {/* Add Videos */}
-                    <ActionCard
+                    {/* <ActionCard
                         icon={Video}
                         watermarkIcon={PlayCircle}
                         title={t('dashboard.menuScore.sidebar.videos.title')}
                         description={t('dashboard.menuScore.sidebar.videos.description')}
                         iconColor="text-[var(--color-secondary-orange)]"
                         variants={itemVariants}
-                    />
+                        onClick={() => setShowComingSoon(true)}
+                    /> */}
                 </div>
 
                 {/* 3. Mobile Opportunities Section (Second on mobile, hidden on desktop) */}
@@ -215,6 +220,11 @@ export const MenuScore = () => {
                     />
                 </div>
             </div>
+
+            <ComingSoonModal
+                isOpen={showComingSoon}
+                onClose={() => setShowComingSoon(false)}
+            />
         </motion.div>
     );
 };
