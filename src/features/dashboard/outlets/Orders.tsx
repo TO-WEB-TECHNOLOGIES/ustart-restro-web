@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useLiveOrders } from '../hooks/useDashboardData';
+import { useLiveOrders } from '../hooks/useOrdersData';
 import { OrdersTabs } from '../components/orders/OrdersTabs';
 import { ActiveOrderCard } from '../components/orders/ActiveOrderCard';
 import { ProcessingOrderCard } from '../components/orders/ProcessingOrderCard';

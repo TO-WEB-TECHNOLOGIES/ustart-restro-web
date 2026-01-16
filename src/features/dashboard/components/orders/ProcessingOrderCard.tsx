@@ -18,6 +18,8 @@ interface ProcessingOrderCardProps {
 export const ProcessingOrderCard = ({ order, onAction, onExtendTime, onCancel, onShowMore }: ProcessingOrderCardProps) => {
     const { t } = useTranslation();
     const selectedAddressId = useRestaurantStore(state => state.selectedAddressId);
+    const addresses = useRestaurantStore(state => state.addresses);
+    const matchedAddress = addresses.find(addr => addr.id === order.restroId);
     const [isProcessing, setIsProcessing] = useState(false);
     const [isExtending, setIsExtending] = useState(false);
     const [isCancelling, setIsCancelling] = useState(false);
@@ -114,9 +116,9 @@ export const ProcessingOrderCard = ({ order, onAction, onExtendTime, onCancel, o
                             <span className="text-3xl font-black text-slate-900 dark:text-white tracking-tighter">
                                 {order.id}
                             </span>
-                            {selectedAddressId === ALL_LOCATIONS_ID && order.recipientAddress && (
+                            {selectedAddressId === ALL_LOCATIONS_ID && matchedAddress && (
                                 <span className="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-[9px] font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wide">
-                                    {order.recipientAddress.label}
+                                    {matchedAddress.label}
                                 </span>
                             )}
                         </div>

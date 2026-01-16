@@ -1,6 +1,6 @@
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { useRecentOrders } from '../hooks/useDashboardData';
+import { useRecentOrders } from '../hooks/useOrdersData';
 import { useNavigate } from 'react-router-dom';
 
 export const RecentOrders = () => {

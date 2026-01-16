@@ -13,6 +13,8 @@ interface ActiveOrderCardProps {
 
 export const ActiveOrderCard = ({ order, onAccept, onReject }: ActiveOrderCardProps) => {
     const selectedAddressId = useRestaurantStore(state => state.selectedAddressId);
+    const addresses = useRestaurantStore(state => state.addresses);
+    const matchedAddress = addresses.find(addr => addr.id === order.restroId);
     const { t } = useTranslation();
     const [prepTime, setPrepTime] = useState<string>('');
     const [giftMessage, setGiftMessage] = useState<string>('');
@@ -108,11 +110,11 @@ export const ActiveOrderCard = ({ order, onAccept, onReject }: ActiveOrderCardPr
             <div className={`w-full md:w-[25%] border-r ${isUrgent ? 'border-red-100 dark:border-red-900/30' : 'border-slate-100 dark:border-slate-800'} p-5 flex flex-col bg-slate-50/30 dark:bg-slate-800/10`}>
                 {/* 1.1 Top: Order ID & Time */}
                 <div className="mb-6">
-                    {selectedAddressId === ALL_LOCATIONS_ID && order.recipientAddress && (
+                    {selectedAddressId === ALL_LOCATIONS_ID && matchedAddress && (
                         <div className="flex items-center gap-1.5 mb-2 px-1.5 py-0.5 rounded border border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-800 w-fit shadow-sm">
                             <Store className="w-3 h-3 text-slate-400" />
                             <div className="text-[9px] font-black text-slate-600 dark:text-slate-300 uppercase tracking-wide leading-none">
-                                {order.recipientAddress.label}
+                                {matchedAddress.label}
                             </div>
                         </div>
                     )}

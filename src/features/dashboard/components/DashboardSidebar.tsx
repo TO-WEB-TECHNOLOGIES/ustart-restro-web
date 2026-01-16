@@ -21,7 +21,7 @@ import {
   Wallet as WalletIcon,
   Store as StoreIcon,
 } from "lucide-react";
-import { usePendingOrders } from "../hooks/useDashboardData";
+import { usePendingOrders } from "../hooks/useOrdersData";
 import { Logo } from "@/components/ui/logo";
 import {
   Accordion,
