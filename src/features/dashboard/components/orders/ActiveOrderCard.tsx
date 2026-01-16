@@ -33,27 +33,24 @@ export const ActiveOrderCard = ({ order, onAccept, onReject }: ActiveOrderCardPr
     useEffect(() => {
         if (isProcessing) return; // Stop timer if processing
 
-        // Sync timer on mount and background/foreground changes
-        setTimeLeft(calculateTimeLeft());
-
-        if (calculateTimeLeft() <= 0) {
-            onReject(order.id, 'Timeout');
-            return;
-        }
-
-        const timer = setInterval(async () => {
+        const checkExpiry = async () => {
             const remaining = calculateTimeLeft();
             setTimeLeft(remaining);
             if (remaining <= 0) {
-                clearInterval(timer);
                 setIsProcessing(true);
                 try {
                     await onReject(order.id, 'Timeout');
-                } finally {
-                    setIsProcessing(false);
+                } catch (error) {
+                    console.error("Auto-reject failed:", error);
+                    setIsProcessing(false); // Only reset if failed so it can try again
                 }
             }
-        }, 1000);
+        };
+
+        // Check immediately on mount/update
+        checkExpiry();
+
+        const timer = setInterval(checkExpiry, 1000);
 
         return () => clearInterval(timer);
     }, [order.id, onReject, isProcessing]);

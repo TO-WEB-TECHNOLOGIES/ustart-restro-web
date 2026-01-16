@@ -1,57 +1,39 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useShallow } from 'zustand/react/shallow';
-import {
-    mockDashboardService,
-    type Order
-} from '../api/mockDashboard';
+import type { Order } from '../api/mockDashboard';
 import { useRestaurantStore } from '../store/useRestaurantStore';
+import { useOrderStore, ORDER_STATUS_GROUPS } from '../store/useOrderStore';
+
 
 const EMPTY_ARRAY: any[] = [];
 
 export const useRecentOrders = () => {
     const selectedAddressId = useRestaurantStore(state => state.selectedAddressId);
-    const orders = useRestaurantStore(
+    const orders = useOrderStore(
         useShallow(state =>
             selectedAddressId ? state.recentOrders[selectedAddressId] || EMPTY_ARRAY : EMPTY_ARRAY
         )
     );
-    const pagination = useRestaurantStore(
+    const pagination = useOrderStore(
         useShallow(state =>
             selectedAddressId ? state.orderPages[selectedAddressId] || { current: 1, total: 1 } : { current: 1, total: 1 }
         )
     );
-    const setRecentOrders = useRestaurantStore(state => state.setRecentOrders);
-    const setOrderPagination = useRestaurantStore(state => state.setOrderPagination);
-    const setLoading = useRestaurantStore(state => state.setLoading);
-    const isLoading = useRestaurantStore(
-        useShallow(state => selectedAddressId ? state.loading.orders[selectedAddressId] : false)
+    const isLoading = useOrderStore(
+        useShallow(state => selectedAddressId ? state.loading[selectedAddressId] : false)
     );
-
-    const fetchOrders = async (page: number) => {
-        if (!selectedAddressId) return;
-
-        setLoading('orders', selectedAddressId, true);
-        try {
-            const data = await mockDashboardService.getRecentOrders(selectedAddressId, page, 5);
-            setRecentOrders(selectedAddressId, data.orders);
-            setOrderPagination(selectedAddressId, { current: page, total: data.totalPages });
-        } catch (err) {
-            console.error("Failed to fetch orders", err);
-        } finally {
-            setLoading('orders', selectedAddressId, false);
-        }
-    };
+    const fetchOrders = useOrderStore(state => state.fetchOrders);
 
     useEffect(() => {
         // Only fetch if data is missing or we are on a different page than what's available
         if (selectedAddressId && !orders.length) {
-            fetchOrders(pagination.current);
+            fetchOrders(selectedAddressId, pagination.current);
         }
-    }, [selectedAddressId, pagination.current, orders.length]);
+    }, [selectedAddressId, pagination.current, orders.length, fetchOrders]);
 
     const goToPage = (page: number) => {
         if (selectedAddressId) {
-            setOrderPagination(selectedAddressId, { ...pagination, current: page });
+            fetchOrders(selectedAddressId, page);
         }
     };
 
@@ -66,128 +48,113 @@ export const useRecentOrders = () => {
 
 export const usePendingOrders = () => {
     const selectedAddressId = useRestaurantStore(state => state.selectedAddressId);
-    const orders = useRestaurantStore(
-        useShallow(state =>
-            selectedAddressId ? state.recentOrders[selectedAddressId] || (EMPTY_ARRAY as Order[]) : (EMPTY_ARRAY as Order[])
-        )
+    return useOrderStore(
+        useShallow(state => {
+            const orders = selectedAddressId ? state.recentOrders[selectedAddressId] || (EMPTY_ARRAY as Order[]) : (EMPTY_ARRAY as Order[]);
+            const pendingCount = orders.filter(o => ORDER_STATUS_GROUPS.New.includes(o.status as any)).length;
+            return {
+                hasPendingOrders: pendingCount > 0,
+                pendingCount
+            };
+        })
     );
-
-    const pendingCount = orders.filter(o => o.status === 'ORDER_CREATED_BY_CUSTOMER').length;
-
-    return {
-        hasPendingOrders: pendingCount > 0,
-        pendingCount
-    };
 };
 
 export type OrderTab = 'New' | 'Preparing' | 'Ready' | 'Completed';
 
 export const useLiveOrders = () => {
     const selectedAddressId = useRestaurantStore(state => state.selectedAddressId);
-    const recentOrders = useRestaurantStore(
+    const recentOrders = useOrderStore(
         useShallow(state =>
             selectedAddressId ? state.recentOrders[selectedAddressId] || (EMPTY_ARRAY as Order[]) : (EMPTY_ARRAY as Order[])
         )
     );
-    const setRecentOrders = useRestaurantStore(state => state.setRecentOrders);
-    const updateOrder = useRestaurantStore(state => state.updateOrder);
+
+    // Actions from store
+    const acceptOrderStore = useOrderStore(state => state.acceptOrder);
+    const rejectOrderStore = useOrderStore(state => state.rejectOrder);
+    const markReadyStore = useOrderStore(state => state.markReady);
+    const markCompletedStore = useOrderStore(state => state.markCompleted);
+    const cancelOrderStore = useOrderStore(state => state.cancelOrder);
+    const extendTimeStore = useOrderStore(state => state.extendTime);
+
     const [activeTab, setActiveTab] = useState<OrderTab>('New');
 
-    // Helper functions for status grouping
-    const isNew = (s: string) => ['ORDER_CREATED_BY_CUSTOMER'].includes(s);
+    // Shared status group checks
+    const isNew = (s: string) => (ORDER_STATUS_GROUPS.New as readonly string[]).includes(s);
+    const isPreparing = (s: string) => (ORDER_STATUS_GROUPS.Preparing as readonly string[]).includes(s);
+    const isReady = (s: string) => (ORDER_STATUS_GROUPS.Ready as readonly string[]).includes(s);
+    const isCompleted = (s: string) => (ORDER_STATUS_GROUPS.Completed as readonly string[]).includes(s);
 
-    const isPreparing = (s: string) => [
-        'ORDER_APPROVED_BY_RESTRO',
-        'DELIVERY_PARTNER_ASSIGNED',
-        'TIME_EXTENDED_BY_RESTRO',
-        'DELIVERY_PARTNER_AT_RESTRO'
-    ].includes(s);
-
-    const isReady = (s: string) => ['ORDER_READY_BY_RESTRO'].includes(s);
-
-    const isCompleted = (s: string) => [
-        'ORDER_PICKED',
-        'DELIVERY_PARTNER_AT_STATION',
-        'DELIVERED',
-        'CUSTOMER_NOT_RESPONDING',
-        'UNDELIVERABLE_BY_DELIVER_PARTNER'
-    ].includes(s);
-
-    // Counts for tabs
-    const counts = {
+    // Counts for tabs - Centralized from store logic
+    const counts = useMemo(() => ({
         New: recentOrders.filter(o => isNew(o.status)).length,
         Preparing: recentOrders.filter(o => isPreparing(o.status)).length,
         Ready: recentOrders.filter(o => isReady(o.status)).length,
         Completed: recentOrders.filter(o => isCompleted(o.status)).length,
-    };
+    }), [recentOrders]);
 
     // Filtered orders based on active tab
-    const filteredOrders = recentOrders.filter(order => {
-        if (activeTab === 'New') return isNew(order.status);
-        if (activeTab === 'Preparing') return isPreparing(order.status);
-        if (activeTab === 'Ready') return isReady(order.status);
-        if (activeTab === 'Completed') return isCompleted(order.status);
-        return false;
-    });
+    const filteredOrders = useMemo(() => {
+        return recentOrders.filter(order => {
+            if (activeTab === 'New') return isNew(order.status);
+            if (activeTab === 'Preparing') return isPreparing(order.status);
+            if (activeTab === 'Ready') return isReady(order.status);
+            if (activeTab === 'Completed') return isCompleted(order.status);
+            return false;
+        });
+    }, [recentOrders, activeTab]);
 
-    // We don't need a local useEffect for initial fetch anymore as useOrderService 
-    // in DashboardLayout handles the initial fetch on address change.
+    const acceptOrder = useCallback(async (orderId: string, prepTime: number, giftMessage?: string) => {
+        if (selectedAddressId) {
+            await acceptOrderStore(selectedAddressId, orderId, prepTime, giftMessage);
+        }
+    }, [selectedAddressId, acceptOrderStore]);
 
-    const refreshOrders = async () => {
-        if (!selectedAddressId) return;
-        // Fetching 50 to sync with the background service's typical payload
-        const data = await mockDashboardService.getRecentOrders(selectedAddressId, 1, 50);
-        setRecentOrders(selectedAddressId, data.orders);
-    };
+    const rejectOrder = useCallback(async (orderId: string, reason: string) => {
+        if (selectedAddressId) {
+            await rejectOrderStore(selectedAddressId, orderId, reason);
+        }
+    }, [selectedAddressId, rejectOrderStore]);
 
-    const acceptOrder = async (orderId: string, prepTime: number, giftMessage?: string) => {
-        updateOrder(orderId, { status: 'ORDER_APPROVED_BY_RESTRO', prepTime });
-        const success = await mockDashboardService.updateOrderStatus(orderId, 'ORDER_APPROVED_BY_RESTRO', prepTime, giftMessage);
-        if (success) refreshOrders();
-    };
+    const markReady = useCallback(async (orderId: string) => {
+        if (selectedAddressId) {
+            await markReadyStore(selectedAddressId, orderId);
+        }
+    }, [selectedAddressId, markReadyStore]);
 
-    const rejectOrder = async (orderId: string, reason: string) => {
-        if (selectedAddressId) useRestaurantStore.getState().removeOrder(selectedAddressId, orderId);
-        const success = await mockDashboardService.updateOrderStatus(orderId, 'ORDER_REJECTED_BY_RESTRO', undefined, undefined, reason);
-        if (success) refreshOrders();
-    };
+    const markCompleted = useCallback(async (orderId: string) => {
+        if (selectedAddressId) {
+            await markCompletedStore(selectedAddressId, orderId);
+        }
+    }, [selectedAddressId, markCompletedStore]);
 
-    const markReady = async (orderId: string) => {
-        updateOrder(orderId, { status: 'ORDER_READY_BY_RESTRO' });
-        setActiveTab('Ready');
-        const success = await mockDashboardService.updateOrderStatus(orderId, 'ORDER_READY_BY_RESTRO');
-        if (success) refreshOrders();
-    };
+    const cancelOrder = useCallback(async (orderId: string, reason: string) => {
+        if (selectedAddressId) {
+            await cancelOrderStore(selectedAddressId, orderId, reason);
+        }
+    }, [selectedAddressId, cancelOrderStore]);
 
-    const markCompleted = async (orderId: string) => {
-        updateOrder(orderId, { status: 'ORDER_PICKED' });
-        const success = await mockDashboardService.updateOrderStatus(orderId, 'ORDER_PICKED');
-        if (success) refreshOrders();
-    };
+    const extendTime = useCallback(async (orderId: string, additionalMinutes: number) => {
+        if (selectedAddressId) {
+            await extendTimeStore(selectedAddressId, orderId, additionalMinutes);
+        }
+    }, [selectedAddressId, extendTimeStore]);
 
-    const cancelOrder = async (orderId: string, reason: string) => {
-        if (selectedAddressId) useRestaurantStore.getState().removeOrder(selectedAddressId, orderId);
-        const success = await mockDashboardService.updateOrderStatus(orderId, 'CANCELLED_BY_RESTRO', undefined, undefined, reason);
-        if (success) refreshOrders();
-    };
-
-    const extendTime = async (orderId: string, additionalMinutes: number) => {
-        const success = await mockDashboardService.updateOrderStatus(orderId, 'TIME_EXTENDED_BY_RESTRO', additionalMinutes);
-        if (success) refreshOrders();
-    };
+    const actions = useMemo(() => ({
+        acceptOrder,
+        rejectOrder,
+        markReady,
+        markCompleted,
+        cancelOrder,
+        extendTime
+    }), [acceptOrder, rejectOrder, markReady, markCompleted, cancelOrder, extendTime]);
 
     return {
         activeTab,
         setActiveTab,
         orders: filteredOrders,
         counts,
-        actions: {
-            acceptOrder,
-            rejectOrder,
-            markReady,
-            markCompleted,
-            cancelOrder,
-            extendTime
-        }
+        actions
     };
 };

@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import type { StatMetric, Order } from '../api/mockDashboard';
-import { ALL_LOCATIONS_ID, type Address, type RestaurantDetails, type RestaurantStatus } from '@/types/storeTypes';
+import type { StatMetric } from '../api/mockDashboard';
+import { type Address, type RestaurantDetails, type RestaurantStatus } from '@/types/storeTypes';
 
 
 interface RestaurantState {
@@ -13,14 +13,11 @@ interface RestaurantState {
     // Dashboard Data
     statuses: Record<string, RestaurantStatus>;
     stats: Record<string, StatMetric[]>;
-    recentOrders: Record<string, Order[]>;
-    orderPages: Record<string, { current: number; total: number }>;
 
     // Granular Loading States
     loading: {
         status: Record<string, boolean>;
         stats: Record<string, boolean>;
-        orders: Record<string, boolean>;
     };
 
     // Actions
@@ -32,11 +29,7 @@ interface RestaurantState {
     removeAddress: (id: string) => void;
     setSelectedAddressId: (id: string) => void;
     setStats: (addressId: string, stats: StatMetric[]) => void;
-    setRecentOrders: (addressId: string, orders: Order[]) => void;
-    setOrderPagination: (addressId: string, pagination: { current: number; total: number }) => void;
-    setLoading: (type: 'status' | 'stats' | 'orders', id: string, isLoading: boolean) => void;
-    updateOrder: (orderId: string, updates: Partial<Order>) => void;
-    removeOrder: (addressId: string, orderId: string) => void;
+    setLoading: (type: 'status' | 'stats', id: string, isLoading: boolean) => void;
     reset: () => void;
 }
 
@@ -47,12 +40,9 @@ const initialState = {
     addresses: [],
     selectedAddressId: null,
     stats: {},
-    recentOrders: {},
-    orderPages: {},
     loading: {
         status: {},
         stats: {},
-        orders: {},
     },
 };
 
@@ -76,46 +66,16 @@ export const useRestaurantStore = create<RestaurantState>()(
             setStats: (addressId, stats) => set((state) => ({
                 stats: { ...state.stats, [addressId]: stats }
             })),
-            setRecentOrders: (addressId, orders) => set((state) => ({
-                recentOrders: { ...state.recentOrders, [addressId]: orders }
-            })),
-            setOrderPagination: (addressId, pagination) => set((state) => ({
-                orderPages: { ...state.orderPages, [addressId]: pagination }
-            })),
             setLoading: (type, id, isLoading) => set((state) => ({
                 loading: {
                     ...state.loading,
                     [type]: { ...state.loading[type], [id]: isLoading }
                 }
             })),
-            removeOrder: (addressId, orderId) => set((state) => {
-                const updatedOrders = { ...state.recentOrders };
-                if (addressId === ALL_LOCATIONS_ID) {
-                    // If all is selected, we might need to remove it from the specific branch too
-                    // but for simplicity in mock, we'll just remove it from 'all'
-                    updatedOrders[ALL_LOCATIONS_ID] = (updatedOrders[ALL_LOCATIONS_ID] || []).filter(o => o.id !== orderId);
-                } else {
-                    updatedOrders[addressId] = (updatedOrders[addressId] || []).filter(o => o.id !== orderId);
-                    // Also remove from 'all' if present
-                    if (updatedOrders[ALL_LOCATIONS_ID]) {
-                        updatedOrders[ALL_LOCATIONS_ID] = updatedOrders[ALL_LOCATIONS_ID].filter(o => o.id !== orderId);
-                    }
-                }
-                return { recentOrders: updatedOrders };
-            }),
-            updateOrder: (orderId, updates) => set((state) => {
-                const updatedOrders = { ...state.recentOrders };
-                Object.keys(updatedOrders).forEach(key => {
-                    updatedOrders[key] = (updatedOrders[key] || []).map(o =>
-                        o.id === orderId ? { ...o, ...updates } : o
-                    );
-                });
-                return { recentOrders: updatedOrders };
-            }),
             reset: () => set(initialState),
         }),
         {
-            name: 'restaurant-storage-v4', // Incremented version after removing aggregateStatus
+            name: 'restaurant-storage-v5', // Incrementing version to invalidate old state with orders
         }
     )
 );

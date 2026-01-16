@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { useRestaurantStore } from '../store/useRestaurantStore';
+import { useOrderStore } from '../store/useOrderStore';
 import { mockDashboardService } from '../api/mockDashboard';
 
 /**
@@ -8,14 +9,14 @@ import { mockDashboardService } from '../api/mockDashboard';
  */
 export const useOrderService = () => {
     const selectedAddressId = useRestaurantStore(state => state.selectedAddressId);
-    const setRecentOrders = useRestaurantStore(state => state.setRecentOrders);
-    const setLoading = useRestaurantStore(state => state.setLoading);
+    const setRecentOrders = useOrderStore(state => state.setRecentOrders);
+    const setLoading = useOrderStore(state => state.setLoading);
     const pollInterval = useRef<ReturnType<typeof setInterval> | null>(null);
 
     const fetchOrders = async (silent = false) => {
         if (!selectedAddressId) return;
 
-        if (!silent) setLoading('orders', selectedAddressId, true);
+        if (!silent) setLoading(selectedAddressId, true);
 
         try {
             // Fetch a larger set for live tracking (e.g., first 50 orders)
@@ -27,7 +28,7 @@ export const useOrderService = () => {
         } catch (err) {
             console.error("Background Order Fetch Failed:", err);
         } finally {
-            if (!silent) setLoading('orders', selectedAddressId, false);
+            if (!silent) setLoading(selectedAddressId, false);
         }
     };
 

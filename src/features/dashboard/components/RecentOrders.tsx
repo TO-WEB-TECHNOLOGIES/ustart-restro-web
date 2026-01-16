@@ -1,12 +1,52 @@
+import { useEffect, useState } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { useRecentOrders } from '../hooks/useOrdersData';
 import { useNavigate } from 'react-router-dom';
+import { useShallow } from 'zustand/react/shallow';
+import { useOrderStore } from '../store/useOrderStore';
+import { useRestaurantStore } from '../store/useRestaurantStore';
+import type { Order } from '../api/mockDashboard';
+
+const EMPTY_ARRAY: Order[] = [];
+const ITEMS_PER_PAGE = 5;
 
 export const RecentOrders = () => {
     const { t } = useTranslation();
     const navigate = useNavigate();
-    const { orders, isLoading, currentPage, totalPages, goToPage } = useRecentOrders();
+    const selectedAddressId = useRestaurantStore(state => state.selectedAddressId);
+    const [currentPage, setCurrentPage] = useState(1);
+
+    // Direct store integration
+    const { orders, isLoading, fetchOrders } = useOrderStore(
+        useShallow(state => ({
+            orders: selectedAddressId ? state.recentOrders[selectedAddressId] || EMPTY_ARRAY : EMPTY_ARRAY,
+            isLoading: selectedAddressId ? state.loading[selectedAddressId] : false,
+            fetchOrders: state.fetchOrders
+        }))
+    );
+
+    useEffect(() => {
+        if (selectedAddressId) {
+            // Fetch a batch large enough to handle typical recent activity (e.g., 50)
+            // This allows client-side pagination to work smoothly with other components
+            // that might be refreshing the store with 'live' data.
+            fetchOrders(selectedAddressId, 1, 50);
+        }
+    }, [selectedAddressId, fetchOrders]);
+
+    // Client-side pagination logic
+    const totalPages = Math.ceil((orders.length || 0) / ITEMS_PER_PAGE);
+    const visibleOrders = orders.slice(
+        (currentPage - 1) * ITEMS_PER_PAGE,
+        currentPage * ITEMS_PER_PAGE
+    );
+
+    const handlePageChange = (newPage: number) => {
+        if (newPage >= 1 && newPage <= totalPages) {
+            setCurrentPage(newPage);
+        }
+    };
+
     const getStatusColor = (status: string) => {
         if (['PENDING', 'APPROVED_PAYMENT_PENDING', 'ORDER_CREATED_BY_CUSTOMER'].includes(status)) {
             return 'bg-orange-100 text-orange-700 dark:bg-orange-500/10 dark:text-orange-400';
@@ -78,7 +118,7 @@ export const RecentOrders = () => {
                                 </tr>
                             ))
                         ) : (
-                            Array.isArray(orders) && orders.map((order) => (
+                            visibleOrders.map((order) => (
                                 <tr key={order.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors">
                                     <td className="px-6 py-4 font-bold text-slate-700 dark:text-slate-300">
                                         {order.id}
@@ -100,7 +140,7 @@ export const RecentOrders = () => {
                                 </tr>
                             ))
                         )}
-                        {!isLoading && orders.length === 0 && (
+                        {!isLoading && visibleOrders.length === 0 && (
                             <tr>
                                 <td colSpan={5} className="px-6 py-12 text-center text-slate-400 dark:text-slate-600">
                                     {t('dashboard.recentOrders.noOrders')}
@@ -119,14 +159,14 @@ export const RecentOrders = () => {
                     </p>
                     <div className="flex gap-2">
                         <button
-                            onClick={() => goToPage(currentPage - 1)}
+                            onClick={() => handlePageChange(currentPage - 1)}
                             disabled={currentPage === 1}
                             className="p-2 rounded-lg border border-slate-200 dark:border-slate-700 hover:bg-white dark:hover:bg-slate-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                         >
                             <ChevronLeft className="w-4 h-4 dark:text-slate-300" />
                         </button>
                         <button
-                            onClick={() => goToPage(currentPage + 1)}
+                            onClick={() => handlePageChange(currentPage + 1)}
                             disabled={currentPage === totalPages}
                             className="p-2 rounded-lg border border-slate-200 dark:border-slate-700 hover:bg-white dark:hover:bg-slate-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                         >

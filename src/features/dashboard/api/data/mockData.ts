@@ -38,7 +38,7 @@ export const MOCK_ORDERS: Order[] = [
         ],
         amount: 690.00,
         status: 'ORDER_CREATED_BY_CUSTOMER',
-        createdAt: Date.now() - 1000 * 60 * 9, // 2 mins ago
+        createdAt: Date.now() - 1000 * 60 * 9.8, // 2 mins ago
         paymentMethod: 'PAID',
         deliveryAddress: '42, Green Avenue, Near Central Park, Sector 5',
         distanceFromRestroToCustomer: 2.4,
@@ -56,7 +56,7 @@ export const MOCK_ORDERS: Order[] = [
         ],
         amount: 380.00,
         status: 'ORDER_CREATED_BY_CUSTOMER',
-        createdAt: Date.now() - 1000 * 60 * 5, // 15 mins ago
+        createdAt: Date.now() - 1000 * 60 * 9, // 15 mins ago
         paymentMethod: 'CASH_ON_DELIVERY',
         deliveryAddress: '101, Blue Heights, Hill Road',
         distanceFromRestroToCustomer: 5.1,
@@ -97,7 +97,7 @@ export const MOCK_ORDERS: Order[] = [
         discountCoupon: 'WELCOME40',
         deliveryAddress: 'Flat 4B, Sunrise Apartments',
         distanceFromRestroToCustomer: 3.5,
-        prepTime: 120,
+        prepTime: 45,
         deliveryPartner: {
             name: 'Rahul Sharma',
             phone: '+91 91234 56789',

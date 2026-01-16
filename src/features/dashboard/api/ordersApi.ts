@@ -8,10 +8,22 @@ export const ordersApi = {
 
         let filteredOrders: Order[] = [];
         if (addressId === 'all') {
-            filteredOrders = MOCK_ORDERS;
+            filteredOrders = [...MOCK_ORDERS];
         } else {
             filteredOrders = MOCK_ORDERS.filter(o => o.restroId === addressId);
         }
+
+        // Sort: Pending orders first, then by date descending
+        filteredOrders.sort((a, b) => {
+            const isAPending = a.status === 'ORDER_CREATED_BY_CUSTOMER';
+            const isBPending = b.status === 'ORDER_CREATED_BY_CUSTOMER';
+
+            if (isAPending && !isBPending) return -1;
+            if (!isAPending && isBPending) return 1;
+
+            // Secondary sort by newest first
+            return b.createdAt - a.createdAt;
+        });
 
         const start = (page - 1) * limit;
         const end = start + limit;
@@ -24,16 +36,29 @@ export const ordersApi = {
         };
     },
 
-    updateOrderStatus: async (orderId: string, status: Order['status'], prepTime?: number, giftMessage?: string, rejectionReason?: string): Promise<boolean> => {
+    updateOrderStatus: async (orderId: string, status: Order['status'], prepTime?: number, giftMessage?: string, _rejectionReason?: string): Promise<boolean> => {
         await delay(400);
-        console.log(`Updating order ${orderId} to ${status}. PrepTime: ${prepTime}, GiftMessage: ${giftMessage}, Reason: ${rejectionReason}`);
+        console.log(`[API] Updating order ${orderId} to ${status}`);
 
-        // In a real app, this would update the backend.
-        const orderIndex = MOCK_ORDERS.findIndex(o => o.id === orderId);
+        // Define statuses that should cause the order to be removed
+        const removalStatuses: Order['status'][] = [
+            'ORDER_REJECTED_BY_RESTRO',
+            'CANCELLED_BY_RESTRO',
+            'CANCELLED_BY_CUSTOMER',
+            'CANCELLED_BY_USTART',
+            'ORDER_PICKED',
+            'DELIVERED'
+        ];
+
+        let orderIndex = MOCK_ORDERS.findIndex(o => o.id === orderId);
         if (orderIndex !== -1) {
-            if (status === 'ORDER_REJECTED_BY_RESTRO') {
-                // Remove the order from the mock list entirely on rejection
-                MOCK_ORDERS.splice(orderIndex, 1);
+            if (removalStatuses.includes(status)) {
+                // Remove all instances of this order ID just in case
+                while (orderIndex !== -1) {
+                    MOCK_ORDERS.splice(orderIndex, 1);
+                    orderIndex = MOCK_ORDERS.findIndex(o => o.id === orderId);
+                }
+                console.log(`[API] Order ${orderId} removed from MOCK_ORDERS`);
             } else {
                 MOCK_ORDERS[orderIndex].status = status;
                 if (!MOCK_ORDERS[orderIndex].logs) {
@@ -52,6 +77,11 @@ export const ordersApi = {
             }
             return true;
         }
+        console.warn(`[API] Order ${orderId} not found for update`);
         return false;
+    },
+
+    rejectOrder: async (orderId: string, reason: string): Promise<boolean> => {
+        return ordersApi.updateOrderStatus(orderId, 'ORDER_REJECTED_BY_RESTRO', undefined, undefined, reason);
     }
 };
