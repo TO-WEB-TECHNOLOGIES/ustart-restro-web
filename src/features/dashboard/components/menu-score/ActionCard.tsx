@@ -41,7 +41,7 @@ export const ActionCard = ({
                     <h4 className="text-xl font-black text-[var(--color-primary-blue)] dark:text-white leading-tight max-w-[180px]">
                         {title}
                     </h4>
-                    <ChevronRight className="w-6 h-6 text-slate-300 group-hover:text-slate-500 transition-colors" />
+                    <ChevronRight className="w-6 h-6 text-slate-300 transition-colors" />
                 </div>
 
                 {/* Description */}

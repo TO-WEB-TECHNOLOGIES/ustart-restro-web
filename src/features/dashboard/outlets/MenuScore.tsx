@@ -6,21 +6,23 @@ import {
     Info,
     UtensilsCrossed,
     Aperture,
-    Video,
+    // Video,
     Camera,
-    PlayCircle,
+    // PlayCircle,
     List,
     Image as ImageIcon,
     FileText,
     ShoppingCart,
     Package
 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { OpportunityCard, ActionCard, MenuScoreGauge } from '../components/menu-score';
 import { useMenuData } from '../hooks/useMenuData';
 import { useLanguage } from '@/hooks/useLanguage';
 import ComingSoonModal from '../components/orders/ComingSoonModal';
 
 export const MenuScore = () => {
+    const navigate = useNavigate();
     const { t } = useTranslation();
     const { language } = useLanguage();
     const { score, thresholdScore, status, lastUpdated, isLoading } = useMenuData();
@@ -137,6 +139,7 @@ export const MenuScore = () => {
                     {/* Menu Editor Card */}
                     <motion.div
                         variants={itemVariants}
+                        onClick={() => navigate('edit')}
                         className="bg-[var(--color-primary-blue)] dark:bg-slate-800 rounded-[32px] p-8 text-white relative overflow-hidden group cursor-pointer h-[200px]"
                     >
                         <div className="relative z-10">
@@ -164,6 +167,7 @@ export const MenuScore = () => {
                     {/* Update Stock Card */}
                     <motion.div
                         variants={itemVariants}
+                        onClick={() => navigate('stock')}
                         className="bg-[var(--color-primary-blue)] dark:bg-slate-800 rounded-[32px] p-8 text-white relative overflow-hidden group cursor-pointer h-[200px]"
                     >
                         <div className="relative z-10">

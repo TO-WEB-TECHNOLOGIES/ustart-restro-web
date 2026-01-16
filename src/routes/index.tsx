@@ -15,6 +15,7 @@ const Verification = lazy(() => import('@/features/onboarding/components/Verific
 const HelpCenter = lazy(() => import('@/pages/HelpCenter').then(module => ({ default: module.HelpCenter })));
 const NotFound = lazy(() => import('@/pages/NotFound').then(module => ({ default: module.NotFound })));
 const DashboardLayout = lazy(() => import('@/features/dashboard/layouts/DashboardLayout').then(module => ({ default: module.DashboardLayout })));
+const MenuEditor = lazy(() => import('@/features/dashboard/outlets/MenuEditor').then(module => ({ default: module.MenuEditor })));
 
 const Loading = () => (
     <div className="flex items-center justify-center min-h-screen">
@@ -93,7 +94,28 @@ export const router = createBrowserRouter([
                             },
                             {
                                 path: 'menu',
-                                element: withSuspense(MenuScore),
+                                children: [
+                                    {
+                                        index: true,
+                                        element: withSuspense(MenuScore),
+                                    },
+                                    {
+                                        path: 'edit',
+                                        element: withSuspense(MenuEditor),
+                                    },
+                                    {
+                                        path: 'stock',
+                                        element: withSuspense(MenuEditor),
+                                    },
+                                    {
+                                        path: 'taxes',
+                                        element: withSuspense(MenuEditor),
+                                    },
+                                    {
+                                        path: 'charges',
+                                        element: withSuspense(MenuEditor),
+                                    }
+                                ]
                             },
                         ],
                     }

@@ -16,7 +16,7 @@ export const Orders = () => {
     const sortedOrders = [...orders].sort((a, b) => a.createdAt - b.createdAt);
 
     return (
-        <div className="space-y-6 max-w-[1600px] pb-20 w-full h-full relative">
+        <div className="space-y-6 max-w-[1600px] p-4 md: p-6 mb-8 pb-20 w-full h-full relative">
             <OrdersTabs
                 activeTab={activeTab}
                 onTabChange={setActiveTab}

@@ -5,7 +5,7 @@ import { BoostWidget, HelpWidget } from '../components/DashboardWidgets';
 export const Dashboard = () => {
 
     return (
-        <div className="space-y-8 max-w-screen mx-auto">
+        <div className="space-y-8 max-w-screen mx-auto p-4 md:p-6 pb-8">
             {/* Outlet Status Bar */}
             <OutletStatus />
 

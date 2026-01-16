@@ -190,7 +190,9 @@ export const DashboardSidebar = ({
                 <AccordionContent className="pb-2">
                   <div className="space-y-1">
                     {section.items.map((item) => {
-                      const isActive = location.pathname === item.path;
+                      const isActive = item.path === '/dashboard'
+                        ? location.pathname === item.path
+                        : location.pathname.startsWith(item.path);
                       const Icon = item.icon;
 
                       return (
