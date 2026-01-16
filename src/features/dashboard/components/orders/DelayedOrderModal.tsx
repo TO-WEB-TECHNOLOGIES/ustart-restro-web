@@ -4,7 +4,8 @@ import { Modal } from '@/components/ui/modal';
 import { Button } from '@/components/ui/button';
 import { AlertTriangle, Clock, UtensilsCrossed, Phone, Store } from 'lucide-react';
 import type { Order } from '../../api/mockDashboard';
-import { useRestaurantStore, ALL_LOCATIONS_ID } from '../../store/useRestaurantStore';
+import { useRestaurantStore } from '../../store/useRestaurantStore';
+import { ALL_LOCATIONS_ID } from '@/types/storeTypes';
 
 interface DelayedOrderModalProps {
     isOpen: boolean;
@@ -20,7 +21,8 @@ export const DelayedOrderModal: React.FC<DelayedOrderModalProps> = ({
     const { t } = useTranslation();
     const [isSubmitting, setIsSubmitting] = useState(false);
     const selectedAddressId = useRestaurantStore(state => state.selectedAddressId);
-
+    const addresses = useRestaurantStore(state => state.addresses);
+    const matchedAddress = addresses.find(addr => addr.id === order.restroId);
     // Calculate current delay
     const approvedLog = order.logs?.find(log => log.status === 'ORDER_APPROVED_BY_RESTRO');
     const approvedAt = approvedLog?.timestamp || order.createdAt;
@@ -82,10 +84,10 @@ export const DelayedOrderModal: React.FC<DelayedOrderModalProps> = ({
                             <Phone className="w-2.5 h-2.5" />
                             <span>{order.customer.phone}</span>
                         </div>
-                        {selectedAddressId === ALL_LOCATIONS_ID && order.recipientAddress && (
+                        {selectedAddressId === ALL_LOCATIONS_ID && matchedAddress?.address && (
                             <div className="flex items-center gap-1 text-slate-400 text-[9px] font-bold uppercase tracking-wide">
                                 <Store className="w-2.5 h-2.5" />
-                                <span>{order.recipientAddress.label}</span>
+                                <span>{matchedAddress.label}</span>
                             </div>
                         )}
                     </div>

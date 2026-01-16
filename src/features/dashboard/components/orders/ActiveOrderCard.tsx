@@ -3,7 +3,8 @@ import { Clock, Phone, Utensils, MapPin, Loader2, Store } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import type { Order } from '../../api/mockDashboard';
 import { RejectOrderModal } from './RejectOrderModal';
-import { useRestaurantStore, ALL_LOCATIONS_ID } from '../../store/useRestaurantStore';
+import { useRestaurantStore } from '../../store/useRestaurantStore';
+import { ALL_LOCATIONS_ID } from '@/types/storeTypes';
 
 interface ActiveOrderCardProps {
     order: Order;

@@ -1,25 +1,8 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import type { StatMetric, Order } from '../api/mockDashboard';
+import { ALL_LOCATIONS_ID, type Address, type RestaurantDetails, type RestaurantStatus } from '@/types/storeTypes';
 
-export type RestaurantStatus = 'open' | 'closed' | 'busy';
-
-export const ALL_LOCATIONS_ID = 'all';
-
-export interface Address {
-    id: string;
-    label: string;
-    address: string;
-    isDefault?: boolean;
-}
-
-export interface RestaurantDetails {
-    id: string;
-    email?: string;
-    contact?: string;
-    description?: string;
-    cuisineTypes?: string[];
-}
 
 interface RestaurantState {
     name: string;

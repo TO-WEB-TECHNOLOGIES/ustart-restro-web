@@ -1,17 +1,31 @@
-import { createBrowserRouter } from 'react-router-dom';
-import { LandingPage } from '@/features/home/LandingPage';
-import { Dashboard } from '@/features/dashboard/outlets/Dashboard';
-import { Orders } from '@/features/dashboard/outlets/Orders';
+import { createBrowserRouter, Navigate } from 'react-router-dom';
+import { lazy, Suspense } from 'react';
 import { RequireAuth, RequireOnboarding, RequirePending, PublicOnlyRoute } from './ProtectedRoute';
-import { OnboardingLayout } from '@/features/onboarding/layouts/OnboardingLayout';
-import { PersonalInfo } from '@/features/onboarding/components/PersonalInfo';
-import { Navigate } from 'react-router-dom';
-import { RestaurantInfo } from '@/features/onboarding/components/RestaurantInfo';
-import { AboutRestaurant } from '@/features/onboarding/components/AboutRestaurant';
-import { Verification } from '@/features/onboarding/components/Verification';
-import { HelpCenter } from '@/pages/HelpCenter';
-import { NotFound } from '@/pages/NotFound';
-import { DashboardLayout } from '@/features/dashboard/layouts/DashboardLayout';
+
+// Lazy loading components
+const LandingPage = lazy(() => import('@/features/home/LandingPage').then(module => ({ default: module.LandingPage })));
+const Dashboard = lazy(() => import('@/features/dashboard/outlets/Dashboard').then(module => ({ default: module.Dashboard })));
+const Orders = lazy(() => import('@/features/dashboard/outlets/Orders').then(module => ({ default: module.Orders })));
+const OnboardingLayout = lazy(() => import('@/features/onboarding/layouts/OnboardingLayout').then(module => ({ default: module.OnboardingLayout })));
+const PersonalInfo = lazy(() => import('@/features/onboarding/components/PersonalInfo').then(module => ({ default: module.PersonalInfo })));
+const RestaurantInfo = lazy(() => import('@/features/onboarding/components/RestaurantInfo').then(module => ({ default: module.RestaurantInfo })));
+const AboutRestaurant = lazy(() => import('@/features/onboarding/components/AboutRestaurant').then(module => ({ default: module.AboutRestaurant })));
+const Verification = lazy(() => import('@/features/onboarding/components/Verification').then(module => ({ default: module.Verification })));
+const HelpCenter = lazy(() => import('@/pages/HelpCenter').then(module => ({ default: module.HelpCenter })));
+const NotFound = lazy(() => import('@/pages/NotFound').then(module => ({ default: module.NotFound })));
+const DashboardLayout = lazy(() => import('@/features/dashboard/layouts/DashboardLayout').then(module => ({ default: module.DashboardLayout })));
+
+const Loading = () => (
+    <div className="flex items-center justify-center min-h-screen">
+        <div className="w-16 h-16 border-4 border-primary/30 border-t-primary rounded-full animate-spin"></div>
+    </div>
+);
+
+const withSuspense = (Component: React.ComponentType) => (
+    <Suspense fallback={<Loading />}>
+        <Component />
+    </Suspense>
+);
 
 export const router = createBrowserRouter([
     {
@@ -19,13 +33,13 @@ export const router = createBrowserRouter([
         children: [
             {
                 path: '/',
-                element: <LandingPage />,
+                element: withSuspense(LandingPage),
             }
         ]
     },
     {
         path: '/help',
-        element: <HelpCenter />
+        element: withSuspense(HelpCenter)
     },
     {
         element: <RequireAuth />,
@@ -35,7 +49,7 @@ export const router = createBrowserRouter([
                 children: [
                     {
                         path: '/grow-with-ustart',
-                        element: <OnboardingLayout />,
+                        element: withSuspense(OnboardingLayout),
                         children: [
                             {
                                 index: true,
@@ -43,19 +57,19 @@ export const router = createBrowserRouter([
                             },
                             {
                                 path: 'personal-info',
-                                element: <PersonalInfo />
+                                element: withSuspense(PersonalInfo)
                             },
                             {
                                 path: "restaurant-info",
-                                element: <RestaurantInfo />
+                                element: withSuspense(RestaurantInfo)
                             },
                             {
                                 path: "documents",
-                                element: <AboutRestaurant />
+                                element: withSuspense(AboutRestaurant)
                             },
                             {
                                 path: "verification",
-                                element: <Verification />
+                                element: withSuspense(Verification)
                             }
                         ]
                     }
@@ -66,15 +80,15 @@ export const router = createBrowserRouter([
                 children: [
                     {
                         path: '/dashboard',
-                        element: <DashboardLayout />,
+                        element: withSuspense(DashboardLayout),
                         children: [
                             {
                                 index: true,
-                                element: <Dashboard />,
+                                element: withSuspense(Dashboard),
                             },
                             {
                                 path: 'orders',
-                                element: <Orders />,
+                                element: withSuspense(Orders),
                             },
                         ],
                     }
@@ -84,6 +98,6 @@ export const router = createBrowserRouter([
     },
     {
         path: '*',
-        element: <NotFound />,
+        element: withSuspense(NotFound),
     },
 ]);

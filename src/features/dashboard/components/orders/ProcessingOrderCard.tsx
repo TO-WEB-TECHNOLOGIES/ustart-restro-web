@@ -2,10 +2,11 @@ import { useState, useEffect } from 'react';
 import { Clock, UtensilsCrossed, Phone, ChevronDown, Loader2, AlertCircle, Bike, MapPin, Navigation, Headphones, Gift } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import type { Order } from '../../api/mockDashboard';
-import { useRestaurantStore, ALL_LOCATIONS_ID } from '../../store/useRestaurantStore';
+import { useRestaurantStore } from '../../store/useRestaurantStore';
 import { CancelOrderModal } from './CancelOrderModal';
 import { DelayedOrderModal } from './DelayedOrderModal';
 import { HelpModal } from './HelpModal';
+import { ALL_LOCATIONS_ID } from '@/types/storeTypes';
 
 interface ProcessingOrderCardProps {
     order: Order;

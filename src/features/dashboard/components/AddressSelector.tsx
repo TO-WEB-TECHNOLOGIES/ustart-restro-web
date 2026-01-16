@@ -1,9 +1,10 @@
 import { MapPin, ChevronDown, Check, Store, Search, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { useRestaurantStore, ALL_LOCATIONS_ID } from '../store/useRestaurantStore';
+import { useRestaurantStore } from '../store/useRestaurantStore';
 import { useTranslation } from 'react-i18next';
 import { useAddressSearch } from '../hooks/useDashboardData';
+import { ALL_LOCATIONS_ID } from '@/types/storeTypes';
 
 export const AddressSelector = () => {
     const [isOpen, setIsOpen] = useState(false);

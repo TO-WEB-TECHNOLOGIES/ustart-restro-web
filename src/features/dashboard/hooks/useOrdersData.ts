@@ -43,10 +43,11 @@ export const useRecentOrders = () => {
     };
 
     useEffect(() => {
-        if (selectedAddressId) {
+        // Only fetch if data is missing or we are on a different page than what's available
+        if (selectedAddressId && !orders.length) {
             fetchOrders(pagination.current);
         }
-    }, [selectedAddressId, pagination.current]);
+    }, [selectedAddressId, pagination.current, orders.length]);
 
     const goToPage = (page: number) => {
         if (selectedAddressId) {
@@ -129,15 +130,15 @@ export const useLiveOrders = () => {
         return false;
     });
 
+    // We don't need a local useEffect for initial fetch anymore as useOrderService 
+    // in DashboardLayout handles the initial fetch on address change.
+
     const refreshOrders = async () => {
         if (!selectedAddressId) return;
-        const data = await mockDashboardService.getRecentOrders(selectedAddressId, 1, 100);
+        // Fetching 50 to sync with the background service's typical payload
+        const data = await mockDashboardService.getRecentOrders(selectedAddressId, 1, 50);
         setRecentOrders(selectedAddressId, data.orders);
     };
-
-    useEffect(() => {
-        refreshOrders();
-    }, [selectedAddressId]);
 
     const acceptOrder = async (orderId: string, prepTime: number, giftMessage?: string) => {
         updateOrder(orderId, { status: 'ORDER_APPROVED_BY_RESTRO', prepTime });

@@ -2,7 +2,8 @@ import { TrendingUp, GripHorizontal, ShoppingBag, Receipt, Star } from 'lucide-r
 import { useTranslation } from 'react-i18next';
 
 import { useStats } from '../hooks/useDashboardData';
-import { useRestaurantStore, ALL_LOCATIONS_ID } from '../store/useRestaurantStore';
+import { useRestaurantStore } from '../store/useRestaurantStore';
+import { ALL_LOCATIONS_ID } from '@/types/storeTypes';
 
 export const StatsCards = () => {
     const { t } = useTranslation();

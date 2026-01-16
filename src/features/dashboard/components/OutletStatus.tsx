@@ -2,8 +2,9 @@ import { Switch } from '../../../components/ui/switch';
 import { Wifi, WifiOff } from 'lucide-react';
 import { useOutletStatus } from '../hooks/useDashboardData';
 import { useTranslation } from 'react-i18next';
-import { useRestaurantStore, ALL_LOCATIONS_ID } from '../store/useRestaurantStore';
+import { useRestaurantStore } from '../store/useRestaurantStore';
 import { AlertCircle } from 'lucide-react';
+import { ALL_LOCATIONS_ID } from '@/types/storeTypes';
 
 interface OutletStatusProps {
     compact?: boolean;

@@ -5,6 +5,7 @@ import { useState } from 'react';
 import { DashboardSidebar } from '../components/DashboardSidebar';
 import { DashboardHeader } from '../components/DashboardHeader';
 import { LogoutConfirmationModal } from '@/components/ui/logout-confirmation-modal';
+import { useOrderService } from '../hooks/useOrderService';
 
 export const DashboardLayout = () => {
     const { user, logout } = useAuth();
@@ -12,8 +13,9 @@ export const DashboardLayout = () => {
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
-    // Initial Data Fetch
+    // Initial Data Fetch & Background Services
     useRestaurantDetails();
+    useOrderService();
 
     const handleLogout = () => {
         logout();

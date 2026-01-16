@@ -6,7 +6,8 @@ import {
     type Order,
     type OutletStatus
 } from '../api/mockDashboard';
-import { useRestaurantStore, ALL_LOCATIONS_ID, type RestaurantStatus } from '../store/useRestaurantStore';
+import { useRestaurantStore } from '../store/useRestaurantStore';
+import { ALL_LOCATIONS_ID, type RestaurantStatus } from '@/types/storeTypes';
 
 export type { StatMetric, Order, OutletStatus };
 

@@ -4,9 +4,10 @@ import { useState, useEffect } from 'react';
 import { Clock, UtensilsCrossed, Store, Phone, ChevronDown, Loader2, AlertCircle, Bike, MapPin } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import type { Order } from '../../../api/mockDashboard';
-import { useRestaurantStore, ALL_LOCATIONS_ID } from '../../../store/useRestaurantStore';
+import { useRestaurantStore } from '../../../store/useRestaurantStore';
 import { CancelOrderModal } from '../CancelOrderModal';
 import { DelayedOrderModal } from '../DelayedOrderModal';
+import { ALL_LOCATIONS_ID } from '@/types/storeTypes';
 
 interface ProcessingOrderCardProps {
     order: Order;
@@ -26,7 +27,8 @@ export const ProcessingOrderCard = ({ order, onAction, onExtendTime, onCancel, o
     const [showDelayedModal, setShowDelayedModal] = useState(false);
     const [extensionMinutes, setExtensionMinutes] = useState('5');
     const isReady = order.status === 'ORDER_READY_BY_RESTRO';
-
+    const addresses = useRestaurantStore(state => state.addresses);
+    const matchedAddress = addresses.find(addr => addr.id === order.restroId);
     // Timer Logic
     const approvedLog = order.logs?.find(log => log.status === 'ORDER_APPROVED_BY_RESTRO');
     const approvedAt = approvedLog?.timestamp || order.createdAt;
@@ -152,11 +154,11 @@ export const ProcessingOrderCard = ({ order, onAction, onExtendTime, onCancel, o
                             <span className="text-[10px] font-bold font-mono tracking-wider">{order.customer.phone}</span>
                         </div>
 
-                        {selectedAddressId === ALL_LOCATIONS_ID && order.recipientAddress && (
+                        {selectedAddressId === ALL_LOCATIONS_ID && matchedAddress?.address && (
                             <div className="flex items-center justify-center gap-1 mt-2 bg-slate-100/50 rounded px-2 py-0.5 w-fit mx-auto">
                                 <Store className="w-2.5 h-2.5 text-slate-400" />
                                 <span className="text-[9px] font-bold text-slate-500 uppercase tracking-wide">
-                                    {order.recipientAddress.label}
+                                    {matchedAddress.label}
                                 </span>
                             </div>
                         )}

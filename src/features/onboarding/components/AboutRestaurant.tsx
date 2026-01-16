@@ -12,10 +12,11 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 
 // Master Data API
-import { masterDataService, type Cuisine } from '../api/masterData';
+import { masterDataService } from '../api/masterData';
 import { onboardingService } from '../api/onboardingService';
 import { Info, BookOpen, Image as ImageIcon, X, Paperclip, CloudUpload, CheckCircle2, User, Store, MapPin } from 'lucide-react';
 import { useRef } from 'react';
+import type { Cuisine, OnboardingData, RestaurantInfo, AboutRestaurant as OnboardingAboutRestaurant, OnboardingDocuments } from '@/types/onboardingTypes';
 
 export const AboutRestaurant = () => {
     const { t } = useTranslation();
@@ -101,11 +102,11 @@ export const AboutRestaurant = () => {
             setDocuments(data);
 
             // Prepare full payload
-            const fullPayload = {
+            const fullPayload: OnboardingData = {
                 personalInfo,
-                restaurantInfo,
-                aboutRestaurant,
-                documents: data
+                restaurantInfo: restaurantInfo as RestaurantInfo,
+                aboutRestaurant: aboutRestaurant as unknown as OnboardingAboutRestaurant,
+                documents: data as OnboardingDocuments
             };
 
             // Call API
