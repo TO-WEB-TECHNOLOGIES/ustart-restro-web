@@ -5,7 +5,7 @@ import { useAuth } from '@/context/AuthContext';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Footer } from '@/features/landing/components/Footer';
+import { Footer } from '@/features/home/components/Footer';
 import { Logo } from '@/components/ui/logo';
 import { useLanguage } from '@/hooks/useLanguage';
 import { useNavigate } from 'react-router-dom';
