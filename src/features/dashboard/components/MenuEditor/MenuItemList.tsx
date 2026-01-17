@@ -1,8 +1,9 @@
-import { useRef, useEffect } from 'react';
+import { useRef, useEffect, useState } from 'react';
 import { Plus, Search, Filter, ChevronDown, Loader2, Utensils, Layout } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useMenu } from '../../hooks/useMenu';
 import { MenuItemCard } from './MenuItemCard';
+import { motion } from 'framer-motion';
 
 interface MenuItemListProps {
     onOpenSidebar?: () => void;
@@ -13,18 +14,44 @@ interface MenuItemListProps {
  */
 export const MenuItemList = ({ onOpenSidebar }: MenuItemListProps) => {
     const { t } = useTranslation();
+    const [showFilters, setShowFilters] = useState(false);
+    const filterRef = useRef<HTMLDivElement>(null);
+
     const {
         selectedCategory,
         selectedCategoryId,
         allItems,
         searchQuery,
         setSearchQuery,
+        filters,
+        setFilters,
+        clearFilters,
         isCurrentCategoryItemsLoading,
         hasMore,
         fetchNextPage
     } = useMenu();
 
+    const [stagedFilters, setStagedFilters] = useState(filters);
+
+    // Sync staged filters when global filters change (e.g. on clear) or when opening dropdown
+    useEffect(() => {
+        if (showFilters) {
+            setStagedFilters(filters);
+        }
+    }, [showFilters, filters]);
+
     const observerTarget = useRef<HTMLDivElement>(null);
+
+    // Close filters on click outside
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (filterRef.current && !filterRef.current.contains(event.target as Node)) {
+                setShowFilters(false);
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
 
     // Infinite Scroll Implementation
     useEffect(() => {
@@ -44,13 +71,34 @@ export const MenuItemList = ({ onOpenSidebar }: MenuItemListProps) => {
         return () => observer.disconnect();
     }, [hasMore, isCurrentCategoryItemsLoading, fetchNextPage, selectedCategoryId]);
 
+    // Handle multi-select toggle for array filters (STAGED)
+    const toggleStagedFilter = (key: 'stock' | 'foodType', value: any) => {
+        const current = stagedFilters[key] as any[];
+        const updated = current.includes(value)
+            ? current.filter(v => v !== value)
+            : [...current, value];
+        setStagedFilters({ ...stagedFilters, [key]: updated });
+    };
+
+    const handleApplyFilters = () => {
+        setFilters(stagedFilters);
+        setShowFilters(false);
+    };
+
+    const handleClearFilters = () => {
+        clearFilters();
+        setShowFilters(false);
+    };
+
+    const activeFilterCount = filters.stock.length + filters.foodType.length + (filters.discounted !== null ? 1 : 0);
+
     // Do not render anything if no category is selected
     if (!selectedCategory) return null;
 
     return (
         <div className="flex-1 flex flex-col h-full bg-[#fdfdfd] dark:bg-slate-950 overflow-hidden">
             {/* Sticky Action Bar */}
-            <div className="px-4 md:px-8 py-4 shrink-0 z-20 border-b md:border-none border-slate-100 dark:border-slate-800">
+            <div className="px-4 md:px-8 py-4 shrink-0 z-30 border-b md:border-none border-slate-100 dark:border-slate-800">
                 <div className="flex flex-col md:flex-row items-center gap-4 w-full">
                     <div className="flex items-center gap-2 w-full md:w-auto md:flex-1">
                         {/* Mobile Categories Toggle */}
@@ -74,10 +122,103 @@ export const MenuItemList = ({ onOpenSidebar }: MenuItemListProps) => {
                     </div>
 
                     <div className="flex items-center gap-2 w-full md:w-auto">
-                        <button className="flex-1 md:flex-none flex items-center justify-center gap-2 px-4 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors shadow-sm">
-                            <Filter className="w-4 h-4" />
-                            <span className="md:inline">{t('dashboard.menuEditor.filters')}</span>
-                        </button>
+                        {/* Filter Dropdown */}
+                        <div className="relative flex-1 md:flex-none" ref={filterRef}>
+                            <button
+                                onClick={() => setShowFilters(!showFilters)}
+                                className={`w-full md:w-auto flex items-center justify-center gap-2 px-4 py-2 rounded-xl text-sm font-bold transition-all shadow-sm border ${showFilters || activeFilterCount > 0 ? 'bg-[var(--color-primary-blue)] border-[var(--color-primary-blue)] text-white' : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300'}`}
+                            >
+                                <Filter className="w-4 h-4" />
+                                <span>{t('dashboard.menuEditor.filters')}</span>
+                                {activeFilterCount > 0 && (
+                                    <span className="flex items-center justify-center w-5 h-5 bg-white text-[var(--color-primary-blue)] rounded-full text-[10px] font-black">
+                                        {activeFilterCount}
+                                    </span>
+                                )}
+                            </button>
+
+                            {showFilters && (
+                                <motion.div
+                                    initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                                    className="absolute right-0 top-full mt-2 w-72 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-xl p-4 z-50 overflow-hidden"
+                                >
+                                    <div className="flex items-center justify-between mb-4">
+                                        <h4 className="text-xs font-black uppercase tracking-widest text-slate-400">Apply Filters</h4>
+                                        {activeFilterCount > 0 && (
+                                            <button onClick={handleClearFilters} className="text-[10px] font-black text-red-500 hover:underline uppercase tracking-tighter">
+                                                Clear All
+                                            </button>
+                                        )}
+                                    </div>
+
+                                    {/* 1. Stock Status */}
+                                    <div className="mb-4">
+                                        <span className="text-[10px] font-bold text-slate-500 block mb-2 uppercase tracking-tight">Stock Status</span>
+                                        <div className="flex flex-wrap gap-2">
+                                            {[
+                                                { label: 'In Stock', value: 'in_stock' },
+                                                { label: 'Out of Stock', value: 'out_of_stock' }
+                                            ].map((opt) => (
+                                                <button
+                                                    key={opt.value}
+                                                    onClick={() => toggleStagedFilter('stock', opt.value)}
+                                                    className={`px-3 py-1.5 rounded-lg text-[10px] font-bold transition-colors ${stagedFilters.stock.includes(opt.value as any) ? 'bg-[var(--color-primary-blue)] text-white' : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400'}`}
+                                                >
+                                                    {opt.label}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </div>
+
+                                    {/* 2. Food Type */}
+                                    <div className="mb-4">
+                                        <span className="text-[10px] font-bold text-slate-500 block mb-2 uppercase tracking-tight">Dietary preference</span>
+                                        <div className="flex flex-wrap gap-2">
+                                            {[
+                                                { label: 'Veg', value: 'veg' },
+                                                { label: 'Non-veg', value: 'non_veg' },
+                                                { label: 'Contains Egg', value: 'contains_egg' }
+                                            ].map((opt) => (
+                                                <button
+                                                    key={opt.value}
+                                                    onClick={() => toggleStagedFilter('foodType', opt.value)}
+                                                    className={`px-3 py-1.5 rounded-lg text-[10px] font-bold transition-colors ${stagedFilters.foodType.includes(opt.value as any) ? 'bg-[var(--color-primary-blue)] text-white' : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400'}`}
+                                                >
+                                                    {opt.label}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </div>
+
+                                    {/* 3. Discount */}
+                                    <div className="mb-6">
+                                        <span className="text-[10px] font-bold text-slate-500 block mb-2 uppercase tracking-tight">Pricing</span>
+                                        <div className="grid grid-cols-2 gap-2">
+                                            {[
+                                                { label: 'Discounted', value: true },
+                                                { label: 'No Discount', value: false }
+                                            ].map((opt) => (
+                                                <button
+                                                    key={opt.label}
+                                                    onClick={() => setStagedFilters({ ...stagedFilters, discounted: stagedFilters.discounted === opt.value ? null : opt.value })}
+                                                    className={`px-3 py-1.5 rounded-lg text-[10px] font-bold transition-colors ${stagedFilters.discounted === opt.value ? 'bg-[var(--color-primary-blue)] text-white' : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400'}`}
+                                                >
+                                                    {opt.label}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </div>
+
+                                    <button
+                                        onClick={handleApplyFilters}
+                                        className="w-full py-2 bg-[var(--color-primary-blue)] text-white text-[10px] font-black uppercase tracking-widest rounded-xl hover:opacity-90 transition-opacity"
+                                    >
+                                        Apply Filters
+                                    </button>
+                                </motion.div>
+                            )}
+                        </div>
 
                         <button className="flex-1 md:flex-none flex items-center justify-center gap-2 px-4 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-bold hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors shadow-sm text-slate-700 dark:text-slate-300">
                             <span className="md:inline">{t('dashboard.menuEditor.actions')}</span>

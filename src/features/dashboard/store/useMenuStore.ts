@@ -14,6 +14,12 @@ export interface MenuStore {
     selectedCategoryId: string | null;
     /** Current search query for filtering menu items */
     searchQuery: string;
+    /** Current filters for menu items */
+    filters: {
+        stock: ('in_stock' | 'out_of_stock')[];
+        foodType: ('veg' | 'non_veg' | 'contains_egg')[];
+        discounted: boolean | null;
+    };
     /** Tracks if any changes have been made since the last submission */
     isDirty: boolean;
     /** Indicates if a submission is currently in progress */
@@ -31,6 +37,10 @@ export interface MenuStore {
     setSelectedCategoryId: (id: string | null) => void;
     /** Updates the search query string */
     setSearchQuery: (query: string) => void;
+    /** Updates the filters */
+    setFilters: (filters: Partial<MenuStore['filters']>) => void;
+    /** Clears all filters */
+    clearFilters: () => void;
     /** Updates a specific menu item */
     updateMenuItem: (categoryId: string, itemId: string, updates: Partial<MenuItem>) => void;
     /** Helper function to get the full category object for the selected ID */
@@ -120,6 +130,11 @@ export const useMenuStore = create<MenuStore>()(
             categories: [],
             selectedCategoryId: null,
             searchQuery: '',
+            filters: {
+                stock: [],
+                foodType: [],
+                discounted: null,
+            },
             isDirty: false,
             isSubmitting: false,
             isCategoriesLoading: false,
@@ -150,7 +165,36 @@ export const useMenuStore = create<MenuStore>()(
                 }
             },
 
-            setSearchQuery: (searchQuery) => set({ searchQuery }),
+            setSearchQuery: (searchQuery) => {
+                set({ searchQuery });
+                const id = get().selectedCategoryId;
+                if (id) {
+                    get().fetchCategoryItems(id);
+                }
+            },
+
+            setFilters: (newFilters) => {
+                const updatedFilters = { ...get().filters, ...newFilters };
+                set({ filters: updatedFilters });
+                const id = get().selectedCategoryId;
+                if (id) {
+                    get().fetchCategoryItems(id);
+                }
+            },
+
+            clearFilters: () => {
+                set({
+                    filters: {
+                        stock: [],
+                        foodType: [],
+                        discounted: null,
+                    }
+                });
+                const id = get().selectedCategoryId;
+                if (id) {
+                    get().fetchCategoryItems(id);
+                }
+            },
 
             fetchCategories: async (force = false) => {
                 const { categories, lastCategoriesFetch, isCategoriesLoading, isDirty } = get();
@@ -196,7 +240,7 @@ export const useMenuStore = create<MenuStore>()(
              * Initial items fetch for a category.
              */
             fetchCategoryItems: async (categoryId: string) => {
-                const { isItemsLoading, categories } = get();
+                const { isItemsLoading, categories, filters, searchQuery } = get();
                 if (isItemsLoading[categoryId]) return;
 
                 set(state => ({
@@ -204,7 +248,13 @@ export const useMenuStore = create<MenuStore>()(
                 }));
 
                 try {
-                    const response = await fetchCategoryItems(categoryId, 1, 5); // Start with page 1
+                    const response = await fetchCategoryItems(
+                        categoryId,
+                        1,
+                        5,
+                        searchQuery,
+                        filters
+                    );
                     const updatedCategories = updateCategoryInTree(categories, categoryId, {
                         items: response.items,
                         currentPage: response.currentPage,
@@ -227,7 +277,7 @@ export const useMenuStore = create<MenuStore>()(
              * Infinite scroll next page fetch.
              */
             fetchNextPage: async (categoryId: string) => {
-                const { isItemsLoading, categories } = get();
+                const { isItemsLoading, categories, filters, searchQuery } = get();
                 if (isItemsLoading[categoryId]) return;
 
                 const findRecursive = (list: Category[]): Category | undefined => {
@@ -253,7 +303,13 @@ export const useMenuStore = create<MenuStore>()(
                 }));
 
                 try {
-                    const response = await fetchCategoryItems(categoryId, nextPage, 5);
+                    const response = await fetchCategoryItems(
+                        categoryId,
+                        nextPage,
+                        5,
+                        searchQuery,
+                        filters
+                    );
                     const baseItems = Array.isArray(currentCategory.items) ? currentCategory.items : [];
                     const updatedItems = [...baseItems, ...response.items];
 

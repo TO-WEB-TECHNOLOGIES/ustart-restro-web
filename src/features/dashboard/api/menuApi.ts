@@ -41,12 +41,48 @@ export interface PaginatedItems {
  * @param {string} categoryId 
  * @param {number} page 
  * @param {number} limit 
+ * @param {string} searchQuery
+ * @param {any} filters
  * @returns {Promise<PaginatedItems>}
  */
-export const fetchCategoryItems = async (categoryId: string, page = 1, limit = 5): Promise<PaginatedItems> => {
+export const fetchCategoryItems = async (
+    categoryId: string,
+    page = 1,
+    limit = 5,
+    searchQuery = '',
+    filters: any = {}
+): Promise<PaginatedItems> => {
     await delay(500); // Faster delay for specific item fetch
     const category = MOCK_CATEGORIES.find(c => c.id === categoryId || c.parentCategoryId === categoryId);
-    const allItems = category?.items || [];
+    let allItems = category?.items || [];
+
+    // Simulate Server-Side Search
+    if (searchQuery) {
+        const query = searchQuery.toLowerCase();
+        allItems = allItems.filter(item =>
+            item.name.toLowerCase().includes(query) ||
+            item.description?.toLowerCase().includes(query)
+        );
+    }
+
+    // Simulate Server-Side Filtering
+    if (filters) {
+        if (filters.stock && filters.stock.length > 0) {
+            allItems = allItems.filter(item => {
+                if (filters.stock.includes('in_stock') && item.inStock) return true;
+                if (filters.stock.includes('out_of_stock') && !item.inStock) return true;
+                return false;
+            });
+        }
+
+        if (filters.foodType && filters.foodType.length > 0) {
+            allItems = allItems.filter(item => filters.foodType.includes(item.foodType));
+        }
+
+        if (filters.discounted !== null) {
+            allItems = allItems.filter(item => item.hasDiscount === filters.discounted);
+        }
+    }
 
     // Calculate pagination
     const totalPages = Math.ceil(allItems.length / limit);
