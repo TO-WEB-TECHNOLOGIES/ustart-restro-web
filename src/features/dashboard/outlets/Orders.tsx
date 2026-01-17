@@ -36,7 +36,7 @@ export const Orders = () => {
             />
 
             {sortedOrders.length === 0 ? (
-                <div className="flex-1 flex items-center justify-center">
+                <div className="flex-1 flex h-full items-center justify-center">
                     <NoOrdersScreen stage={activeTab} />
                 </div>
             ) : (

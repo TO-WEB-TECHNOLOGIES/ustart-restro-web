@@ -70,7 +70,7 @@ export default function NoOrdersScreen({ stage }: NoOrdersScreenProps) {
     const { t } = useTranslation();
 
     return (
-        <div className="flex flex-col items-center justify-center py-12 px-4 text-center">
+        <div className="flex flex-col items-center justify-center py-12 px-4 text-center flex-grow w-full h-full">
             {/* Hero Illustration */}
             <div className="w-64 h-56 mb-6 relative">
                 <EmptyPlateIllustration />
