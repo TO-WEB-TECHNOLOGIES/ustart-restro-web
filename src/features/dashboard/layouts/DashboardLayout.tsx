@@ -40,7 +40,7 @@ export const DashboardLayout = () => {
                 />
 
                 {/* Main Content */}
-                <main className="flex-1 w-full overflow-x-hidden overflow-y-auto transition-all duration-300 ease-in-out flex flex-col">
+                <main className="flex-1 w-full h-full overflow-x-hidden overflow-y-auto transition-all duration-300 ease-in-out flex flex-col">
                     <Outlet />
                 </main>
             </div>

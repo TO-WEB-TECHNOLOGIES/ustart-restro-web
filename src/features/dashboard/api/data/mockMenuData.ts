@@ -1,5 +1,9 @@
 import { type Category } from "../../../../types/menuTypes";
 
+/**
+ * Mock data for menu categories and items.
+ * Used for development and testing purposes to simulate a real restaurant menu.
+ */
 export const MOCK_CATEGORIES: Category[] = [
     {
         id: '1',

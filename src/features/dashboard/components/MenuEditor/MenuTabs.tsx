@@ -2,6 +2,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Sparkles } from 'lucide-react';
 
+/** Possible navigation tabs for the menu editor section */
 const TABS = [
     { label: 'Menu editor', path: 'edit' },
     { label: 'Manage inventory', path: 'stock' },
@@ -9,6 +10,10 @@ const TABS = [
     { label: 'Charges', path: 'charges' }
 ];
 
+/**
+ * Component displaying top navigation tabs for the menu dashboard.
+ * Uses react-router-dom for navigation and framer-motion for smooth tab indicator transitions.
+ */
 export const MenuTabs = () => {
     const location = useLocation();
     const navigate = useNavigate();
@@ -29,6 +34,7 @@ export const MenuTabs = () => {
                                 }`}
                         >
                             {tab.label}
+                            {/* Animated line indicator for the active tab */}
                             {isActive && (
                                 <motion.div
                                     layoutId="activeTabIndicator"
@@ -39,6 +45,7 @@ export const MenuTabs = () => {
                     );
                 })}
             </div>
+            {/* Utility button for change awareness */}
             <button className="flex items-center gap-2 text-[var(--color-primary-blue)] text-sm font-bold">
                 <Sparkles className="w-4 h-4 text-[#f97316]" />
                 See what's changed
