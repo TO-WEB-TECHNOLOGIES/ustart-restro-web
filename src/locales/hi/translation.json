@@ -1,5 +1,6 @@
 {
   "common": {
+    "loading": "लोड हो रहा है...",
     "welcome": "एडमिन डैशबोर्ड में आपका स्वागत है",
     "dashboard": "डैशबोर्ड",
     "settings": "सेटिंग्स",
@@ -648,6 +649,41 @@
       "title": "हम अभी भी इसे",
       "titleSecondary": "तैयार कर रहे हैं।",
       "description": "यह सुविधा अभी परोसने के लिए तैयार नहीं है। हमारी टीम इसे आपके लिए सही बनाने के लिए अंतिम सामग्री जोड़ रही है।"
+    },
+    "menuEditor": {
+      "title": "मेनू संपादक",
+      "tabs": {
+        "edit": "मेनू संपादक",
+        "stock": "इन्वेंट्री प्रबंधित करें",
+        "taxes": "टैक्स",
+        "charges": "शुल्क",
+        "seeChanges": "देखें क्या बदला है"
+      },
+      "categories": "श्रेणियां",
+      "addCategory": "श्रेणी जोड़ें",
+      "addSubcategory": "उपश्रेणी जोड़ें",
+      "goToAddOns": "ऐड-ऑन पर जाएं",
+      "menuHealth": "मेनू स्वास्थ्य",
+      "statusLabel": "स्थिति",
+      "noDescription": "कोई विवरण नहीं, बेहतर दृश्यता के लिए जोड़ें",
+      "noImage": "कोई छवि नहीं, सर्वोत्तम दृश्यता के लिए जोड़ें",
+      "noImageShort": "कोई छवि नहीं",
+      "addNewItem": "नया आइटम जोड़ें",
+      "searchPlaceholder": "डिश का नाम खोजें...",
+      "filterAll": "सभी व्यंजन",
+      "filterVeg": "केवल शाकाहारी",
+      "filterNonVeg": "माँसाहारी",
+      "actions": "क्रियाएं",
+      "filters": "फिल्टर",
+      "submitChanges": "परिवर्तन सबमिट करें",
+      "unsavedChanges": "अनसेव्ड परिवर्तन",
+      "saving": "सहेज रहा है...",
+      "items": "आइटम",
+      "customisable": "कस्टमाइज़ करने योग्य",
+      "searchCategories": "श्रेणियां खोजें...",
+      "noCategoriesFound": "कोई श्रेणी नहीं मिली",
+      "fetchingItems": "आइटम प्राप्त कर रहा है...",
+      "off": "{{amount}} की छूट"
     }
   }
 }

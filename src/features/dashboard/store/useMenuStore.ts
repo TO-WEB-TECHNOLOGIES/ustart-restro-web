@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import { type Category, type MenuItem } from '../../../types/menuTypes';
-import { fetchMenuScore, updateMenu, fetchCategories } from '../api/menuApi';
+import { fetchMenuScore, updateMenu, fetchCategories, fetchCategoryItems } from '../api/menuApi';
 
 /**
  * Interface representing the state and actions for the Menu Store.
@@ -20,10 +20,14 @@ export interface MenuStore {
     isSubmitting: boolean;
     /** Loading state for categories fetching */
     isCategoriesLoading: boolean;
+    /** Loading state for items within categories (mapped by categoryId) */
+    isItemsLoading: Record<string, boolean>;
+    /** Timestamp of the last successful categories fetch */
+    lastCategoriesFetch: number | null;
 
     /** Updates the categories in the store */
     setCategories: (categories: Category[]) => void;
-    /** Updates the selected category ID */
+    /** Updates the selected category ID and fetches items if needed */
     setSelectedCategoryId: (id: string | null) => void;
     /** Updates the search query string */
     setSearchQuery: (query: string) => void;
@@ -33,8 +37,10 @@ export interface MenuStore {
     getSelectedCategory: () => Category | undefined;
     /** Submits all local changes to the API */
     submitChanges: () => Promise<void>;
-    /** Fetches categories from the API */
-    fetchCategories: () => Promise<void>;
+    /** Fetches categories from the API with caching and revalidation */
+    fetchCategories: (force?: boolean) => Promise<void>;
+    /** Fetches items for a specific category on demand */
+    fetchCategoryItems: (categoryId: string) => Promise<void>;
 
     // --- Menu Score State ---
     /** Overall health score of the menu */
@@ -52,8 +58,56 @@ export interface MenuStore {
 }
 
 /**
+ * Helper to transform a flat list of categories into a tree structure.
+ * Uses itemCount provided by the API and maintains hierarchy.
+ */
+const buildCategoryTree = (flatCategories: Category[]): Category[] => {
+    const categoryMap: Record<string, Category> = {};
+    const roots: Category[] = [];
+
+    // Initialize map
+    flatCategories.forEach(cat => {
+        categoryMap[cat.id] = {
+            ...cat,
+            items: cat.items || undefined, // Ensure it's undefined if not present
+            subCategories: [],
+            itemCount: cat.itemCount || 0
+        };
+    });
+
+    // Link children to parents
+    flatCategories.forEach(cat => {
+        if (cat.parentCategoryId && categoryMap[cat.parentCategoryId]) {
+            categoryMap[cat.parentCategoryId].subCategories?.push(categoryMap[cat.id]);
+        } else {
+            roots.push(categoryMap[cat.id]);
+        }
+    });
+
+    return roots;
+};
+
+/**
+ * Helper to update a single category within the hierarchical tree.
+ */
+const updateCategoryInTree = (categories: Category[], categoryId: string, updates: Partial<Category>): Category[] => {
+    return categories.map(cat => {
+        if (cat.id === categoryId) {
+            return { ...cat, ...updates };
+        }
+        if (cat.subCategories && cat.subCategories.length > 0) {
+            return {
+                ...cat,
+                subCategories: updateCategoryInTree(cat.subCategories, categoryId, updates)
+            };
+        }
+        return cat;
+    });
+};
+
+/**
  * Zustand store for managing menu data with SessionStorage persistence.
- * Logic is decoupled from mock data; interact always through the API layer.
+ * Implements a stale-while-revalidate caching strategy.
  */
 export const useMenuStore = create<MenuStore>()(
     persist(
@@ -65,28 +119,103 @@ export const useMenuStore = create<MenuStore>()(
             isDirty: false,
             isSubmitting: false,
             isCategoriesLoading: false,
+            isItemsLoading: {},
+            lastCategoriesFetch: null,
 
-            setCategories: (categories) => set({ categories, isDirty: true }),
-            setSelectedCategoryId: (id) => set({ selectedCategoryId: id }),
+            setCategories: (categories) => {
+                set({ categories, isDirty: true });
+            },
+
+            setSelectedCategoryId: (id) => {
+                set({ selectedCategoryId: id });
+                if (id) {
+                    const findSelected = (list: Category[]): Category | undefined => {
+                        for (const cat of list) {
+                            if (cat.id === id) return cat;
+                            if (cat.subCategories) {
+                                const found = findSelected(cat.subCategories);
+                                if (found) return found;
+                            }
+                        }
+                    };
+                    const category = findSelected(get().categories);
+                    if (category && !category.items) {
+                        get().fetchCategoryItems(id);
+                    }
+                }
+            },
+
             setSearchQuery: (searchQuery) => set({ searchQuery }),
 
             /**
-             * Fetches categories from the API and initializes the store.
+             * Fetches categories using an enhanced stale-while-revalidate strategy.
+             * Categories are returned with itemCount but without items.
              */
-            fetchCategories: async () => {
-                if (get().isCategoriesLoading) return;
+            fetchCategories: async (force = false) => {
+                const { categories, lastCategoriesFetch, isCategoriesLoading, isDirty } = get();
+                const REVALIDATE_TIME = 30 * 1000;
+
+                if (isCategoriesLoading) return;
+
+                const isFresh = !force && lastCategoriesFetch && (Date.now() - lastCategoriesFetch < REVALIDATE_TIME);
+
+                if (isFresh && categories.length > 0) {
+                    return;
+                }
+
+                if (isDirty && categories.length > 0 && !force) {
+                    return;
+                }
+
                 set({ isCategoriesLoading: true });
+
                 try {
-                    const categories = await fetchCategories();
+                    const flatData = await fetchCategories();
+                    const treeData = buildCategoryTree(flatData);
+
+                    const finalSelectedId = get().selectedCategoryId || (treeData.length > 0 ? treeData[0].id : null);
+
                     set({
-                        categories,
+                        categories: treeData,
                         isCategoriesLoading: false,
-                        // Set first category as selected if none selected
-                        selectedCategoryId: get().selectedCategoryId || (categories.length > 0 ? categories[0].id : null)
+                        lastCategoriesFetch: Date.now(),
+                        selectedCategoryId: finalSelectedId
                     });
+
+                    // Trigger items fetch for initial selection
+                    if (finalSelectedId) {
+                        get().fetchCategoryItems(finalSelectedId);
+                    }
                 } catch (error) {
-                    console.error('Failed to fetch categories:', error);
+                    console.error('Menu Store: Failed to fetch categories:', error);
                     set({ isCategoriesLoading: false });
+                }
+            },
+
+            /**
+             * Fetches items for a specific category on demand.
+             */
+            fetchCategoryItems: async (categoryId: string) => {
+                const { isItemsLoading, categories } = get();
+                if (isItemsLoading[categoryId]) return;
+
+                set(state => ({
+                    isItemsLoading: { ...state.isItemsLoading, [categoryId]: true }
+                }));
+
+                try {
+                    const items = await fetchCategoryItems(categoryId);
+                    const updatedCategories = updateCategoryInTree(categories, categoryId, { items });
+
+                    set(state => ({
+                        categories: updatedCategories,
+                        isItemsLoading: { ...state.isItemsLoading, [categoryId]: false }
+                    }));
+                } catch (error) {
+                    console.error(`Menu Store: Failed to fetch items for category ${categoryId}:`, error);
+                    set(state => ({
+                        isItemsLoading: { ...state.isItemsLoading, [categoryId]: false }
+                    }));
                 }
             },
 
@@ -95,26 +224,52 @@ export const useMenuStore = create<MenuStore>()(
              */
             updateMenuItem: (categoryId, itemId, updates) => {
                 const { categories } = get();
-                const updatedCategories = categories.map(cat => {
-                    if (cat.id !== categoryId) return cat;
-                    return {
-                        ...cat,
-                        items: cat.items.map(item =>
-                            item.id === itemId ? { ...item, ...updates } : item
-                        )
-                    };
-                });
-                set({ categories: updatedCategories, isDirty: true });
+
+                const updateRecursive = (list: Category[]): Category[] => {
+                    return list.map(cat => {
+                        if (cat.id === categoryId && cat.items) {
+                            const updatedItems = cat.items.map(item =>
+                                item.id === itemId ? { ...item, ...updates } : item
+                            );
+                            return {
+                                ...cat,
+                                items: updatedItems
+                            };
+                        }
+                        if (cat.subCategories && cat.subCategories.length > 0) {
+                            return {
+                                ...cat,
+                                subCategories: updateRecursive(cat.subCategories)
+                            };
+                        }
+                        return cat;
+                    });
+                };
+
+                set({ categories: updateRecursive(categories), isDirty: true });
             },
 
             getSelectedCategory: () => {
                 const { categories, selectedCategoryId } = get();
-                return categories.find(cat => cat.id === selectedCategoryId);
+                if (!selectedCategoryId) return undefined;
+
+                const findRecursive = (list: Category[]): Category | undefined => {
+                    for (const cat of list) {
+                        if (cat.id === selectedCategoryId) return cat;
+                        if (cat.subCategories && cat.subCategories.length > 0) {
+                            const found = findRecursive(cat.subCategories);
+                            if (found) return found;
+                        }
+                    }
+                    return undefined;
+                };
+
+                return findRecursive(categories);
             },
 
             /**
              * Performs an API call to sync local changes with the server.
-             * Resets the isDirty flag upon success.
+             * Clears the fetch cache upon success to ensure sub-sequent fetches are fresh.
              */
             submitChanges: async () => {
                 const { categories, isDirty, isSubmitting } = get();
@@ -124,7 +279,11 @@ export const useMenuStore = create<MenuStore>()(
                 try {
                     const response = await updateMenu(categories);
                     if (response.success) {
-                        set({ isDirty: false, isSubmitting: false });
+                        set({
+                            isDirty: false,
+                            isSubmitting: false,
+                            lastCategoriesFetch: null
+                        });
                         alert('Changes submitted successfully!');
                     }
                 } catch (error) {
@@ -134,7 +293,7 @@ export const useMenuStore = create<MenuStore>()(
                 }
             },
 
-            // --- Initial Menu Score State ---
+            // --- Menu Score State ---
             score: 0,
             thresholdScore: 0,
             status: '',
@@ -162,11 +321,12 @@ export const useMenuStore = create<MenuStore>()(
         {
             name: 'menu-editor-storage',
             storage: createJSONStorage(() => sessionStorage),
-            // Only persist editor-related state
+             // Only persist editor-related state
             partialize: (state) => ({
                 categories: state.categories,
                 selectedCategoryId: state.selectedCategoryId,
                 isDirty: state.isDirty,
+                lastCategoriesFetch: state.lastCategoriesFetch,
             }),
         }
     )

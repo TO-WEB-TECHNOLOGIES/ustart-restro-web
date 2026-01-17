@@ -48,7 +48,7 @@ const MENU_SECTIONS: MenuSection[] = [
     key: "operations",
     items: [
       { icon: LayoutDashboard, key: "home", path: "/dashboard" },
-      { icon: UtensilsCrossed, key: "menu", path: "/dashboard/menu" },
+      { icon: UtensilsCrossed, key: "menu", path: "/dashboard/menu/edit" },
       {
         icon: CalendarClock,
         key: "orders",

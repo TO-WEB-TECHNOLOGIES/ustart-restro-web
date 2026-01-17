@@ -1,5 +1,6 @@
 {
   "common": {
+    "loading": "Loading...",
     "welcome": "Welcome to the Admin Dashboard",
     "dashboard": "Dashboard",
     "settings": "Settings",
@@ -649,6 +650,41 @@
       "title": "We're still",
       "titleSecondary": "cooking this up.",
       "description": "This feature isn't quite ready to be served yet. Our team is adding the final ingredients to make it perfect for you."
+    },
+    "menuEditor": {
+      "title": "Menu Editor",
+      "tabs": {
+        "edit": "Menu editor",
+        "stock": "Manage inventory",
+        "taxes": "Taxes",
+        "charges": "Charges",
+        "seeChanges": "See what's changed"
+      },
+      "categories": "Categories",
+      "addCategory": "Add Category",
+      "addSubcategory": "Add Subcategory",
+      "goToAddOns": "Go to Add Ons",
+      "menuHealth": "Menu Health",
+      "statusLabel": "Status",
+      "noDescription": "No Description, add for better visibility",
+      "noImage": "No Image, add for best visibility",
+      "noImageShort": "No Image",
+      "addNewItem": "Add New Item",
+      "searchPlaceholder": "Search dish name...",
+      "filterAll": "All Dishes",
+      "filterVeg": "Veg Only",
+      "filterNonVeg": "Non-Veg",
+      "actions": "Actions",
+      "filters": "Filters",
+      "submitChanges": "Submit Changes",
+      "unsavedChanges": "Unsaved changes",
+      "saving": "Saving...",
+      "items": "Items",
+      "customisable": "Customisable",
+      "searchCategories": "Search categories...",
+      "noCategoriesFound": "No categories found",
+      "fetchingItems": "Fetching items...",
+      "off": "{{amount}} OFF"
     }
   }
 }

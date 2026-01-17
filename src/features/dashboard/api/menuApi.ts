@@ -1,4 +1,4 @@
-import type { Category } from '@/types/menuTypes';
+import type { Category, MenuItem } from '@/types/menuTypes';
 import { delay, MOCK_MENU_SCORE } from './data/mockData';
 import { MOCK_CATEGORIES } from './data/mockMenuData';
 
@@ -13,12 +13,29 @@ export interface MenuScoreData {
 }
 
 /**
- * Fetches the current menu categories and items.
+ * Fetches the current menu categories.
+ * Returns categories with itemCount but without the items list.
  * @returns {Promise<Category[]>}
  */
 export const fetchCategories = async (): Promise<Category[]> => {
     await delay(800); // Simulate network delay
-    return [...MOCK_CATEGORIES];
+    // Strip items and inject itemCount for simulation
+    return MOCK_CATEGORIES.map(cat => ({
+        ...cat,
+        itemCount: (cat.items || []).length,
+        items: undefined
+    }));
+};
+
+/**
+ * Fetches items for a specific category.
+ * @param {string} categoryId 
+ * @returns {Promise<MenuItem[]>}
+ */
+export const fetchCategoryItems = async (categoryId: string): Promise<MenuItem[]> => {
+    await delay(500); // Faster delay for specific item fetch
+    const category = MOCK_CATEGORIES.find(c => c.id === categoryId);
+    return category?.items || [];
 };
 
 /**
