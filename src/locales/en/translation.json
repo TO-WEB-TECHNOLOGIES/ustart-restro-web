@@ -1,6 +1,8 @@
 {
   "common": {
     "loading": "Loading...",
+    "edit": "Edit",
+    "delete": "Delete",
     "welcome": "Welcome to the Admin Dashboard",
     "dashboard": "Dashboard",
     "settings": "Settings",
@@ -679,6 +681,14 @@
       "submitChanges": "Submit Changes",
       "unsavedChanges": "Unsaved changes",
       "saving": "Saving...",
+      "block": "Block Item",
+      "inStock": "In Stock",
+      "outOfStock": "Out of Stock",
+      "taxAmount": "Tax Amount",
+      "packaging": "Packaging Charges",
+      "discountType": "Discount Type",
+      "discountLabel": "Discount",
+      "originalPrice": "Original Price",
       "items": "Items",
       "customisable": "Customisable",
       "searchCategories": "Search categories...",

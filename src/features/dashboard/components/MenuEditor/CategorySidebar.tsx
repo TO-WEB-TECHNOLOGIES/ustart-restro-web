@@ -1,18 +1,21 @@
 import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, MoreVertical, ChevronDown, ArrowRight, ShieldCheck, Search } from 'lucide-react';
+import { Plus, MoreVertical, ChevronDown, ArrowRight, ShieldCheck, Search, X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useMenu } from '../../hooks/useMenu';
 import { useMenuData } from '../../hooks/useMenuData';
 import { type Category } from '../../../../types/menuTypes';
 
+interface CategorySidebarProps {
+    onClose?: () => void;
+    isCollapsed?: boolean;
+}
+
 /**
  * Sidebar component for the Menu Editor.
  * Displays a list of all menu categories and allows the user to select one.
- * Shows expanded details (subcategories, counts) for the currently active category.
- * Integrates Menu Health score from MenuScore page.
  */
-export const CategorySidebar = () => {
+export const CategorySidebar = ({ onClose, isCollapsed }: CategorySidebarProps) => {
     const { t } = useTranslation();
     const navigate = useNavigate();
     const { categories, selectedCategoryId, setSelectedCategoryId } = useMenu();
@@ -71,7 +74,10 @@ export const CategorySidebar = () => {
                         : 'hover:bg-slate-50 dark:hover:bg-slate-800/50 border-l-4 border-transparent'
                         }`}
                     style={{ paddingLeft: `${(depth * 1) + 1}rem` }}
-                    onClick={() => setSelectedCategoryId(cat.id)}
+                    onClick={() => {
+                        setSelectedCategoryId(cat.id);
+                        if (window.innerWidth < 768) onClose?.();
+                    }}
                 >
                     <div className="flex items-center gap-2 overflow-hidden">
                         <span className={`text-sm font-bold truncate ${isSelected ? 'text-[var(--color-primary-blue)] dark:text-white' : 'text-slate-700 dark:text-slate-300'}`}>
@@ -100,7 +106,15 @@ export const CategorySidebar = () => {
     };
 
     return (
-        <div className="w-72 bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 flex flex-col h-full overflow-hidden">
+        <div className={`w-full h-full bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 flex flex-col overflow-hidden transition-opacity duration-200 ${isCollapsed ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}>
+            {/* Header with Close Button (Mobile Only) */}
+            <div className="p-4 flex items-center justify-between md:hidden border-b border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-950/50">
+                <span className="text-xs font-black uppercase tracking-widest text-slate-400">{t('dashboard.menuEditor.categories')}</span>
+                <button onClick={onClose} className="p-2 hover:bg-slate-200 dark:hover:bg-slate-800 rounded-full transition-colors">
+                    <X className="w-5 h-5 text-slate-500" />
+                </button>
+            </div>
+
             {/* Menu Health Score Indicator (Synced with MenuScore page) */}
             <div
                 onClick={() => navigate('/dashboard/menu')}
@@ -123,7 +137,7 @@ export const CategorySidebar = () => {
             </div>
 
             {/* Header section with total category count and "Add Category" action */}
-            <div className="p-6 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between gap-2">
+            <div className="p-6 px-0 border-b border-slate-100 dark:border-slate-800 flex items-center justify-around gap-2">
                 <h3 className="text-sm font-black text-slate-900 dark:text-white truncate">
                     {t('dashboard.menuEditor.categories')} ({categories.length})
                 </h3>

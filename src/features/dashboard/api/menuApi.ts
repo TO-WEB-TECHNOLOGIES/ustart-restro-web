@@ -45,7 +45,7 @@ export interface PaginatedItems {
  */
 export const fetchCategoryItems = async (categoryId: string, page = 1, limit = 5): Promise<PaginatedItems> => {
     await delay(500); // Faster delay for specific item fetch
-    const category = MOCK_CATEGORIES.find(c => c.id === categoryId);
+    const category = MOCK_CATEGORIES.find(c => c.id === categoryId || c.parentCategoryId === categoryId);
     const allItems = category?.items || [];
 
     // Calculate pagination

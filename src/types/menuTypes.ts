@@ -27,6 +27,14 @@ export interface MenuItem {
     isCustomisable: boolean;
     /** Optional flag indicating if the item currently has a discount */
     hasDiscount?: boolean;
+    /** Whether the item is currently available in stock */
+    inStock: boolean;
+    /** Tax amount applicable to this item */
+    taxAmount: number;
+    /** Packaging charges for the item */
+    packagingCharges: number;
+    /** Whether the discount is an absolute value (true) or a percentage (false) */
+    discountIsAbsolute: boolean;
 }
 
 /**

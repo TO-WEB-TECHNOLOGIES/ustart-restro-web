@@ -24,8 +24,8 @@ export const MenuTabs = () => {
     const { submitChanges, isDirty, isSubmitting } = useMenu();
 
     return (
-        <div className="bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 px-8 flex items-center justify-between shrink-0">
-            <div className="flex gap-8">
+        <div className="bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 px-4 md:px-8 flex items-center justify-between shrink-0 overflow-x-auto no-scrollbar">
+            <div className="flex gap-4 md:gap-8 min-w-max">
                 {TABS.map((tab) => {
                     const isActive = location.pathname.endsWith(`/${tab.path}`);
 
@@ -33,7 +33,7 @@ export const MenuTabs = () => {
                         <button
                             key={tab.labelKey}
                             onClick={() => navigate(`../${tab.path}`)}
-                            className={`py-4 text-sm font-bold relative transition-colors ${isActive
+                            className={`py-4 text-xs md:text-sm font-bold relative transition-colors ${isActive
                                 ? 'text-[var(--color-primary-blue)] dark:text-white'
                                 : 'text-slate-500 dark:text-slate-400 hover:text-slate-700'
                                 }`}
@@ -51,12 +51,12 @@ export const MenuTabs = () => {
                 })}
             </div>
 
-            <div className="flex items-center gap-6">
+            <div className="flex items-center gap-2 md:gap-6 ml-4 shrink-0 py-2">
                 {/* Utility button for change awareness - only shown when there are unsaved changes */}
                 {isDirty && (
                     <button className="flex items-center gap-2 text-[var(--color-primary-blue)] dark:text-blue-400 text-sm font-bold transition-all animate-in fade-in slide-in-from-right-4">
                         <Sparkles className="w-4 h-4 text-[#f97316]" />
-                        {t('dashboard.menuEditor.tabs.seeChanges')}
+                        <span className="hidden sm:inline">{t('dashboard.menuEditor.tabs.seeChanges')}</span>
                     </button>
                 )}
 
@@ -64,13 +64,15 @@ export const MenuTabs = () => {
                 <button
                     onClick={submitChanges}
                     disabled={!isDirty || isSubmitting}
-                    className={`px-6 py-2 rounded-xl text-xs font-black transition-all shadow-lg flex items-center gap-2 ${!isDirty || isSubmitting
+                    className={`px-4 md:px-6 py-2 rounded-xl text-[10px] md:text-xs font-black transition-all shadow-lg flex items-center gap-2 ${!isDirty || isSubmitting
                         ? 'bg-slate-100 dark:bg-slate-800/50 text-slate-400 dark:text-slate-500 cursor-not-allowed shadow-none'
                         : 'bg-[var(--color-primary-blue)] hover:bg-[#1a3a5f] text-white shadow-blue-500/10'
                         }`}
                 >
                     {isSubmitting && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
-                    {isSubmitting ? t('dashboard.menuEditor.saving') : t('dashboard.menuEditor.submitChanges')}
+                    <span className="truncate">
+                        {isSubmitting ? t('dashboard.menuEditor.saving') : t('dashboard.menuEditor.submitChanges')}
+                    </span>
                 </button>
             </div>
         </div>
