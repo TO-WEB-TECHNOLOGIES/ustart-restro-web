@@ -23,7 +23,8 @@ export const useMenu = () => {
         updateMenuItem,
         getSelectedCategory,
         submitChanges,
-        fetchCategories
+        fetchCategories,
+        fetchNextPage
     } = useMenuStore();
 
     /** The full category object corresponding to the current selectedCategoryId */
@@ -32,11 +33,19 @@ export const useMenu = () => {
     /** Indicates if items for the currently selected category are loading */
     const isCurrentCategoryItemsLoading = selectedCategoryId ? isItemsLoading[selectedCategoryId] : false;
 
+    /** Pagination helper for the selected category */
+    const hasMore = selectedCategory
+        ? (selectedCategory.currentPage || 0) < (selectedCategory.totalPages || 0)
+        : false;
+
     /**
      * Recursively flattens all items from a category and its subcategories.
      */
     const getAllItems = (cat: Category): MenuItem[] => {
-        let items = [...(cat.items || [])];
+        // Ensure items is an array before spreading (defensive against corrupted state)
+        const currentItems = Array.isArray(cat.items) ? cat.items : [];
+        let items = [...currentItems];
+
         if (cat.subCategories && cat.subCategories.length > 0) {
             cat.subCategories.forEach(sub => {
                 items = [...items, ...getAllItems(sub)];
@@ -59,11 +68,15 @@ export const useMenu = () => {
         isCategoriesLoading,
         isItemsLoading,
         isCurrentCategoryItemsLoading,
+        hasMore,
+        currentPage: selectedCategory?.currentPage || 0,
+        totalPages: selectedCategory?.totalPages || 0,
         setCategories,
         setSelectedCategoryId,
         setSearchQuery,
         updateMenuItem,
         submitChanges,
-        fetchCategories
+        fetchCategories,
+        fetchNextPage
     };
 };

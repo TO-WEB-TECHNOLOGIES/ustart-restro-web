@@ -39,8 +39,10 @@ export interface MenuStore {
     submitChanges: () => Promise<void>;
     /** Fetches categories from the API with caching and revalidation */
     fetchCategories: (force?: boolean) => Promise<void>;
-    /** Fetches items for a specific category on demand */
+    /** Fetches items for a specific category on demand (initial or refresh) */
     fetchCategoryItems: (categoryId: string) => Promise<void>;
+    /** Fetches the next page of items for infinite scroll */
+    fetchNextPage: (categoryId: string) => Promise<void>;
 
     // --- Menu Score State ---
     /** Overall health score of the menu */
@@ -69,9 +71,11 @@ const buildCategoryTree = (flatCategories: Category[]): Category[] => {
     flatCategories.forEach(cat => {
         categoryMap[cat.id] = {
             ...cat,
-            items: cat.items || undefined, // Ensure it's undefined if not present
+            items: cat.items || undefined,
             subCategories: [],
-            itemCount: cat.itemCount || 0
+            itemCount: cat.itemCount || 0,
+            currentPage: 0,
+            totalPages: 1
         };
     });
 
@@ -139,7 +143,8 @@ export const useMenuStore = create<MenuStore>()(
                         }
                     };
                     const category = findSelected(get().categories);
-                    if (category && !category.items) {
+                    // If no items are loaded yet (currentPage starts at 0 or items is undefined)
+                    if (category && (!category.items || (category.currentPage || 0) === 0)) {
                         get().fetchCategoryItems(id);
                     }
                 }
@@ -147,10 +152,6 @@ export const useMenuStore = create<MenuStore>()(
 
             setSearchQuery: (searchQuery) => set({ searchQuery }),
 
-            /**
-             * Fetches categories using an enhanced stale-while-revalidate strategy.
-             * Categories are returned with itemCount but without items.
-             */
             fetchCategories: async (force = false) => {
                 const { categories, lastCategoriesFetch, isCategoriesLoading, isDirty } = get();
                 const REVALIDATE_TIME = 30 * 1000;
@@ -182,7 +183,6 @@ export const useMenuStore = create<MenuStore>()(
                         selectedCategoryId: finalSelectedId
                     });
 
-                    // Trigger items fetch for initial selection
                     if (finalSelectedId) {
                         get().fetchCategoryItems(finalSelectedId);
                     }
@@ -193,7 +193,7 @@ export const useMenuStore = create<MenuStore>()(
             },
 
             /**
-             * Fetches items for a specific category on demand.
+             * Initial items fetch for a category.
              */
             fetchCategoryItems: async (categoryId: string) => {
                 const { isItemsLoading, categories } = get();
@@ -204,8 +204,12 @@ export const useMenuStore = create<MenuStore>()(
                 }));
 
                 try {
-                    const items = await fetchCategoryItems(categoryId);
-                    const updatedCategories = updateCategoryInTree(categories, categoryId, { items });
+                    const response = await fetchCategoryItems(categoryId, 1, 5); // Start with page 1
+                    const updatedCategories = updateCategoryInTree(categories, categoryId, {
+                        items: response.items,
+                        currentPage: response.currentPage,
+                        totalPages: response.totalPages
+                    });
 
                     set(state => ({
                         categories: updatedCategories,
@@ -220,14 +224,63 @@ export const useMenuStore = create<MenuStore>()(
             },
 
             /**
-             * Updates a menu item locally and marks the store as dirty.
+             * Infinite scroll next page fetch.
              */
+            fetchNextPage: async (categoryId: string) => {
+                const { isItemsLoading, categories } = get();
+                if (isItemsLoading[categoryId]) return;
+
+                const findRecursive = (list: Category[]): Category | undefined => {
+                    for (const cat of list) {
+                        if (cat.id === categoryId) return cat;
+                        if (cat.subCategories) {
+                            const found = findRecursive(cat.subCategories);
+                            if (found) return found;
+                        }
+                    }
+                };
+
+                const currentCategory = findRecursive(categories);
+                if (!currentCategory) return;
+
+                const nextPage = (currentCategory.currentPage || 0) + 1;
+                const totalPages = currentCategory.totalPages || 1;
+
+                if (nextPage > totalPages) return;
+
+                set(state => ({
+                    isItemsLoading: { ...state.isItemsLoading, [categoryId]: true }
+                }));
+
+                try {
+                    const response = await fetchCategoryItems(categoryId, nextPage, 5);
+                    const baseItems = Array.isArray(currentCategory.items) ? currentCategory.items : [];
+                    const updatedItems = [...baseItems, ...response.items];
+
+                    const updatedCategories = updateCategoryInTree(categories, categoryId, {
+                        items: updatedItems,
+                        currentPage: response.currentPage,
+                        totalPages: response.totalPages
+                    });
+
+                    set(state => ({
+                        categories: updatedCategories,
+                        isItemsLoading: { ...state.isItemsLoading, [categoryId]: false }
+                    }));
+                } catch (error) {
+                    console.error(`Menu Store: Failed to fetch next page for category ${categoryId}:`, error);
+                    set(state => ({
+                        isItemsLoading: { ...state.isItemsLoading, [categoryId]: false }
+                    }));
+                }
+            },
+
             updateMenuItem: (categoryId, itemId, updates) => {
                 const { categories } = get();
 
                 const updateRecursive = (list: Category[]): Category[] => {
                     return list.map(cat => {
-                        if (cat.id === categoryId && cat.items) {
+                        if (cat.id === categoryId && Array.isArray(cat.items)) {
                             const updatedItems = cat.items.map(item =>
                                 item.id === itemId ? { ...item, ...updates } : item
                             );
@@ -267,10 +320,6 @@ export const useMenuStore = create<MenuStore>()(
                 return findRecursive(categories);
             },
 
-            /**
-             * Performs an API call to sync local changes with the server.
-             * Clears the fetch cache upon success to ensure sub-sequent fetches are fresh.
-             */
             submitChanges: async () => {
                 const { categories, isDirty, isSubmitting } = get();
                 if (!isDirty || isSubmitting) return;
@@ -293,7 +342,7 @@ export const useMenuStore = create<MenuStore>()(
                 }
             },
 
-            // --- Menu Score State ---
+            // --- Initial Menu Score State ---
             score: 0,
             thresholdScore: 0,
             status: '',
@@ -321,7 +370,6 @@ export const useMenuStore = create<MenuStore>()(
         {
             name: 'menu-editor-storage',
             storage: createJSONStorage(() => sessionStorage),
-             // Only persist editor-related state
             partialize: (state) => ({
                 categories: state.categories,
                 selectedCategoryId: state.selectedCategoryId,

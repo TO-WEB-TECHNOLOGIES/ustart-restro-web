@@ -683,6 +683,7 @@
       "searchCategories": "श्रेणियां खोजें...",
       "noCategoriesFound": "कोई श्रेणी नहीं मिली",
       "fetchingItems": "आइटम प्राप्त कर रहा है...",
+      "noItemsInCategory": "इस श्रेणी में कोई आइटम उपलब्ध नहीं है।",
       "off": "{{amount}} की छूट"
     }
   }

@@ -31,6 +31,61 @@ export const MOCK_CATEGORIES: Category[] = [
                 foodType: 'veg',
                 isCustomisable: true,
                 hasDiscount: true
+            },
+            {
+                id: '1-extra-1',
+                name: 'Stuffed Masala Litti',
+                description: 'Litti stuffed with a spicy mix of sattu and roasted garlic.',
+                itemPrice: 180,
+                discountAmount: 15,
+                foodType: 'veg',
+                isCustomisable: true
+            },
+            {
+                id: '1-extra-2',
+                name: 'Butter Tossed Litti',
+                description: 'Littis tossed in fragrant salted butter and herbs.',
+                itemPrice: 190,
+                discountAmount: 10,
+                foodType: 'veg',
+                isCustomisable: false
+            },
+            {
+                id: '1-extra-3',
+                name: 'Mini Sized Cocktal Littis',
+                description: 'Bite-sized littis, perfect for parties and quick snacking.',
+                itemPrice: 120,
+                discountAmount: 5,
+                foodType: 'veg',
+                isCustomisable: false
+            },
+            {
+                id: '1-extra-4',
+                name: 'Smoked Coal Litti',
+                description: 'Traditional charcoal-roasted littis with a deep smoky aroma.',
+                itemPrice: 170,
+                discountAmount: 0,
+                foodType: 'veg',
+                isCustomisable: true
+            },
+            {
+                id: '1-extra-5',
+                name: 'Sweet Litti (Gud)',
+                description: 'A dessert version stuffed with jaggery and nuts.',
+                itemPrice: 210,
+                discountAmount: 0,
+                foodType: 'veg',
+                isCustomisable: false
+            },
+            {
+                id: '1-extra-6',
+                name: 'Desi Ghee Dipped Litti',
+                description: 'The ultimate indulgence, littis completely drenched in pure desi ghee.',
+                itemPrice: 240,
+                discountAmount: 40,
+                foodType: 'veg',
+                isCustomisable: true,
+                hasDiscount: true
             }
         ]
     },
@@ -172,5 +227,12 @@ export const MOCK_CATEGORIES: Category[] = [
                 isCustomisable: false
             }
         ]
+    },
+    {
+        id: '6',
+        name: 'Healthy Bites',
+        description: 'Nutritious and delicious options for the health-conscious.',
+        parentCategoryId: null,
+        items: []
     }
 ];

@@ -684,6 +684,7 @@
       "searchCategories": "Search categories...",
       "noCategoriesFound": "No categories found",
       "fetchingItems": "Fetching items...",
+      "noItemsInCategory": "No items available in this category.",
       "off": "{{amount}} OFF"
     }
   }

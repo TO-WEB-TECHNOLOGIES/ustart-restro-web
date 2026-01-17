@@ -45,6 +45,10 @@ export interface Category {
     subCategories?: Category[];
     /** Total number of items in this category (Calculated on frontend) */
     itemCount?: number;
+    /** Current page of items loaded */
+    currentPage?: number;
+    /** Total number of pages available for items */
+    totalPages?: number;
     /** List of menu items belonging to this category (optional, loaded on demand) */
     items?: MenuItem[];
 }

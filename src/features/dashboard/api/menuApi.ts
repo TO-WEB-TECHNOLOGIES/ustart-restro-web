@@ -28,14 +28,36 @@ export const fetchCategories = async (): Promise<Category[]> => {
 };
 
 /**
- * Fetches items for a specific category.
- * @param {string} categoryId 
- * @returns {Promise<MenuItem[]>}
+ * Paginated response for menu items.
  */
-export const fetchCategoryItems = async (categoryId: string): Promise<MenuItem[]> => {
+export interface PaginatedItems {
+    items: MenuItem[];
+    totalPages: number;
+    currentPage: number;
+}
+
+/**
+ * Fetches items for a specific category with pagination.
+ * @param {string} categoryId 
+ * @param {number} page 
+ * @param {number} limit 
+ * @returns {Promise<PaginatedItems>}
+ */
+export const fetchCategoryItems = async (categoryId: string, page = 1, limit = 5): Promise<PaginatedItems> => {
     await delay(500); // Faster delay for specific item fetch
     const category = MOCK_CATEGORIES.find(c => c.id === categoryId);
-    return category?.items || [];
+    const allItems = category?.items || [];
+
+    // Calculate pagination
+    const totalPages = Math.ceil(allItems.length / limit);
+    const startIndex = (page - 1) * limit;
+    const paginatedItems = allItems.slice(startIndex, startIndex + limit);
+
+    return {
+        items: paginatedItems,
+        totalPages,
+        currentPage: page
+    };
 };
 
 /**
