@@ -1,8 +1,13 @@
-import { useRef, useEffect, useState } from 'react';
+import { useRef, useEffect, useState, useMemo } from 'react';
+import { useLocation } from 'react-router-dom';
 import { Plus, Search, Filter, ChevronDown, Loader2, Utensils, Layout } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useMenu } from '../../hooks/useMenu';
+import { useRestaurantStore } from '../../store/useRestaurantStore';
+import { ALL_LOCATIONS_ID } from '../../../../types/storeTypes';
 import { MenuItemCard } from './MenuItemCard';
+import { Switch } from '../../../../components/ui/switch';
+import { Modal } from '../../../../components/ui/modal';
 import { motion } from 'framer-motion';
 
 interface MenuItemListProps {
@@ -14,8 +19,12 @@ interface MenuItemListProps {
  */
 export const MenuItemList = ({ onOpenSidebar }: MenuItemListProps) => {
     const { t } = useTranslation();
+    const location = useLocation();
     const [showFilters, setShowFilters] = useState(false);
     const filterRef = useRef<HTMLDivElement>(null);
+
+    // Detect if we're on the stock management page
+    const isStockPage = location.pathname.includes('/stock');
 
     const {
         selectedCategory,
@@ -28,10 +37,61 @@ export const MenuItemList = ({ onOpenSidebar }: MenuItemListProps) => {
         clearFilters,
         isCurrentCategoryItemsLoading,
         hasMore,
-        fetchNextPage
+        fetchNextPage,
+        updateMenuItem // Added to handle bulk updates
     } = useMenu();
 
+    const { selectedAddressId } = useRestaurantStore();
+    const isAggregated = !selectedAddressId || selectedAddressId === ALL_LOCATIONS_ID;
+
     const [stagedFilters, setStagedFilters] = useState(filters);
+
+    // Confirmation Modal State
+    const [isStockConfirmOpen, setStockConfirmOpen] = useState(false);
+    const [pendingStockValue, setPendingStockValue] = useState<boolean>(false);
+
+    /**
+     * Determine if category is "In Stock" based on its items.
+     * Logic: If ANY item in the category is in stock (in any location if aggregate, or in current location if specific), it is true.
+     */
+    const isCategoryInStock = useMemo(() => {
+        if (allItems.length === 0) return false;
+
+        return allItems.some(item => {
+            if (isAggregated) {
+                return Object.values(item.inStock || {}).some(s => s === true);
+            }
+            return item.inStock[selectedAddressId!] === true;
+        });
+    }, [allItems, isAggregated, selectedAddressId]);
+
+    /**
+     * Handle bulk stock update for the entire category
+     */
+    const handleBulkStockUpdate = () => {
+        if (!selectedCategoryId) return;
+
+        // Apply Status to all items in current view
+        // Note: In a real app, this would be a single API call to the backend.
+        // Here we iterate over allItems to update the local store state.
+        allItems.forEach(item => {
+            const newInStock = { ...item.inStock };
+
+            if (isAggregated) {
+                // Set for all locations
+                Object.keys(newInStock).forEach(locId => {
+                    newInStock[locId] = pendingStockValue;
+                });
+                updateMenuItem(selectedCategoryId, item.id, { inStock: newInStock }, null);
+            } else {
+                // Set for specific location
+                newInStock[selectedAddressId!] = pendingStockValue;
+                updateMenuItem(selectedCategoryId, item.id, { inStock: newInStock }, selectedAddressId);
+            }
+        });
+
+        setStockConfirmOpen(false);
+    };
 
     // Sync staged filters when global filters change (e.g. on clear) or when opening dropdown
     useEffect(() => {
@@ -254,16 +314,34 @@ export const MenuItemList = ({ onOpenSidebar }: MenuItemListProps) => {
             <div className="flex-1 overflow-y-auto">
                 <div className="w-full px-4 md:px-8 py-4">
                     {/* Category Title & Description */}
-                    <div className="mb-6 md:mb-8">
-                        <h2 className="text-2xl md:text-3xl font-black text-slate-900 dark:text-white flex items-baseline gap-2">
-                            <span className="truncate">{selectedCategory.name}</span>
-                            <span className="text-lg md:text-xl font-bold text-slate-400 dark:text-slate-500 shrink-0">
-                                ({selectedCategory.itemCount || 0})
-                            </span>
-                        </h2>
-                        <p className={`text-sm md:text-base mt-2 w-full max-w-5xl leading-relaxed ${selectedCategory.description ? 'text-slate-500 dark:text-slate-400' : 'text-orange-500 dark:text-orange-400 font-medium italic'}`}>
-                            {selectedCategory.description || t('dashboard.menuEditor.noDescription')}
-                        </p>
+                    <div className="mb-6 md:mb-8 flex items-start justify-between">
+                        <div className='flex flex-col'>
+                            <div className="flex items-center gap-4">
+                                <h2 className="text-2xl md:text-3xl font-black text-slate-900 dark:text-white flex items-baseline gap-2">
+                                    <span className="truncate">{selectedCategory.name}</span>
+                                    <span className="text-lg md:text-xl font-bold text-slate-400 dark:text-slate-500 shrink-0">
+                                        ({selectedCategory.itemCount || 0})
+                                    </span>
+                                </h2>
+                            </div>
+                            <p className={`text-sm md:text-base mt-2 w-full max-w-5xl leading-relaxed ${selectedCategory.description ? 'text-slate-500 dark:text-slate-400' : 'text-orange-500 dark:text-orange-400 font-medium italic'}`}>
+                                {selectedCategory.description || t('dashboard.menuEditor.noDescription')}
+                            </p>
+                        </div>
+                        {/* Stock Toggle Switch - Only on Stock Page */}
+                        {isStockPage && (
+                            <Switch
+                                checked={isCategoryInStock}
+                                onCheckedChange={(checked) => {
+                                    setPendingStockValue(checked);
+                                    setStockConfirmOpen(true);
+                                }}
+                                className={isCategoryInStock
+                                    ? 'data-[state=checked]:bg-green-500'
+                                    : 'data-[state=unchecked]:bg-red-400'
+                                }
+                            />
+                        )}
                     </div>
 
                     {/* Content Section */}
@@ -308,6 +386,35 @@ export const MenuItemList = ({ onOpenSidebar }: MenuItemListProps) => {
                     )}
                 </div>
             </div>
+            {/* Confirmation Modal for Category Stock Update */}
+            <Modal
+                isOpen={isStockConfirmOpen}
+                onClose={() => setStockConfirmOpen(false)}
+                title={t('dashboard.menuEditor.stockUpdate.confirmTitle')}
+            >
+                <div className="flex flex-col gap-6">
+                    <p className="text-slate-600 dark:text-slate-300">
+                        {pendingStockValue
+                            ? t('dashboard.menuEditor.stockUpdate.markAllInStock')
+                            : t('dashboard.menuEditor.stockUpdate.markAllOutOfStock')
+                        }
+                    </p>
+                    <div className="flex justify-end gap-3">
+                        <button
+                            onClick={() => setStockConfirmOpen(false)}
+                            className="px-4 py-2 rounded-xl text-sm font-bold text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                        >
+                            {t('dashboard.menuEditor.stockUpdate.cancelAction')}
+                        </button>
+                        <button
+                            onClick={handleBulkStockUpdate}
+                            className={`px-4 py-2 rounded-xl text-sm font-bold text-white transition-opacity hover:opacity-90 ${pendingStockValue ? 'bg-green-600' : 'bg-red-600'}`}
+                        >
+                            {t('dashboard.menuEditor.stockUpdate.confirmAction')}
+                        </button>
+                    </div>
+                </div>
+            </Modal>
         </div>
     );
 };

@@ -97,7 +97,12 @@ export const useMenu = () => {
         updateMenuItem,
         submitChanges,
         revertChanges: useMenuStore().revertChanges,
+        addCategory: useMenuStore().addCategory,
+        updateCategory: useMenuStore().updateCategory,
+        deleteCategory: useMenuStore().deleteCategory,
+        toggleCategoryStatus: useMenuStore().toggleCategoryStatus,
         fetchCategories,
+        fetchCategoryItems: useMenuStore().fetchCategoryItems,
         fetchNextPage
     };
 };

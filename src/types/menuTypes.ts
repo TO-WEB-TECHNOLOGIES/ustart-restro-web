@@ -59,4 +59,6 @@ export interface Category {
     totalPages?: number;
     /** List of menu items belonging to this category (optional, loaded on demand) */
     items?: MenuItem[];
+    /** Status of the category */
+    status?: 'active' | 'inactive';
 }

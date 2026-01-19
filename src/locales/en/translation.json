@@ -740,7 +740,50 @@
         "confirmTitle": "Are you sure?",
         "confirmDesc": "This will change the status for all of your restaurants.",
         "confirmAction": "Yes, Update All",
-        "cancelAction": "Cancel"
+        "cancelAction": "Cancel",
+        "markAllInStock": "This will mark all items in this category as IN STOCK for all your restaurant locations. Do you want to proceed?",
+        "markAllOutOfStock": "This will mark all items in this category as OUT OF STOCK for all your restaurant locations. Do you want to proceed?"
+      },
+      "editCategory": "Edit Category",
+      "deleteCategory": "Delete Category",
+      "markOutOfStock": "Mark as Out of Stock",
+      "markInStock": "Mark as In Stock",
+      "loadingMenu": "Loading your menu...",
+      "submittingChanges": "Submitting Changes",
+      "submittingDesc": "Please wait while we update your menu...",
+      "noItemsInThisCategory": "No items found in this category",
+      "irreversibleAction": "This action is irreversible",
+      "addCategoryModal": {
+        "title": "Add New Category",
+        "subtitle": "Organize your menu by creating a new category for your items.",
+        "nameLabel": "Category Name",
+        "namePlaceholder": "e.g., Refreshing Beverages",
+        "descLabel": "Description (Optional)",
+        "descPlaceholder": "Short description about this category...",
+        "parentLabel": "Parent Category (Optional)",
+        "noneOption": "None (Top Level)",
+        "saveButton": "Save Category"
+      },
+      "deleteCategoryModal": {
+        "title": "Delete Category",
+        "warning": "This action is irreversible. The following items will also be deleted from this category:",
+        "confirmButton": "Delete Category",
+        "cancelButton": "Keep Category"
+      },
+      "disableCategoryModal": {
+        "title": "Disable Category",
+        "subtitle": "Are you sure you want to disable this category? Customers won't be able to see it or order from it.",
+        "confirmButton": "Disable Category",
+        "enableButton": "Active Category",
+        "cancelButton": "Cancel",
+        "disableDesc": "Customers won't see this category or its sub-items.",
+        "enableDesc": "This category and its items will become visible immediately."
+      },
+      "categoryMenu": {
+        "edit": "Edit Category",
+        "delete": "Delete Category",
+        "disable": "Disable Category",
+        "enable": "Enable Category"
       }
     }
   }

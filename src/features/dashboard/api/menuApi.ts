@@ -123,7 +123,69 @@ export const fetchMenuScore = async (): Promise<MenuScoreData> => {
  * @returns {Promise<{ success: boolean }>}
  */
 export const updateMenu = async (updates: Record<string, unknown>[]): Promise<{ success: boolean }> => {
-    console.log('API Call: Updating menu with data:', updates);
+    console.log('API Call: Updating menu items with data:', updates);
     await delay(1500); // Simulate network delay
+    return { success: true };
+};
+
+/**
+ * Creates a new category on the server.
+ * @returns {Promise<{ success: boolean, category: Category }>}
+ */
+export const createCategory = async (data: { name: string; description?: string; parentCategoryId?: number | null }): Promise<{ success: boolean; category: Category }> => {
+    console.log('API Call: Creating category:', data);
+    await delay(1000);
+    const newCategory: Category = {
+        id: Math.floor(Math.random() * 1000000),
+        name: data.name,
+        description: data.description,
+        parentCategoryId: data.parentCategoryId,
+        subCategories: [],
+        itemCount: 0,
+        currentPage: 1,
+        totalPages: 1,
+        items: []
+    };
+    return { success: true, category: newCategory };
+};
+
+/**
+ * Updates an exisiting category on the server.
+ * @returns {Promise<{ success: boolean, category: Category }>}
+ */
+export const patchCategory = async (categoryId: number, data: { name?: string; description?: string; parentCategoryId?: number | null }): Promise<{ success: boolean; category: Category }> => {
+    console.log(`API Call: Patching category ${categoryId}:`, data);
+    await delay(1000);
+    // In a real app, this would be the actual updated record from DB
+    const updatedCategory: Category = {
+        id: categoryId,
+        name: data.name || 'Updated Category',
+        description: data.description,
+        parentCategoryId: data.parentCategoryId,
+        subCategories: [], // Usually subcategories aren't part of a single row update but let's keep it consistent
+        itemCount: 0,
+        currentPage: 1,
+        totalPages: 1,
+        items: []
+    };
+    return { success: true, category: updatedCategory };
+};
+/**
+ * Deletes a category from the server.
+ * @returns {Promise<{ success: boolean }>}
+ */
+export const deleteCategory = async (categoryId: number): Promise<{ success: boolean }> => {
+    console.log(`API Call: Deleting category ${categoryId}`);
+    await delay(1000);
+    return { success: true };
+};
+
+/**
+ * Toggles the status of a category (active/inactive).
+ * @returns {Promise<{ success: boolean }>}
+ */
+export const toggleCategoryStatus = async (categoryId: number, status: 'active' | 'inactive'): Promise<{ success: boolean }> => {
+    console.log(`API Call: Toggling category ${categoryId} status to ${status}`);
+    await delay(1000);
     return { success: true };
 };

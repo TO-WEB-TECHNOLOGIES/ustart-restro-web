@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import { type Category, type MenuItem } from '../../../types/menuTypes';
-import { fetchMenuScore, updateMenu, fetchCategories, fetchCategoryItems } from '../api/menuApi';
+import { fetchMenuScore, updateMenu, fetchCategories, fetchCategoryItems, createCategory, patchCategory, deleteCategory, toggleCategoryStatus } from '../api/menuApi';
 
 /**
  * Interface representing the state and actions for the Menu Store.
@@ -57,6 +57,14 @@ export interface MenuStore {
     fetchNextPage: (categoryId: number) => Promise<void>;
     /** Reverts all local changes for updated items */
     revertChanges: () => void;
+    /** Directly adds a new category via API */
+    addCategory: (category: { name: string; description?: string; parentCategoryId?: number | null }) => Promise<void>;
+    /** Directly updates an existing category via API */
+    updateCategory: (categoryId: number, updates: { name: string; description?: string; parentCategoryId?: number | null }) => Promise<void>;
+    /** Directly deletes a category via API */
+    deleteCategory: (categoryId: number) => Promise<void>;
+    /** Directly toggles category status via API */
+    toggleCategoryStatus: (categoryId: number, status: 'active' | 'inactive') => Promise<void>;
 
     // --- Menu Score State ---
     /** Overall health score of the menu */
@@ -121,6 +129,52 @@ const updateCategoryInTree = (categories: Category[], categoryId: number, update
         }
         return cat;
     });
+};
+
+/**
+ * Helper to add a new category to the hierarchical tree locally.
+ */
+const addCategoryToTree = (categories: Category[], parentId: number | null, newCategory: Category): Category[] => {
+    if (!parentId) {
+        return [newCategory, ...categories];
+    }
+    return categories.map(cat => {
+        if (cat.id === parentId) {
+            return {
+                ...cat,
+                subCategories: [newCategory, ...(cat.subCategories || [])]
+            };
+        }
+        if (cat.subCategories && cat.subCategories.length > 0) {
+            return {
+                ...cat,
+                subCategories: addCategoryToTree(cat.subCategories, parentId, newCategory)
+            };
+        }
+        return cat;
+    });
+};
+
+/**
+ * Helper to remove a category from the tree.
+ */
+const removeCategoryFromTree = (categories: Category[], categoryId: number): { updatedTree: Category[], removedCategory: Category | null } => {
+    let removedCategory: Category | null = null;
+    const updatedTree = categories.filter(cat => {
+        if (cat.id === categoryId) {
+            removedCategory = cat;
+            return false;
+        }
+        return true;
+    }).map(cat => {
+        if (cat.subCategories && cat.subCategories.length > 0) {
+            const result = removeCategoryFromTree(cat.subCategories, categoryId);
+            if (result.removedCategory) removedCategory = result.removedCategory;
+            return { ...cat, subCategories: result.updatedTree };
+        }
+        return cat;
+    });
+    return { updatedTree, removedCategory };
 };
 
 /**
@@ -484,6 +538,90 @@ export const useMenuStore = create<MenuStore>()(
                 });
             },
 
+            addCategory: async (newCatData) => {
+                set({ isSubmitting: true });
+                try {
+                    const response = await createCategory(newCatData);
+                    if (response.success) {
+                        const { categories } = get();
+                        set({
+                            categories: addCategoryToTree(categories, newCatData.parentCategoryId || null, response.category)
+                        });
+                    }
+                } catch (error) {
+                    console.error('Failed to create category:', error);
+                } finally {
+                    set({ isSubmitting: false });
+                }
+            },
+
+            updateCategory: async (categoryId, updates) => {
+                set({ isSubmitting: true });
+                try {
+                    const response = await patchCategory(categoryId, updates);
+                    if (response.success) {
+                        const { categories } = get();
+
+                        // 1. Remove it from its current position
+                        const { updatedTree, removedCategory } = removeCategoryFromTree(categories, categoryId);
+
+                        if (removedCategory) {
+                            // 2. Combine API response with existing children/items
+                            const updatedCategory = {
+                                ...response.category,
+                                subCategories: removedCategory.subCategories,
+                                items: removedCategory.items,
+                                itemCount: removedCategory.itemCount // Preserve local counts/states
+                            };
+
+                            // 3. Re-insert it at the new parent position (from the API response)
+                            set({
+                                categories: addCategoryToTree(updatedTree, updatedCategory.parentCategoryId || null, updatedCategory)
+                            });
+                        }
+                    }
+                } catch (error) {
+                    console.error('Failed to update category:', error);
+                } finally {
+                    set({ isSubmitting: false });
+                }
+            },
+            deleteCategory: async (categoryId) => {
+                set({ isSubmitting: true });
+                try {
+                    const response = await deleteCategory(categoryId);
+                    if (response.success) {
+                        const { categories, selectedCategoryId } = get();
+                        const { updatedTree } = removeCategoryFromTree(categories, categoryId);
+
+                        set({
+                            categories: updatedTree,
+                            selectedCategoryId: selectedCategoryId === categoryId ? null : selectedCategoryId
+                        });
+                    }
+                } catch (error) {
+                    console.error('Failed to delete category:', error);
+                } finally {
+                    set({ isSubmitting: false });
+                }
+            },
+
+            toggleCategoryStatus: async (categoryId, status) => {
+                set({ isSubmitting: true });
+                try {
+                    const response = await toggleCategoryStatus(categoryId, status);
+                    if (response.success) {
+                        const { categories } = get();
+                        set({
+                            categories: updateCategoryInTree(categories, categoryId, { status })
+                        });
+                    }
+                } catch (error) {
+                    console.error('Failed to toggle category status:', error);
+                } finally {
+                    set({ isSubmitting: false });
+                }
+            },
             // --- Menu Score State ---
             score: 0,
             thresholdScore: 0,
@@ -513,7 +651,6 @@ export const useMenuStore = create<MenuStore>()(
             name: 'menu-editor-storage',
             storage: createJSONStorage(() => sessionStorage),
             partialize: (state) => ({
-                categories: state.categories,
                 updatedItems: state.updatedItems,
                 isDirty: state.isDirty,
                 lastCategoriesFetch: state.lastCategoriesFetch,

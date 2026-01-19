@@ -1,9 +1,12 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, MoreVertical, ChevronDown, ArrowRight, ShieldCheck, Search, X } from 'lucide-react';
+import { Plus, MoreVertical, ChevronDown, ArrowRight, ShieldCheck, Search, X, Pencil, Trash2, Eye, EyeOff } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useMenu } from '../../hooks/useMenu';
 import { useMenuData } from '../../hooks/useMenuData';
+import { AddCategoryModal } from './AddCategoryModal';
+import { DeleteCategoryModal } from './DeleteCategoryModal';
+import { DisableCategoryModal } from './DisableCategoryModal';
 import { type Category } from '../../../../types/menuTypes';
 
 interface CategorySidebarProps {
@@ -21,6 +24,125 @@ export const CategorySidebar = ({ onClose, isCollapsed }: CategorySidebarProps) 
     const { categories, selectedCategoryId, setSelectedCategoryId } = useMenu();
     const { score, status } = useMenuData();
     const [categorySearch, setCategorySearch] = useState('');
+
+    // Track which categories are manually expanded (by their IDs)
+    const [expandedCategories, setExpandedCategories] = useState<Set<number>>(new Set());
+
+    // Track which category's menu is currently open (null if none)
+    const [openMenuCategoryId, setOpenMenuCategoryId] = useState<number | null>(null);
+
+    // Ref for the menu dropdown to handle click outside
+    const menuRef = useRef<HTMLDivElement>(null);
+
+    // Modal States
+    const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+    const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+    const [isDisableModalOpen, setIsDisableModalOpen] = useState(false);
+    const [activeCategory, setActiveCategory] = useState<Category | null>(null);
+
+    /**
+     * Close menu when clicking outside
+     */
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+                setOpenMenuCategoryId(null);
+            }
+        };
+
+        if (openMenuCategoryId !== null) {
+            document.addEventListener('mousedown', handleClickOutside);
+        }
+
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, [openMenuCategoryId]);
+
+    /**
+     * Toggle the expanded state of a category
+     */
+    const toggleCategoryExpansion = (categoryId: number, e: React.MouseEvent) => {
+        e.stopPropagation(); // Prevent triggering the category selection
+        setExpandedCategories(prev => {
+            const newSet = new Set(prev);
+            if (newSet.has(categoryId)) {
+                newSet.delete(categoryId);
+            } else {
+                newSet.add(categoryId);
+            }
+            return newSet;
+        });
+    };
+
+    /**
+     * Toggle the 3-dot menu for a category
+     */
+    const toggleCategoryMenu = (categoryId: number, e: React.MouseEvent) => {
+        e.stopPropagation();
+        setOpenMenuCategoryId(prev => prev === categoryId ? null : categoryId);
+    };
+
+    /**
+     * Handle editing a category (opens modal)
+     */
+    const handleEditCategory = (cat: Category, e: React.MouseEvent) => {
+        e.stopPropagation();
+        setOpenMenuCategoryId(null);
+        setActiveCategory(cat);
+        setIsAddModalOpen(true);
+    };
+
+    /**
+     * Handle Disable Category action
+     */
+    const handleDisableCategory = (cat: Category, e: React.MouseEvent) => {
+        e.stopPropagation();
+        setOpenMenuCategoryId(null);
+        setActiveCategory(cat);
+        setIsDisableModalOpen(true);
+    };
+
+    /**
+     * Handle Delete Category action
+     */
+    const handleDeleteCategory = (cat: Category, e: React.MouseEvent) => {
+        e.stopPropagation();
+        setOpenMenuCategoryId(null);
+        setActiveCategory(cat);
+        setIsDeleteModalOpen(true);
+    };
+
+
+    /**
+     * Helper to find all parent category IDs for a given category ID
+     */
+    const findParentIds = (targetId: number, cats: Category[], parentIds: number[] = []): number[] | null => {
+        for (const cat of cats) {
+            if (cat.id === targetId) {
+                return parentIds;
+            }
+            if (cat.subCategories && cat.subCategories.length > 0) {
+                const found = findParentIds(targetId, cat.subCategories, [...parentIds, cat.id]);
+                if (found) return found;
+            }
+        }
+        return null;
+    };
+
+    /**
+     * Auto-expand parent categories when a child is selected
+     */
+    useEffect(() => {
+        if (selectedCategoryId) {
+            const parentIds = findParentIds(selectedCategoryId, categories);
+            if (parentIds && parentIds.length > 0) {
+                setExpandedCategories(prev => {
+                    const newSet = new Set(prev);
+                    parentIds.forEach(id => newSet.add(id));
+                    return newSet;
+                });
+            }
+        }
+    }, [selectedCategoryId, categories]);
 
     /**
      * Filters categories recursively based on name.
@@ -47,14 +169,10 @@ export const CategorySidebar = ({ onClose, isCollapsed }: CategorySidebarProps) 
     }, [categories, categorySearch]);
 
     /**
-     * Determines if a category or any of its subcategories is currently selected.
+     * Check if a category is expanded (either manually or via search)
      */
-    const isNodeOrChildSelected = (cat: Category): boolean => {
-        if (selectedCategoryId === cat.id) return true;
-        if (cat.subCategories) {
-            return cat.subCategories.some(sub => isNodeOrChildSelected(sub));
-        }
-        return false;
+    const isCategoryExpanded = (cat: Category): boolean => {
+        return expandedCategories.has(cat.id);
     };
 
     /**
@@ -62,43 +180,106 @@ export const CategorySidebar = ({ onClose, isCollapsed }: CategorySidebarProps) 
      */
     const renderCategory = (cat: Category, depth = 0) => {
         const isSelected = selectedCategoryId === cat.id;
-        const isExpanded = isNodeOrChildSelected(cat);
         const hasSubCategories = cat.subCategories && cat.subCategories.length > 0;
+        const isExpanded = isCategoryExpanded(cat);
+        const isMenuOpen = openMenuCategoryId === cat.id;
+        const isInactive = cat.status === 'inactive';
 
         return (
             <div key={cat.id}>
                 {/* Individual Category/Subcategory Item */}
                 <div
-                    className={`group flex items-center justify-between px-4 py-3 cursor-pointer transition-all ${isSelected
+                    className={`group flex items-center justify-between px-4 py-3 cursor-pointer transition-all relative ${isMenuOpen ? 'z-50' : 'z-auto'} ${isSelected
                         ? 'bg-blue-50/50 dark:bg-blue-600/20 border-l-4 border-[var(--color-primary-blue)]'
                         : 'hover:bg-slate-50 dark:hover:bg-slate-800/50 border-l-4 border-transparent'
-                        }`}
+                        } ${isInactive ? 'opacity-50 grayscale-[0.5]' : ''}`}
                     style={{ paddingLeft: `${(depth * 1) + 1}rem` }}
                     onClick={() => {
                         setSelectedCategoryId(cat.id);
+                        // Auto-expand category when selected (if it has subcategories)
+                        if (hasSubCategories) {
+                            setExpandedCategories(prev => {
+                                const newSet = new Set(prev);
+                                newSet.add(cat.id);
+                                return newSet;
+                            });
+                        }
                         if (window.innerWidth < 768) onClose?.();
                     }}
                 >
                     <div className="flex items-center gap-2 overflow-hidden">
+                        {isInactive && <EyeOff className="w-3.5 h-3.5 text-orange-500 shrink-0" />}
                         <span className={`text-sm font-bold truncate ${isSelected ? 'text-[var(--color-primary-blue)] dark:text-white' : 'text-slate-700 dark:text-slate-300'}`}>
                             {cat.name} ({cat.itemCount})
                         </span>
                     </div>
                     {/* Hover actions for category management */}
-                    <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <button className="p-1 hover:bg-slate-200 dark:hover:bg-slate-700 rounded">
-                            <MoreVertical className="w-4 h-4 text-slate-400" />
-                        </button>
+                    <div className="flex items-center gap-1">
+                        {/* 3-dot Menu Button */}
+                        <div className="relative" ref={isMenuOpen ? menuRef : null}>
+                            <button
+                                className={`p-1 hover:bg-slate-200 dark:hover:bg-slate-700 rounded transition-opacity ${isMenuOpen ? 'opacity-100 bg-slate-200 dark:bg-slate-700' : 'opacity-0 group-hover:opacity-100'}`}
+                                onClick={(e) => toggleCategoryMenu(cat.id, e)}
+                            >
+                                <MoreVertical className="w-4 h-4 text-slate-400" />
+                            </button>
+
+                            {/* Dropdown Menu */}
+                            {isMenuOpen && (
+                                <div className="absolute right-0 top-full mt-1 w-48 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-xl z-[60] overflow-hidden animate-in fade-in slide-in-from-top-2 duration-150">
+                                    {/* Edit Category */}
+                                    <button
+                                        onClick={(e) => handleEditCategory(cat, e)}
+                                        className="w-full flex items-center gap-3 px-4 py-3 text-left text-sm font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors"
+                                    >
+                                        <Pencil className="w-4 h-4 text-slate-400" />
+                                        {t('dashboard.menuEditor.categoryMenu.edit')}
+                                    </button>
+
+                                    {/* Disable/Enable Category */}
+                                    <button
+                                        onClick={(e) => handleDisableCategory(cat, e)}
+                                        className={`w-full flex items-center gap-3 px-4 py-3 text-left text-sm font-medium hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors border-t border-slate-100 dark:border-slate-700 ${isInactive ? 'text-green-600 dark:text-green-400' : 'text-orange-600 dark:text-orange-400'}`}
+                                    >
+                                        {isInactive ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
+                                        {isInactive ? t('dashboard.menuEditor.categoryMenu.enable') : t('dashboard.menuEditor.categoryMenu.disable')}
+                                    </button>
+
+                                    {/* Delete Category */}
+                                    <button
+                                        onClick={(e) => handleDeleteCategory(cat, e)}
+                                        className="w-full flex items-center gap-3 px-4 py-3 text-left text-sm font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors border-t border-slate-100 dark:border-slate-700"
+                                    >
+                                        <Trash2 className="w-4 h-4" />
+                                        {t('dashboard.menuEditor.categoryMenu.delete')}
+                                    </button>
+                                </div>
+                            )}
+                        </div>
+
                         {hasSubCategories && (
-                            <ChevronDown className={`w-4 h-4 text-slate-400 transition-transform ${isExpanded && !isSelected ? 'rotate-180' : isSelected ? 'rotate-180' : ''}`} />
+                            <button
+                                onClick={(e) => toggleCategoryExpansion(cat.id, e)}
+                                className="p-1 hover:bg-slate-200 dark:hover:bg-slate-700 rounded transition-colors"
+                                aria-label={isExpanded ? 'Collapse subcategories' : 'Expand subcategories'}
+                            >
+                                <ChevronDown
+                                    className={`w-4 h-4 text-slate-400 transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`}
+                                />
+                            </button>
                         )}
                     </div>
                 </div>
 
-                {/* Render subcategories if selected or if a child is selected */}
-                {isExpanded && hasSubCategories && (
-                    <div className="bg-slate-50/50 dark:bg-slate-800/30 py-1">
-                        {cat.subCategories?.map(sub => renderCategory(sub, depth + 1))}
+                {/* Render subcategories with accordion animation */}
+                {hasSubCategories && (
+                    <div
+                        className={`transition-all duration-200 ease-in-out ${isExpanded ? 'max-h-[1000px] opacity-100' : 'max-h-0 opacity-0 overflow-hidden'
+                            } ${openMenuCategoryId !== null ? 'overflow-visible' : 'overflow-hidden'}`}
+                    >
+                        <div className="bg-slate-50/50 dark:bg-slate-800/30 py-1">
+                            {cat.subCategories?.map(sub => renderCategory(sub, depth + 1))}
+                        </div>
                     </div>
                 )}
             </div>
@@ -141,7 +322,13 @@ export const CategorySidebar = ({ onClose, isCollapsed }: CategorySidebarProps) 
                 <h3 className="text-sm font-black text-slate-900 dark:text-white truncate">
                     {t('dashboard.menuEditor.categories')} ({categories.length})
                 </h3>
-                <button className="flex items-center gap-1.5 text-[var(--color-primary-blue)] dark:text-blue-400 text-[10px] font-black uppercase tracking-wider py-1.5 px-2.5 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-all border border-transparent hover:border-blue-100 dark:hover:border-blue-800 shrink-0">
+                <button
+                    onClick={() => {
+                        setActiveCategory(null);
+                        setIsAddModalOpen(true);
+                    }}
+                    className="flex items-center gap-1.5 text-[var(--color-primary-blue)] dark:text-blue-400 text-[10px] font-black uppercase tracking-wider py-1.5 px-2.5 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-all border border-transparent hover:border-blue-100 dark:hover:border-blue-800 shrink-0"
+                >
                     <Plus className="w-3.5 h-3.5" />
                     {t('dashboard.menuEditor.addCategory')}
                 </button>
@@ -179,6 +366,35 @@ export const CategorySidebar = ({ onClose, isCollapsed }: CategorySidebarProps) 
                     <ArrowRight className="w-5 h-5 transition-transform group-hover:translate-x-1" />
                 </button>
             </div>
+
+            <AddCategoryModal
+                isOpen={isAddModalOpen}
+                category={activeCategory}
+                onClose={() => {
+                    setIsAddModalOpen(false);
+                    setActiveCategory(null);
+                }}
+            />
+
+            <DeleteCategoryModal
+                isOpen={isDeleteModalOpen}
+                category={activeCategory}
+                onClose={() => {
+                    setIsDeleteModalOpen(false);
+                    setActiveCategory(null);
+                }}
+            />
+
+            <DisableCategoryModal
+                isOpen={isDisableModalOpen}
+                category={activeCategory}
+                onClose={() => {
+                    setIsDisableModalOpen(false);
+                    setActiveCategory(null);
+                }}
+            />
         </div>
     );
 };
+
+
