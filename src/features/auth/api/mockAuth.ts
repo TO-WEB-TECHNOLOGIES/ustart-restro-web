@@ -34,7 +34,7 @@ export const mockAuthService = {
                 },
                 isOnboardingComplete: !isNewUser, // Assuming established users are "complete" in sense of steps, but maybe dependent on status
                 status,
-                exp: Date.now() + (24 * 60 * 60 * 1000) // 24 hours
+                exp: Math.floor(Date.now() / 1000) + (24 * 60 * 60) // 24 hours in seconds
             };
 
             // Simple mock JWT generation (Header.Payload.Signature)

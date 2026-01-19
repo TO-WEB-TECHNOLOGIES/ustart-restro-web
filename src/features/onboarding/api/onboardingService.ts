@@ -15,7 +15,7 @@ export const onboardingService = {
             },
             isOnboardingComplete: true,
             status: 'APPROVAL_PENDING',
-            exp: Date.now() + (24 * 60 * 60 * 1000) // 24 hours
+            exp: Math.floor(Date.now() / 1000) + (24 * 60 * 60) // 24 hours in seconds
         };
 
         const header = btoa(JSON.stringify({ alg: "HS256", typ: "JWT" }));
@@ -40,7 +40,7 @@ export const onboardingService = {
             },
             isOnboardingComplete: true,
             status: 'APPROVAL_PENDING',
-            exp: Date.now() + (24 * 60 * 60 * 1000) // 24 hours
+            exp: Math.floor(Date.now() / 1000) + (24 * 60 * 60) // 24 hours in seconds
         };
 
         const header = btoa(JSON.stringify({ alg: "HS256", typ: "JWT" }));
