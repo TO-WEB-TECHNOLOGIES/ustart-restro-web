@@ -54,7 +54,7 @@ export const ModifiedItemCard = ({ original, current, modifiedByAddressId }: Mod
     const { addresses } = useRestaurantStore();
 
     // Find address label if modified by specific address
-    const modificationSourceLabel = modifiedByAddressId 
+    const modificationSourceLabel = modifiedByAddressId
         ? addresses.find(a => a.id === modifiedByAddressId)?.label || modifiedByAddressId
         : null;
 
@@ -150,6 +150,23 @@ export const ModifiedItemCard = ({ original, current, modifiedByAddressId }: Mod
                         <ChangeLine label={t('dashboard.menuEditor.packaging')} oldVal={original.packagingCharges} newVal={current.packagingCharges} suffix="₹" />
                         <ChangeLine label={t('dashboard.menuEditor.itemName')} oldVal={original.name} newVal={current.name} />
                         <ChangeLine label={t('dashboard.menuEditor.itemDescription')} oldVal={original.description} newVal={current.description} />
+
+                        {/* Status Changes */}
+                        <ChangeLine
+                            label={t('dashboard.menuEditor.statusLabel')}
+                            oldVal={original.status === 'blocked' ? t('dashboard.menuEditor.blocked') : t('common.active')}
+                            newVal={current.status === 'blocked' ? t('dashboard.menuEditor.blocked') : t('common.active')}
+                        />
+
+                        {/* Deletion Status */}
+                        {original.isDeleted !== current.isDeleted && (
+                            <div className="flex items-center gap-3 text-[10px] md:text-xs py-1.5">
+                                <span className="text-slate-400 w-28 shrink-0 font-medium">{t('dashboard.menuEditor.deleteItem')}</span>
+                                <div className="flex items-center gap-2 flex-1 min-w-0">
+                                    <span className="text-red-500 font-bold uppercase tracking-widest">{t('dashboard.menuEditor.markedForDeletion')}</span>
+                                </div>
+                            </div>
+                        )}
                     </div>
                 </div>
             </div>

@@ -35,6 +35,10 @@ export interface MenuItem {
     packagingCharges: number;
     /** Whether the discount is an absolute value (true) or a percentage (false) */
     discountIsAbsolute: boolean;
+    /** Tracks if the item is marked for deletion in local edits */
+    isDeleted?: boolean;
+    /** Current status of the item (e.g., 'active', 'inactive', 'blocked') */
+    status?: string;
 }
 
 /**

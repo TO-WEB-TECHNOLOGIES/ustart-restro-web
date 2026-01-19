@@ -1,7 +1,7 @@
 import { motion } from 'framer-motion';
 import { useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
-import { Tag, Image as ImageIcon, Pencil, Ban, Trash2, Percent, IndianRupee, Dot } from 'lucide-react';
+import { Tag, Image as ImageIcon, Pencil, Ban, Trash2, Percent, IndianRupee, Dot, AlertCircle } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { type MenuItem, type FoodType } from '../../../../types/menuTypes';
 import { useMenu } from '../../hooks/useMenu';
@@ -9,6 +9,8 @@ import { useRestaurantStore } from '../../store/useRestaurantStore';
 import { ALL_LOCATIONS_ID } from '../../../../types/storeTypes';
 import { Switch } from '../../../../components/ui/switch';
 import { Modal } from '../../../../components/ui/modal';
+import { DeleteItemModal } from './DeleteItemModal';
+import { BlockItemModal } from './BlockItemModal';
 
 interface MenuItemCardProps {
     /** The menu item data to display */
@@ -50,13 +52,15 @@ export const MenuItemCard = ({ item }: MenuItemCardProps) => {
     const [isStockConfirmOpen, setStockConfirmOpen] = useState(false);
     const [pendingStockValue, setPendingStockValue] = useState<boolean>(false);
 
+    // Delete and Block Modal States
+    const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+    const [isBlockModalOpen, setIsBlockModalOpen] = useState(false);
+
     // Reset editing state when tab changes
     useEffect(() => {
         if (isEditing) {
-            // eslint-disable-next-line react-hooks/exhaustive-deps
             setIsEditing(false);
         }
-        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [activeTab]);
 
     // Calculate Stock Stats
@@ -66,7 +70,6 @@ export const MenuItemCard = ({ item }: MenuItemCardProps) => {
 
     // Determine current display status
     const isAggregated = !selectedAddressId || selectedAddressId === ALL_LOCATIONS_ID;
-    // Default to false if location not found in record logic, though types suggest it should exist or be handled safely
     const isCurrentLocationInStock = selectedAddressId && !isAggregated ? (item.inStock[selectedAddressId] ?? false) : false;
 
     /**
@@ -94,7 +97,7 @@ export const MenuItemCard = ({ item }: MenuItemCardProps) => {
      */
     const handleStockUpdate = (checked: boolean) => {
         if (selectedCategoryId === null) return;
-        
+
         if (isAggregated) {
             setPendingStockValue(checked);
             setStockConfirmOpen(true);
@@ -108,25 +111,38 @@ export const MenuItemCard = ({ item }: MenuItemCardProps) => {
     const handleConfirmStockUpdate = () => {
         if (selectedCategoryId === null) return;
 
-        // Apply status to all existing keys
         const newInStock = { ...item.inStock };
         Object.keys(newInStock).forEach(key => {
             newInStock[key] = pendingStockValue;
         });
 
-        // For aggregate, we don't pass a specific addressId as it affects all
         updateMenuItem(selectedCategoryId, item.id, { inStock: newInStock }, null);
         setStockConfirmOpen(false);
+    };
+
+    const handleDeleteItem = () => {
+        if (selectedCategoryId === null) return;
+        updateMenuItem(selectedCategoryId, item.id, { isDeleted: true }, selectedAddressId);
+    };
+
+    const handleBlockItem = () => {
+        if (selectedCategoryId === null) return;
+        const nextStatus = item.status === 'blocked' ? 'active' : 'blocked';
+        updateMenuItem(selectedCategoryId, item.id, { status: nextStatus }, selectedAddressId);
     };
 
     // Calculate final price (simplified for display)
     const discountValue = item.discountIsAbsolute ? item.discountAmount : (item.itemPrice * item.discountAmount / 100);
     const finalPrice = item.itemPrice - discountValue;
 
+    // Local changes for this item
+    const isLocalDeleted = item.isDeleted === true;
+    const isLocalBlocked = item.status === 'blocked';
+
     return (
         <motion.div
             layoutId={String(item.id.toString())}
-            className="bg-white dark:bg-slate-900 rounded-3xl p-4 border border-slate-100 dark:border-slate-800 shadow-sm hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-all flex flex-col lg:flex-row gap-4 group relative"
+            className={`bg-white dark:bg-slate-900 rounded-3xl p-4 border border-slate-100 dark:border-slate-800 shadow-sm hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-all flex flex-col lg:flex-row gap-4 group relative ${isLocalDeleted ? 'opacity-50 grayscale' : ''}`}
         >
             {/* Left Section: Image and Primary Details */}
             <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 flex-1 min-w-0">
@@ -167,8 +183,22 @@ export const MenuItemCard = ({ item }: MenuItemCardProps) => {
 
                         {/* Contextual Header Actions */}
                         <div className="flex items-center gap-2 shrink-0">
-                            {/* Global 'Edited' Badge - Show in all tabs */}
-                            {updatedItems[item.id] && (
+                            {/* Status Badges */}
+                            {isLocalDeleted && (
+                                <div className="flex items-center px-2 py-1 bg-red-50 dark:bg-red-900/20 text-red-600 rounded-lg text-[10px] font-black uppercase tracking-wider gap-0.5 border border-red-100 dark:border-red-900/30">
+                                    <AlertCircle className="w-3.5 h-3.5" />
+                                    <span>{t('dashboard.menuEditor.markedForDeletion')}</span>
+                                </div>
+                            )}
+
+                            {isLocalBlocked && (
+                                <div className="flex items-center px-2 py-1 bg-slate-900 text-white dark:bg-slate-800 rounded-lg text-[10px] font-black uppercase tracking-wider gap-0.5">
+                                    <Ban className="w-3 h-3" />
+                                    <span>{t('dashboard.menuEditor.blocked')}</span>
+                                </div>
+                            )}
+
+                            {updatedItems[item.id] && !isLocalDeleted && !isLocalBlocked && (
                                 <div className="flex items-center px-2 py-1 bg-orange-50 dark:bg-orange-900/20 text-orange-600 rounded-lg text-[10px] font-black uppercase tracking-wider gap-0.5">
                                     <Dot className="w-4 h-4" />
                                     <span>{t('dashboard.menuEditor.edited')}</span>
@@ -181,12 +211,12 @@ export const MenuItemCard = ({ item }: MenuItemCardProps) => {
                                         <div className="flex gap-1">
                                             {inStockCount > 0 && (
                                                 <div className="px-2 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider bg-green-50 text-green-600 dark:bg-green-900/20">
-                                                    {inStockCount} In Stock
+                                                    {inStockCount} {t('dashboard.menuEditor.inStockBadge')}
                                                 </div>
                                             )}
                                             {outStockCount > 0 && (
                                                 <div className="px-2 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider bg-red-50 text-red-600 dark:bg-red-900/20">
-                                                    {outStockCount} Out
+                                                    {outStockCount} {t('dashboard.menuEditor.outStockBadge')}
                                                 </div>
                                             )}
                                         </div>
@@ -199,10 +229,18 @@ export const MenuItemCard = ({ item }: MenuItemCardProps) => {
                                         <button className="p-2 bg-blue-50 dark:bg-blue-900/20 text-[var(--color-primary-blue)] dark:text-blue-400 rounded-xl hover:bg-blue-100 transition-colors">
                                             <Pencil className="w-4 h-4" />
                                         </button>
-                                        <button className="p-2 bg-slate-50 dark:bg-slate-800 text-slate-500 rounded-xl hover:bg-slate-100 transition-colors">
+                                        <button
+                                            onClick={() => isLocalBlocked ? handleBlockItem() : setIsBlockModalOpen(true)}
+                                            title={isLocalBlocked ? t('dashboard.menuEditor.unblockItem') : t('dashboard.menuEditor.blockItem')}
+                                            className={`p-2 rounded-xl transition-colors ${isLocalBlocked ? 'bg-slate-900 text-white' : 'bg-slate-50 dark:bg-slate-800 text-slate-500 hover:bg-slate-100'}`}
+                                        >
                                             <Ban className="w-4 h-4" />
                                         </button>
-                                        <button className="p-2 bg-red-50 dark:bg-red-900/20 text-red-500 rounded-xl hover:bg-red-100 transition-colors">
+                                        <button
+                                            onClick={() => isLocalDeleted ? handleUpdateField('isDeleted', false) : setIsDeleteModalOpen(true)}
+                                            title={isLocalDeleted ? t('common.restore') : t('dashboard.menuEditor.deleteItem')}
+                                            className={`p-2 rounded-xl transition-colors ${isLocalDeleted ? 'bg-orange-500 text-white' : 'bg-red-50 dark:bg-red-900/20 text-red-500 hover:bg-red-100'}`}
+                                        >
                                             <Trash2 className="w-4 h-4" />
                                         </button>
                                     </div>
@@ -215,11 +253,11 @@ export const MenuItemCard = ({ item }: MenuItemCardProps) => {
                                         <>
                                             <div className="flex items-center gap-2 min-w-[120px] justify-end">
                                                 <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">
-                                                    Overview:
+                                                    {t('dashboard.menuEditor.inStockOverview')}
                                                 </span>
-                                                {inStockCount > 0 && <span className="text-xs font-bold text-green-500">{inStockCount} In</span>}
+                                                {inStockCount > 0 && <span className="text-xs font-bold text-green-500">{inStockCount} {t('dashboard.menuEditor.inStockShort')}</span>}
                                                 {inStockCount > 0 && outStockCount > 0 && <span className="text-slate-300">|</span>}
-                                                {outStockCount > 0 && <span className="text-xs font-bold text-red-500">{outStockCount} Out</span>}
+                                                {outStockCount > 0 && <span className="text-xs font-bold text-red-500">{outStockCount} {t('dashboard.menuEditor.outStockShort')}</span>}
                                             </div>
                                             <Switch
                                                 checked={outStockCount === 0 && inStockCount > 0}
@@ -245,7 +283,7 @@ export const MenuItemCard = ({ item }: MenuItemCardProps) => {
                             {activeTab === 'taxes' && (
                                 <div className="flex items-center gap-3">
                                     <div className="flex items-center gap-2 bg-slate-50 dark:bg-slate-800/50 px-3 py-1.5 rounded-xl border border-slate-100 dark:border-slate-700">
-                                        <span className="hidden md:inline text-[10px] font-black uppercase tracking-widest text-slate-400">Tax</span>
+                                        <span className="hidden md:inline text-[10px] font-black uppercase tracking-widest text-slate-400">{t('dashboard.menuEditor.taxLabel')}</span>
                                         <input
                                             type="number"
                                             value={item.taxAmount}
@@ -256,7 +294,7 @@ export const MenuItemCard = ({ item }: MenuItemCardProps) => {
                                     </div>
                                     <div className="flex flex-col items-end mr-2">
                                         <span className="text-[10px] font-black text-slate-400 uppercase tracking-tighter">
-                                            ₹{finalPrice} + {item.taxAmount}% TAX
+                                            ₹{finalPrice} + {item.taxAmount}% {t('dashboard.menuEditor.taxLabel')}
                                         </span>
                                         <span className="text-xs font-black text-slate-900 dark:text-white">
                                             = ₹{(finalPrice + (finalPrice * item.taxAmount / 100)).toFixed(2)}
@@ -277,7 +315,7 @@ export const MenuItemCard = ({ item }: MenuItemCardProps) => {
                             <div className="flex items-center gap-1.5">
                                 <span className="text-xs text-slate-400 line-through font-bold">₹{item.itemPrice}</span>
                                 <span className="text-[10px] font-black text-green-600 bg-green-50 dark:bg-green-900/20 px-1.5 py-0.5 rounded-md">
-                                    {item.discountIsAbsolute ? `₹${item.discountAmount} OFF` : `${item.discountAmount}% OFF`}
+                                    {item.discountIsAbsolute ? `₹${item.discountAmount} ${t('dashboard.menuEditor.offLabel')}` : `${item.discountAmount}% ${t('dashboard.menuEditor.offLabel')}`}
                                 </span>
                             </div>
                         )}
@@ -292,9 +330,9 @@ export const MenuItemCard = ({ item }: MenuItemCardProps) => {
                     {activeTab === 'charges' && (
                         <div className="flex items-center gap-2 mt-0.5">
                             <span className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">
-                                Breakdown: ₹{item.itemPrice} (Base)
-                                {item.discountAmount > 0 && ` - ${item.discountIsAbsolute ? '₹' : ''}${item.discountAmount}${item.discountIsAbsolute ? '' : '%'} (Disc)`}
-                                {item.packagingCharges > 0 && ` + ₹${item.packagingCharges} (Pkg)`}
+                                {t('dashboard.recentOrders.table.items')}: ₹{item.itemPrice} ({t('dashboard.menuEditor.basePrice')})
+                                {item.discountAmount > 0 && ` - ${item.discountIsAbsolute ? '₹' : ''}${item.discountAmount}${item.discountIsAbsolute ? '' : '%'} (${t('dashboard.menuEditor.discountShort')})`}
+                                {item.packagingCharges > 0 && ` + ₹${item.packagingCharges} (${t('dashboard.menuEditor.packagingShort')})`}
                                 {` = ₹${(finalPrice + item.packagingCharges).toFixed(2)}`}
                             </span>
                         </div>
@@ -330,7 +368,9 @@ export const MenuItemCard = ({ item }: MenuItemCardProps) => {
                     {!isEditing ? (
                         <div className="flex items-center justify-between lg:justify-center lg:flex-col lg:gap-1">
                             <div className="flex flex-col lg:items-center">
-                                <span className="text-[10px] font-black text-[var(--color-primary-blue)] dark:text-[#539987] uppercase tracking-widest leading-none">Net Price</span>
+                                <span className="text-[10px] font-black text-[var(--color-primary-blue)] dark:text-[#539987] uppercase tracking-widest leading-none">
+                                    {t('dashboard.menuEditor.netPrice')}
+                                </span>
                                 <span className="text-xl font-black text-[var(--color-primary-blue)] dark:text-[#539987]">
                                     ₹{(finalPrice + item.packagingCharges).toFixed(2)}
                                 </span>
@@ -408,7 +448,9 @@ export const MenuItemCard = ({ item }: MenuItemCardProps) => {
                             {/* 4. Footer: Live Total & Close Button */}
                             <div className="flex items-center justify-between gap-2 mt-1 pt-2 border-t border-slate-100 dark:border-slate-800">
                                 <div className="flex flex-col">
-                                    <span className="text-[8px] font-black text-[var(--color-primary-blue)] dark:text-[#539987] uppercase tracking-widest leading-none">Total</span>
+                                    <span className="text-[8px] font-black text-[var(--color-primary-blue)] dark:text-[#539987] uppercase tracking-widest leading-none">
+                                        {t('dashboard.orders.card.totalAmount')}
+                                    </span>
                                     <span className="text-xs font-black text-[var(--color-primary-blue)] dark:text-[#539987]">
                                         ₹{(finalPrice + item.packagingCharges).toFixed(2)}
                                     </span>
@@ -424,6 +466,20 @@ export const MenuItemCard = ({ item }: MenuItemCardProps) => {
                     )}
                 </div>
             )}
+
+            {/* Confirmation Modals */}
+            <DeleteItemModal
+                isOpen={isDeleteModalOpen}
+                onClose={() => setIsDeleteModalOpen(false)}
+                onConfirm={handleDeleteItem}
+                item={item}
+            />
+            <BlockItemModal
+                isOpen={isBlockModalOpen}
+                onClose={() => setIsBlockModalOpen(false)}
+                onConfirm={handleBlockItem}
+                item={item}
+            />
         </motion.div>
     );
 };
