@@ -734,6 +734,12 @@
         "containsEgg": "अंडा शामिल है",
         "discounted": "छूट वाले",
         "noDiscount": "कोई छूट नहीं"
+      },
+      "stockUpdate": {
+        "confirmTitle": "क्या आप निश्चित हैं?",
+        "confirmDesc": "यह आपके सभी रेस्तरां के लिए स्थिति बदल देगा।",
+        "confirmAction": "हाँ, सभी अपडेट करें",
+        "cancelAction": "रद्द करें"
       }
     }
   }

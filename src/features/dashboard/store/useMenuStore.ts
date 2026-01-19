@@ -11,7 +11,7 @@ export interface MenuStore {
     /** Array of menu categories */
     categories: Category[];
     /** Map of modified items: Key is Item ID, Value is { original, current } */
-    updatedItems: Record<number, { original: MenuItem; current: MenuItem }>;
+    updatedItems: Record<number, { original: MenuItem; current: MenuItem; modifiedByAddressId?: string | null }>;
     /** ID of the currently selected category */
     selectedCategoryId: number | null;
     /** Current search query for filtering menu items */
@@ -44,7 +44,7 @@ export interface MenuStore {
     /** Clears all filters */
     clearFilters: () => void;
     /** Updates a specific menu item */
-    updateMenuItem: (categoryId: number, itemId: number, updates: Partial<MenuItem>) => void;
+    updateMenuItem: (categoryId: number, itemId: number, updates: Partial<MenuItem>, addressId?: string | null) => void;
     /** Helper function to get the full category object for the selected ID */
     getSelectedCategory: () => Category | undefined;
     /** Submits all local changes to the API */
@@ -329,7 +329,7 @@ export const useMenuStore = create<MenuStore>()(
                 }
             },
 
-            updateMenuItem: (categoryId: number, itemId: number, updates: Partial<MenuItem>) => {
+            updateMenuItem: (categoryId: number, itemId: number, updates: Partial<MenuItem>, addressId?: string | null) => {
                 const { categories, updatedItems } = get();
                 const newUpdatedItems = { ...updatedItems };
 
@@ -366,7 +366,8 @@ export const useMenuStore = create<MenuStore>()(
                 // 3. Update the tracking map
                 newUpdatedItems[itemId] = {
                     original: originalBaseline,
-                    current: updatedItem
+                    current: updatedItem,
+                    modifiedByAddressId: addressId
                 };
 
                 // 4. Self-Correction: If reverted to original, remove from tracking
@@ -400,20 +401,51 @@ export const useMenuStore = create<MenuStore>()(
             },
 
             submitChanges: async () => {
-                const { categories, isDirty, isSubmitting } = get();
+                const { categories, updatedItems, isDirty, isSubmitting } = get();
                 if (!isDirty || isSubmitting) return;
 
                 set({ isSubmitting: true });
+
+                // 1. Construct Payload
+                const payload = Object.values(updatedItems).map(({ original, current, modifiedByAddressId }) => {
+                    const changes: Record<string, unknown> = { itemId: current.id };
+
+                    // Add restroId if specific update
+                    if (modifiedByAddressId) {
+                        changes['restroId'] = modifiedByAddressId;
+                    }
+
+                    // Diff fields
+                    (Object.keys(current) as Array<keyof MenuItem>).forEach(key => {
+                        if (JSON.stringify(original[key]) !== JSON.stringify(current[key])) {
+                            changes[key] = current[key];
+                        }
+                    });
+
+                    return changes;
+                });
+
                 try {
-                    const response = await updateMenu(categories);
+                    const response = await updateMenu(payload);
                     if (response.success) {
+                        // 2. Apply changes to local 'categories' state (make them permanent)
+                        const applyUpdatesToTree = (cats: Category[]): Category[] => {
+                            return cats.map(cat => ({
+                                ...cat,
+                                items: cat.items?.map(item => updatedItems[item.id]?.current || item),
+                                subCategories: cat.subCategories ? applyUpdatesToTree(cat.subCategories) : []
+                            }));
+                        };
+
+                        const newCategories = applyUpdatesToTree(categories);
+
                         set({
+                            categories: newCategories,
                             isDirty: false,
                             updatedItems: {},
                             isSubmitting: false,
                             lastCategoriesFetch: null
                         });
-                        alert('Changes submitted successfully!');
                     }
                 } catch (error) {
                     console.error('Failed to submit menu changes:', error);
@@ -483,7 +515,6 @@ export const useMenuStore = create<MenuStore>()(
             partialize: (state) => ({
                 categories: state.categories,
                 updatedItems: state.updatedItems,
-                selectedCategoryId: state.selectedCategoryId,
                 isDirty: state.isDirty,
                 lastCategoriesFetch: state.lastCategoriesFetch,
             }),

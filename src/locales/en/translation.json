@@ -735,6 +735,12 @@
         "containsEgg": "Contains Egg",
         "discounted": "Discounted",
         "noDiscount": "No Discount"
+      },
+      "stockUpdate": {
+        "confirmTitle": "Are you sure?",
+        "confirmDesc": "This will change the status for all of your restaurants.",
+        "confirmAction": "Yes, Update All",
+        "cancelAction": "Cancel"
       }
     }
   }

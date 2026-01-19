@@ -45,12 +45,18 @@ export interface PaginatedItems {
  * @param {any} filters
  * @returns {Promise<PaginatedItems>}
  */
+export interface MenuFilters {
+    stock?: ('in_stock' | 'out_of_stock')[];
+    foodType?: ('veg' | 'non_veg' | 'contains_egg')[];
+    discounted?: boolean | null;
+}
+
 export const fetchCategoryItems = async (
     categoryId: number,
     page = 1,
     limit = 5,
     searchQuery = '',
-    filters: any = {}
+    filters: MenuFilters = {}
 ): Promise<PaginatedItems> => {
     await delay(500); // Faster delay for specific item fetch
     const category = MOCK_CATEGORIES.find(c => c.id === categoryId || c.parentCategoryId === categoryId);
@@ -67,20 +73,26 @@ export const fetchCategoryItems = async (
 
     // Simulate Server-Side Filtering
     if (filters) {
-        if (filters.stock && filters.stock.length > 0) {
+        const { stock, foodType, discounted } = filters;
+
+        if (stock && stock.length > 0) {
             allItems = allItems.filter(item => {
-                if (filters.stock.includes('in_stock') && item.inStock) return true;
-                if (filters.stock.includes('out_of_stock') && !item.inStock) return true;
+                const stockValues = Object.values(item.inStock || {});
+                const isAvailableAnywhere = stockValues.some(v => v === true);
+                const isUnavailableAnywhere = stockValues.some(v => v === false);
+
+                if (stock.includes('in_stock') && isAvailableAnywhere) return true;
+                if (stock.includes('out_of_stock') && isUnavailableAnywhere) return true;
                 return false;
             });
         }
 
-        if (filters.foodType && filters.foodType.length > 0) {
-            allItems = allItems.filter(item => filters.foodType.includes(item.foodType));
+        if (foodType && foodType.length > 0) {
+            allItems = allItems.filter(item => foodType.includes(item.foodType));
         }
 
-        if (filters.discounted !== null) {
-            allItems = allItems.filter(item => item.hasDiscount === filters.discounted);
+        if (discounted !== null && discounted !== undefined) {
+            allItems = allItems.filter(item => item.hasDiscount === discounted);
         }
     }
 
@@ -107,11 +119,11 @@ export const fetchMenuScore = async (): Promise<MenuScoreData> => {
 
 /**
  * Submits menu changes to the server.
- * @param {Category[]} categories - The updated list of categories and items.
+ * @param {Record<string, unknown>[]} updates - The array of item updates.
  * @returns {Promise<{ success: boolean }>}
  */
-export const updateMenu = async (categories: Category[]): Promise<{ success: boolean }> => {
-    console.log('API Call: Updating menu with data:', categories);
+export const updateMenu = async (updates: Record<string, unknown>[]): Promise<{ success: boolean }> => {
+    console.log('API Call: Updating menu with data:', updates);
     await delay(1500); // Simulate network delay
     return { success: true };
 };

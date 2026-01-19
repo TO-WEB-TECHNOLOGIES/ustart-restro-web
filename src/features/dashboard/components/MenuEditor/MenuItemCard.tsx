@@ -5,7 +5,10 @@ import { Tag, Image as ImageIcon, Pencil, Ban, Trash2, Percent, IndianRupee, Dot
 import { useTranslation } from 'react-i18next';
 import { type MenuItem, type FoodType } from '../../../../types/menuTypes';
 import { useMenu } from '../../hooks/useMenu';
+import { useRestaurantStore } from '../../store/useRestaurantStore';
+import { ALL_LOCATIONS_ID } from '../../../../types/storeTypes';
 import { Switch } from '../../../../components/ui/switch';
+import { Modal } from '../../../../components/ui/modal';
 
 interface MenuItemCardProps {
     /** The menu item data to display */
@@ -40,14 +43,31 @@ export const MenuItemCard = ({ item }: MenuItemCardProps) => {
     const { t } = useTranslation();
     const location = useLocation();
     const { updateMenuItem, updatedItems, selectedCategoryId } = useMenu();
+    const { selectedAddressId } = useRestaurantStore();
 
     const activeTab = location.pathname.split('/').pop() || 'edit';
     const [isEditing, setIsEditing] = useState(false);
+    const [isStockConfirmOpen, setStockConfirmOpen] = useState(false);
+    const [pendingStockValue, setPendingStockValue] = useState<boolean>(false);
 
     // Reset editing state when tab changes
     useEffect(() => {
-        setIsEditing(false);
+        if (isEditing) {
+            // eslint-disable-next-line react-hooks/exhaustive-deps
+            setIsEditing(false);
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [activeTab]);
+
+    // Calculate Stock Stats
+    const stockStates = Object.values(item.inStock || {});
+    const inStockCount = stockStates.filter(s => s).length;
+    const outStockCount = stockStates.filter(s => !s).length;
+
+    // Determine current display status
+    const isAggregated = !selectedAddressId || selectedAddressId === ALL_LOCATIONS_ID;
+    // Default to false if location not found in record logic, though types suggest it should exist or be handled safely
+    const isCurrentLocationInStock = selectedAddressId && !isAggregated ? (item.inStock[selectedAddressId] ?? false) : false;
 
     /**
      * Toggles the food type of the item for testing purposes.
@@ -58,15 +78,45 @@ export const MenuItemCard = ({ item }: MenuItemCardProps) => {
         const types: FoodType[] = ['veg', 'contains_egg', 'non_veg'];
         const currentIndex = types.indexOf(item.foodType);
         const nextType = types[(currentIndex + 1) % types.length];
-        updateMenuItem(selectedCategoryId, item.id, { foodType: nextType });
+        updateMenuItem(selectedCategoryId, item.id, { foodType: nextType }, selectedAddressId);
     };
 
     /**
      * Generic field updater
      */
-    const handleUpdateField = (field: keyof MenuItem, value: any) => {
+    const handleUpdateField = (field: keyof MenuItem, value: MenuItem[keyof MenuItem]) => {
         if (selectedCategoryId === null) return;
-        updateMenuItem(selectedCategoryId, item.id, { [field]: value });
+        updateMenuItem(selectedCategoryId, item.id, { [field]: value }, selectedAddressId);
+    };
+
+    /**
+     * Specific updater for stock to handle the Record structure
+     */
+    const handleStockUpdate = (checked: boolean) => {
+        if (selectedCategoryId === null) return;
+        
+        if (isAggregated) {
+            setPendingStockValue(checked);
+            setStockConfirmOpen(true);
+            return;
+        }
+
+        const newInStock = { ...item.inStock, [selectedAddressId!]: checked };
+        updateMenuItem(selectedCategoryId, item.id, { inStock: newInStock }, selectedAddressId);
+    };
+
+    const handleConfirmStockUpdate = () => {
+        if (selectedCategoryId === null) return;
+
+        // Apply status to all existing keys
+        const newInStock = { ...item.inStock };
+        Object.keys(newInStock).forEach(key => {
+            newInStock[key] = pendingStockValue;
+        });
+
+        // For aggregate, we don't pass a specific addressId as it affects all
+        updateMenuItem(selectedCategoryId, item.id, { inStock: newInStock }, null);
+        setStockConfirmOpen(false);
     };
 
     // Calculate final price (simplified for display)
@@ -127,9 +177,24 @@ export const MenuItemCard = ({ item }: MenuItemCardProps) => {
 
                             {activeTab === 'edit' && (
                                 <div className="flex items-center gap-2">
-                                    <div className={`px-2 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider ${item.inStock ? 'bg-green-50 text-green-600 dark:bg-green-900/20' : 'bg-red-50 text-red-600 dark:bg-red-900/20'}`}>
-                                        {item.inStock ? t('dashboard.menuEditor.inStock') : t('dashboard.menuEditor.outOfStock')}
-                                    </div>
+                                    {isAggregated ? (
+                                        <div className="flex gap-1">
+                                            {inStockCount > 0 && (
+                                                <div className="px-2 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider bg-green-50 text-green-600 dark:bg-green-900/20">
+                                                    {inStockCount} In Stock
+                                                </div>
+                                            )}
+                                            {outStockCount > 0 && (
+                                                <div className="px-2 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider bg-red-50 text-red-600 dark:bg-red-900/20">
+                                                    {outStockCount} Out
+                                                </div>
+                                            )}
+                                        </div>
+                                    ) : (
+                                        <div className={`px-2 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider ${isCurrentLocationInStock ? 'bg-green-50 text-green-600 dark:bg-green-900/20' : 'bg-red-50 text-red-600 dark:bg-red-900/20'}`}>
+                                            {isCurrentLocationInStock ? t('dashboard.menuEditor.inStock') : t('dashboard.menuEditor.outOfStock')}
+                                        </div>
+                                    )}
                                     <div className="flex items-center gap-1">
                                         <button className="p-2 bg-blue-50 dark:bg-blue-900/20 text-[var(--color-primary-blue)] dark:text-blue-400 rounded-xl hover:bg-blue-100 transition-colors">
                                             <Pencil className="w-4 h-4" />
@@ -146,14 +211,34 @@ export const MenuItemCard = ({ item }: MenuItemCardProps) => {
 
                             {activeTab === 'stock' && (
                                 <div className="flex items-center gap-3 bg-slate-50 dark:bg-slate-800/50 px-3 py-1.5 rounded-xl border border-slate-100 dark:border-slate-700">
-                                    <span className={`hidden md:inline text-[10px] font-black uppercase tracking-widest ${item.inStock ? 'text-green-500' : 'text-red-500'}`}>
-                                        {item.inStock ? t('dashboard.menuEditor.inStock') : t('dashboard.menuEditor.outOfStock')}
-                                    </span>
-                                    <Switch
-                                        checked={item.inStock}
-                                        onCheckedChange={(checked) => handleUpdateField('inStock', checked)}
-                                        className="data-[state=checked]:bg-[#539987]"
-                                    />
+                                    {isAggregated ? (
+                                        <>
+                                            <div className="flex items-center gap-2 min-w-[120px] justify-end">
+                                                <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">
+                                                    Overview:
+                                                </span>
+                                                {inStockCount > 0 && <span className="text-xs font-bold text-green-500">{inStockCount} In</span>}
+                                                {inStockCount > 0 && outStockCount > 0 && <span className="text-slate-300">|</span>}
+                                                {outStockCount > 0 && <span className="text-xs font-bold text-red-500">{outStockCount} Out</span>}
+                                            </div>
+                                            <Switch
+                                                checked={outStockCount === 0 && inStockCount > 0}
+                                                onCheckedChange={handleStockUpdate}
+                                                className="data-[state=checked]:bg-[#539987]"
+                                            />
+                                        </>
+                                    ) : (
+                                        <>
+                                            <span className={`hidden md:inline text-[10px] font-black uppercase tracking-widest ${isCurrentLocationInStock ? 'text-green-500' : 'text-red-500'}`}>
+                                                {isCurrentLocationInStock ? t('dashboard.menuEditor.inStock') : t('dashboard.menuEditor.outOfStock')}
+                                            </span>
+                                            <Switch
+                                                checked={isCurrentLocationInStock}
+                                                onCheckedChange={handleStockUpdate}
+                                                className="data-[state=checked]:bg-[#539987]"
+                                            />
+                                        </>
+                                    )}
                                 </div>
                             )}
 
@@ -216,6 +301,28 @@ export const MenuItemCard = ({ item }: MenuItemCardProps) => {
                     )}
                 </div>
             </div>
+
+            <Modal isOpen={isStockConfirmOpen} onClose={() => setStockConfirmOpen(false)} title={t('dashboard.menuEditor.stockUpdate.confirmTitle')}>
+                <div className="flex flex-col gap-6">
+                    <p className="text-slate-600 dark:text-slate-300">
+                        {t('dashboard.menuEditor.stockUpdate.confirmDesc')}
+                    </p>
+                    <div className="flex justify-end gap-3">
+                        <button
+                            onClick={() => setStockConfirmOpen(false)}
+                            className="px-4 py-2 rounded-xl text-sm font-bold text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                        >
+                            {t('dashboard.menuEditor.stockUpdate.cancelAction')}
+                        </button>
+                        <button
+                            onClick={handleConfirmStockUpdate}
+                            className="px-4 py-2 rounded-xl text-sm font-bold text-white bg-[var(--color-primary-blue)] hover:opacity-90 transition-opacity"
+                        >
+                            {t('dashboard.menuEditor.stockUpdate.confirmAction')}
+                        </button>
+                    </div>
+                </div>
+            </Modal>
 
             {/* Right Section: Charges Panel */}
             {activeTab === 'charges' && (

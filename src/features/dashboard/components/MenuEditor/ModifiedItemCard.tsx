@@ -2,6 +2,7 @@ import { motion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
 import { ArrowLeft, AlertCircle, Tag } from 'lucide-react';
 import type { MenuItem } from '../../../../types/menuTypes';
+import { useRestaurantStore } from '../../store/useRestaurantStore';
 
 /**
  * Helper to render the specific value changes for an item field
@@ -15,8 +16,8 @@ const ChangeLine = ({
     newSuffix
 }: {
     label: string,
-    oldVal: any,
-    newVal: any,
+    oldVal: React.ReactNode,
+    newVal: React.ReactNode,
     suffix?: string,
     oldSuffix?: string,
     newSuffix?: string
@@ -42,13 +43,47 @@ const ChangeLine = ({
 interface ModifiedItemCardProps {
     original: MenuItem;
     current: MenuItem;
+    modifiedByAddressId?: string | null;
 }
 
 /**
  * Sub-component for individual modified menu items used in ReviewChanges view
  */
-export const ModifiedItemCard = ({ original, current }: ModifiedItemCardProps) => {
+export const ModifiedItemCard = ({ original, current, modifiedByAddressId }: ModifiedItemCardProps) => {
     const { t } = useTranslation();
+    const { addresses } = useRestaurantStore();
+
+    // Find address label if modified by specific address
+    const modificationSourceLabel = modifiedByAddressId 
+        ? addresses.find(a => a.id === modifiedByAddressId)?.label || modifiedByAddressId
+        : null;
+
+    // Logic to detect specific address changes
+    const stockChanges = (() => {
+        const changes: { addressLabel: string, oldVal: string, newVal: string }[] = [];
+        const originalStock = original.inStock || {};
+        const currentStock = current.inStock || {};
+
+        const allKeys = new Set([...Object.keys(originalStock), ...Object.keys(currentStock)]);
+
+        allKeys.forEach(key => {
+            // Coerce to boolean to compare status
+            const oldBool = !!originalStock[key];
+            const newBool = !!currentStock[key];
+
+            if (oldBool !== newBool) {
+                const address = addresses.find(a => a.id === key);
+                const addressLabel = address ? address.label : key; // Use ID as fallback label
+
+                changes.push({
+                    addressLabel,
+                    oldVal: oldBool ? t('dashboard.menuEditor.filter.inStock') : t('dashboard.menuEditor.filter.outOfStock'),
+                    newVal: newBool ? t('dashboard.menuEditor.filter.inStock') : t('dashboard.menuEditor.filter.outOfStock')
+                });
+            }
+        });
+        return changes;
+    })();
 
     return (
         <motion.div
@@ -70,7 +105,14 @@ export const ModifiedItemCard = ({ original, current }: ModifiedItemCardProps) =
                     </div>
                     <div className="min-w-0">
                         <h4 className="text-lg font-black text-slate-900 dark:text-white truncate">{current.name}</h4>
-                        <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-0.5">ID: #{current.id}</p>
+                        <div className="flex flex-col gap-0.5 mt-0.5">
+                            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">ID: #{current.id}</p>
+                            {modificationSourceLabel && (
+                                <p className="text-[10px] text-orange-500 font-bold uppercase tracking-widest">
+                                    Modified at: {modificationSourceLabel}
+                                </p>
+                            )}
+                        </div>
                     </div>
                 </div>
 
@@ -85,7 +127,17 @@ export const ModifiedItemCard = ({ original, current }: ModifiedItemCardProps) =
 
                     <div className="space-y-0.5">
                         <ChangeLine label={t('dashboard.menuEditor.filter.dietaryPreference')} oldVal={original.foodType} newVal={current.foodType} />
-                        <ChangeLine label={t('dashboard.menuEditor.filter.stockStatus')} oldVal={original.inStock ? t('dashboard.menuEditor.filter.inStock') : t('dashboard.menuEditor.filter.outOfStock')} newVal={current.inStock ? t('dashboard.menuEditor.filter.inStock') : t('dashboard.menuEditor.filter.outOfStock')} />
+
+                        {/* Dynamic Stock Changes */}
+                        {stockChanges.map((change, idx) => (
+                            <ChangeLine
+                                key={idx}
+                                label={change.addressLabel}
+                                oldVal={change.oldVal}
+                                newVal={change.newVal}
+                            />
+                        ))}
+
                         <ChangeLine label={t('dashboard.menuEditor.originalPrice')} oldVal={original.itemPrice} newVal={current.itemPrice} suffix="₹" />
                         <ChangeLine label={t('dashboard.menuEditor.taxAmount')} oldVal={original.taxAmount} newVal={current.taxAmount} suffix="%" />
                         <ChangeLine

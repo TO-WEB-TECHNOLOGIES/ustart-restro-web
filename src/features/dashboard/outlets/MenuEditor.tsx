@@ -14,7 +14,7 @@ import { Loader2, PanelLeftOpen, PanelLeftClose, Menu } from 'lucide-react';
 export const MenuEditor = () => {
     const { t } = useTranslation();
     const location = useLocation();
-    const { fetchCategories, isCategoriesLoading, categories } = useMenu();
+    const { fetchCategories, isCategoriesLoading, categories, isSubmitting } = useMenu();
     const [isSidebarOpen, setIsSidebarOpen] = useState(true);
 
     const isReviewPage = location.pathname.endsWith('/review');
@@ -37,6 +37,23 @@ export const MenuEditor = () => {
 
     return (
         <div className="flex flex-col h-full bg-slate-50 dark:bg-slate-950 relative overflow-hidden">
+            {/* Full Screen Loader Overlay Logic */}
+            {isSubmitting && (
+                <div className="absolute inset-0 z-60 bg-white/50 dark:bg-slate-950/50 backdrop-blur-sm flex flex-col items-center justify-center">
+                    <div className="bg-white dark:bg-slate-900 p-6 rounded-3xl shadow-2xl flex flex-col items-center gap-4 border border-slate-100 dark:border-slate-800">
+                        <Loader2 className="w-10 h-10 animate-spin text-[var(--color-primary-blue)]" />
+                        <div className="flex flex-col items-center">
+                            <h3 className="text-lg font-black text-slate-900 dark:text-white">
+                                {t('dashboard.menuEditor.submittingChanges')}
+                            </h3>
+                            <p className="text-sm text-slate-500 dark:text-slate-400">
+                                {t('dashboard.menuEditor.submittingDesc') || 'Please wait while we update your menu...'}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            )}
+
             {/* Mobile Sidebar Toggle - Only visible on small screens and NOT on review page */}
             {!isReviewPage && (
                 <button

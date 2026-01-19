@@ -27,8 +27,8 @@ export interface MenuItem {
     isCustomisable: boolean;
     /** Optional flag indicating if the item currently has a discount */
     hasDiscount?: boolean;
-    /** Whether the item is currently available in stock */
-    inStock: boolean;
+    /** Map of restaurant IDs (address IDs) to their stock status */
+    inStock: Record<string, boolean>;
     /** Tax amount applicable to this item */
     taxAmount: number;
     /** Packaging charges for the item */

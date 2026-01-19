@@ -60,11 +60,12 @@ export const ReviewChanges = () => {
             <div className="flex-1 overflow-y-auto px-6 md:px-10 pb-20">
                 <div className="max-w-7xl mx-auto">
                     <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6 md:gap-8">
-                        {changedItemsList.map(({ original, current }) => (
+                        {changedItemsList.map(({ original, current, modifiedByAddressId }) => (
                             <ModifiedItemCard
                                 key={current.id}
                                 original={original}
                                 current={current}
+                                modifiedByAddressId={modifiedByAddressId}
                             />
                         ))}
                     </div>
