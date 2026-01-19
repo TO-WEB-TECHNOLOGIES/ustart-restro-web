@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Upload, CheckCircle, Flame, ChefHat, Tag, Info } from 'lucide-react';
+import { X, Upload, CheckCircle, Flame } from 'lucide-react';
 
-import type { MenuItem, FoodType } from '../../../../types/menuTypes';
+import type { MenuItem } from '../../../../types/menuTypes';
 import { useMenu } from '../../hooks/useMenu';
 
 interface AddEditItemModalProps {

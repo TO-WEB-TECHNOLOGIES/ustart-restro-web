@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useMenu } from '../../hooks/useMenu';
 import type { MenuItem } from '../../../../types/menuTypes';
-import { ArrowLeft, Check, ImagePlus, Sparkles, Plus } from 'lucide-react';
+import { Check, ImagePlus, Sparkles, Plus } from 'lucide-react';
 
 export const AddItemPage = () => {
     const navigate = useNavigate();
@@ -81,12 +81,7 @@ export const AddItemPage = () => {
                 {/* Header */}
                 <header className="flex items-center justify-between mb-8 md:mb-12">
                     <div className="flex items-center gap-4 md:gap-6">
-                        <button
-                            onClick={handleBack}
-                            className="w-10 h-10 flex items-center justify-center rounded-full bg-white border border-gray-100 hover:bg-gray-50 text-navy transition-all shadow-sm"
-                        >
-                            <ArrowLeft className="w-5 h-5" />
-                        </button>
+
                         <div>
                             <h1 className="text-xl md:text-2xl font-bold text-slate-900 dark:text-white">Add New Item</h1>
                             <p className="text-sm text-gray-500 font-medium mt-1">{selectedCategory?.name} Category</p>
@@ -101,7 +96,7 @@ export const AddItemPage = () => {
                         </button>
                         <button
                             onClick={handleSave}
-                            className="bg-navy text-white bg-[var(--color-primary-blue)] px-6 md:px-8 py-2 md:py-3 rounded-full font-bold text-sm shadow-lg shadow-blue-500/20 hover:bg-ustart-blue transition-all flex items-center gap-2"
+                            className="bg-[var(--color-primary-blue)] text-white px-6 md:px-8 py-2 md:py-3 rounded-full font-bold text-sm hover:opacity-90 transition-all flex items-center gap-2"
                         >
                             <span>Save Item</span>
                             <Check className="w-5 h-5" />
