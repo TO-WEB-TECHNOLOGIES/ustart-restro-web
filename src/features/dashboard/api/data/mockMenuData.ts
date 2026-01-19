@@ -19,7 +19,19 @@ export const MOCK_CATEGORIES: Category[] = [
                 discountAmount: 11,
                 image: 'https://images.unsplash.com/photo-1601050633647-8f137e06a256?auto=format&fit=crop&q=80&w=200',
                 foodType: 'veg',
-                isCustomisable: true, inStock: { '1': true, '2': true, '3': true }, taxAmount: 5, packagingCharges: 10, discountIsAbsolute: true
+                isCustomisable: true, inStock: { '1': true, '2': true, '3': true }, taxAmount: 5, packagingCharges: 10, discountIsAbsolute: true,
+                serviceType: 'Both',
+                itemType: 'Solid',
+                isFrosting: 'No',
+                serves: 1,
+                portionSize: 2,
+                maxQuantity: 20,
+                tags: ['Best Seller', 'Spicy'],
+                allergens: ['gluten', 'dairy'],
+                spiceLevel: 2,
+                availability: { startTime: '09:00', endTime: '22:00', allDay: true },
+                nutritionalInfo: { calories: '320', protein: '12g', carbs: '45g', fats: '10g' },
+                isAiGeneratedImage: false
             },
             {
                 id: 102,
@@ -30,7 +42,17 @@ export const MOCK_CATEGORIES: Category[] = [
                 image: 'https://images.unsplash.com/photo-1626777553631-482f71960207?auto=format&fit=crop&q=80&w=200',
                 foodType: 'veg',
                 isCustomisable: true, inStock: { '1': true, '2': false, '3': true }, taxAmount: 5, packagingCharges: 10, discountIsAbsolute: true,
-                hasDiscount: true
+                hasDiscount: true,
+                serviceType: 'Delivery',
+                itemType: 'Solid',
+                isFrosting: 'No',
+                serves: 1,
+                portionSize: 2,
+                maxQuantity: 15,
+                tags: ['Crunchy'],
+                spiceLevel: 1,
+                availability: { startTime: '10:00', endTime: '23:00', allDay: true },
+                nutritionalInfo: { calories: '350', protein: '10g', carbs: '50g', fats: '15g' }
             },
             {
                 id: 103,
@@ -179,7 +201,17 @@ export const MOCK_CATEGORIES: Category[] = [
                 itemPrice: 30,
                 discountAmount: 0,
                 foodType: 'veg',
-                isCustomisable: false, inStock: { '1': true, '2': true, '3': true }, taxAmount: 5, packagingCharges: 10, discountIsAbsolute: true
+                isCustomisable: false, inStock: { '1': true, '2': true, '3': true }, taxAmount: 5, packagingCharges: 10, discountIsAbsolute: true,
+                serviceType: 'Both',
+                itemType: 'Liquid',
+                isFrosting: 'No',
+                serves: 1,
+                portionSize: 1,
+                maxQuantity: 50,
+                tags: ['Refreshing'],
+                spiceLevel: 1,
+                availability: { startTime: '06:00', endTime: '22:00', allDay: true },
+                nutritionalInfo: { calories: '120', protein: '2g', carbs: '15g', fats: '4g' }
             },
             {
                 id: 302,

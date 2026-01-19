@@ -11,6 +11,7 @@ import { Switch } from '../../../../components/ui/switch';
 import { Modal } from '../../../../components/ui/modal';
 import { DeleteItemModal } from './DeleteItemModal';
 import { BlockItemModal } from './BlockItemModal';
+import { AddEditItemModal } from './AddEditItemModal';
 
 interface MenuItemCardProps {
     /** The menu item data to display */
@@ -55,6 +56,7 @@ export const MenuItemCard = ({ item }: MenuItemCardProps) => {
     // Delete and Block Modal States
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
     const [isBlockModalOpen, setIsBlockModalOpen] = useState(false);
+    const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
 
     // Reset editing state when tab changes
     useEffect(() => {
@@ -130,6 +132,8 @@ export const MenuItemCard = ({ item }: MenuItemCardProps) => {
         const nextStatus = item.status === 'blocked' ? 'active' : 'blocked';
         updateMenuItem(selectedCategoryId, item.id, { status: nextStatus }, selectedAddressId);
     };
+
+    const selectedCategoryName = useMenu().selectedCategory?.name || '';
 
     // Calculate final price (simplified for display)
     const discountValue = item.discountIsAbsolute ? item.discountAmount : (item.itemPrice * item.discountAmount / 100);
@@ -226,7 +230,10 @@ export const MenuItemCard = ({ item }: MenuItemCardProps) => {
                                         </div>
                                     )}
                                     <div className="flex items-center gap-1">
-                                        <button className="p-2 bg-blue-50 dark:bg-blue-900/20 text-[var(--color-primary-blue)] dark:text-blue-400 rounded-xl hover:bg-blue-100 transition-colors">
+                                        <button
+                                            onClick={() => setIsDetailsModalOpen(true)}
+                                            className="p-2 bg-blue-50 dark:bg-blue-900/20 text-[var(--color-primary-blue)] dark:text-blue-400 rounded-xl hover:bg-blue-100 transition-colors"
+                                        >
                                             <Pencil className="w-4 h-4" />
                                         </button>
                                         <button
@@ -479,6 +486,13 @@ export const MenuItemCard = ({ item }: MenuItemCardProps) => {
                 onClose={() => setIsBlockModalOpen(false)}
                 onConfirm={handleBlockItem}
                 item={item}
+            />
+            <AddEditItemModal
+                isOpen={isDetailsModalOpen}
+                onClose={() => setIsDetailsModalOpen(false)}
+                item={item}
+                categoryName={selectedCategoryName}
+                categoryId={selectedCategoryId || 0}
             />
         </motion.div>
     );

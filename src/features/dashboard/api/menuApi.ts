@@ -150,6 +150,31 @@ export const createCategory = async (data: { name: string; description?: string;
 };
 
 /**
+ * Creates a new menu item on the server.
+ * @returns {Promise<{ success: boolean; item: MenuItem }>}
+ */
+export const createMenuItem = async (categoryId: number, itemData: Partial<MenuItem>): Promise<{ success: boolean; item: MenuItem }> => {
+    console.log(`API Call: Creating item in category ${categoryId}:`, itemData);
+    await delay(1000);
+    const newItem: MenuItem = {
+        id: Math.floor(Math.random() * 1000000),
+        name: itemData.name || 'New Item',
+        description: itemData.description || '',
+        itemPrice: itemData.itemPrice || 0,
+        discountAmount: itemData.discountAmount || 0,
+        image: '',
+        foodType: itemData.foodType || 'veg',
+        isCustomisable: false,
+        inStock: {},
+        taxAmount: itemData.taxAmount || 5,
+        packagingCharges: itemData.packagingCharges || 0,
+        discountIsAbsolute: true,
+        ...itemData
+    } as MenuItem;
+    return { success: true, item: newItem };
+};
+
+/**
  * Updates an exisiting category on the server.
  * @returns {Promise<{ success: boolean, category: Category }>}
  */

@@ -101,6 +101,7 @@ export const useMenu = () => {
         updateCategory: useMenuStore().updateCategory,
         deleteCategory: useMenuStore().deleteCategory,
         toggleCategoryStatus: useMenuStore().toggleCategoryStatus,
+        addMenuItem: useMenuStore().addMenuItem,
         fetchCategories,
         fetchCategoryItems: useMenuStore().fetchCategoryItems,
         fetchNextPage

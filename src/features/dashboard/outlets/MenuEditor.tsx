@@ -8,6 +8,8 @@ import { ReviewChanges } from '../components/MenuEditor/ReviewChanges';
 import { useMenu } from '../hooks/useMenu';
 import { Loader2, PanelLeftOpen, PanelLeftClose, Menu } from 'lucide-react';
 
+import { AddItemPage } from '../components/MenuEditor/AddItemPage';
+
 /**
  * MenuEditor component provides the interface for managing a restaurant's menu.
  */
@@ -18,6 +20,7 @@ export const MenuEditor = () => {
     const [isSidebarOpen, setIsSidebarOpen] = useState(true);
 
     const isReviewPage = location.pathname.endsWith('/review');
+    const isAddPage = location.pathname.endsWith('/new');
 
     /**
      * Fetch menu categories on component mount.
@@ -110,6 +113,8 @@ export const MenuEditor = () => {
                 <div className="flex-1 flex flex-col min-w-0 h-full">
                     {isReviewPage ? (
                         <ReviewChanges />
+                    ) : isAddPage ? (
+                        <AddItemPage />
                     ) : (
                         <MenuItemList onOpenSidebar={() => setIsSidebarOpen(true)} />
                     )}

@@ -39,6 +39,29 @@ export interface MenuItem {
     isDeleted?: boolean;
     /** Current status of the item (e.g., 'active', 'inactive', 'blocked') */
     status?: string;
+
+    // --- New Fields for Detailed Editor ---
+    serviceType?: 'Delivery' | 'Dine-In' | 'Both';
+    itemType?: 'Solid' | 'Liquid' | 'Semi-Solid' | 'Frozen';
+    isFrosting?: 'Fresh' | 'Pre-Frosted' | 'No';
+    availability?: {
+        startTime: string;
+        endTime: string;
+        allDay: boolean;
+    };
+    serves?: number;
+    portionSize?: number;
+    maxQuantity?: number;
+    tags?: string[];
+    allergens?: string[];
+    spiceLevel?: number; // 0 (None) to 3 (Hot)
+    nutritionalInfo?: {
+        calories: string;
+        protein: string;
+        carbs: string;
+        fats: string;
+    };
+    isAiGeneratedImage?: boolean;
 }
 
 /**

@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import { type Category, type MenuItem } from '../../../types/menuTypes';
-import { fetchMenuScore, updateMenu, fetchCategories, fetchCategoryItems, createCategory, patchCategory, deleteCategory, toggleCategoryStatus } from '../api/menuApi';
+import { fetchMenuScore, updateMenu, fetchCategories, fetchCategoryItems, createCategory, createMenuItem, patchCategory, deleteCategory, toggleCategoryStatus } from '../api/menuApi';
 
 /**
  * Interface representing the state and actions for the Menu Store.
@@ -65,6 +65,8 @@ export interface MenuStore {
     deleteCategory: (categoryId: number) => Promise<void>;
     /** Directly toggles category status via API */
     toggleCategoryStatus: (categoryId: number, status: 'active' | 'inactive') => Promise<void>;
+    /** Directly adds a new item via API */
+    addMenuItem: (categoryId: number, item: Partial<MenuItem>) => Promise<void>;
 
     // --- Menu Score State ---
     /** Overall health score of the menu */
@@ -586,6 +588,45 @@ export const useMenuStore = create<MenuStore>()(
                     set({ isSubmitting: false });
                 }
             },
+
+            addMenuItem: async (categoryId, itemData) => {
+                set({ isSubmitting: true });
+                try {
+                    const response = await createMenuItem(categoryId, itemData);
+                    if (response.success) {
+                        const { categories } = get();
+
+                        // Helper to find and update category with new item
+                        const addItemRecursive = (list: Category[]): Category[] => {
+                            return list.map(cat => {
+                                if (cat.id === categoryId) {
+                                    return {
+                                        ...cat,
+                                        items: [response.item, ...(cat.items || [])],
+                                        itemCount: (cat.itemCount || 0) + 1
+                                    };
+                                }
+                                if (cat.subCategories) {
+                                    return {
+                                        ...cat,
+                                        subCategories: addItemRecursive(cat.subCategories)
+                                    };
+                                }
+                                return cat;
+                            });
+                        };
+
+                        set({
+                            categories: addItemRecursive(categories)
+                        });
+                    }
+                } catch (error) {
+                    console.error('Failed to add menu item:', error);
+                } finally {
+                    set({ isSubmitting: false });
+                }
+            },
+
             deleteCategory: async (categoryId) => {
                 set({ isSubmitting: true });
                 try {

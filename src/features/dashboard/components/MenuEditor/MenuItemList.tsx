@@ -1,5 +1,6 @@
+
 import { useRef, useEffect, useState, useMemo } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { Plus, Search, Filter, ChevronDown, Loader2, Utensils, Layout } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useMenu } from '../../hooks/useMenu';
@@ -9,6 +10,7 @@ import { MenuItemCard } from './MenuItemCard';
 import { Switch } from '../../../../components/ui/switch';
 import { Modal } from '../../../../components/ui/modal';
 import { motion } from 'framer-motion';
+
 
 interface MenuItemListProps {
     onOpenSidebar?: () => void;
@@ -20,8 +22,10 @@ interface MenuItemListProps {
 export const MenuItemList = ({ onOpenSidebar }: MenuItemListProps) => {
     const { t } = useTranslation();
     const location = useLocation();
+    const navigate = useNavigate();
     const [showFilters, setShowFilters] = useState(false);
     const filterRef = useRef<HTMLDivElement>(null);
+
 
     // Detect if we're on the stock management page
     const isStockPage = location.pathname.includes('/stock');
@@ -201,7 +205,7 @@ export const MenuItemList = ({ onOpenSidebar }: MenuItemListProps) => {
                         <div className="relative flex-1 md:flex-none" ref={filterRef}>
                             <button
                                 onClick={() => setShowFilters(!showFilters)}
-                                className={`w-full md:w-auto flex items-center justify-center gap-2 px-4 py-2 rounded-xl text-sm font-bold transition-all shadow-sm border ${showFilters || activeFilterCount > 0 ? 'bg-[var(--color-primary-blue)] border-[var(--color-primary-blue)] text-white' : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300'}`}
+                                className={`w-full md:w-auto flex items-center justify-center gap-2 px-4 py-2 rounded-xl text-sm font-bold transition-all shadow-sm border ${showFilters || activeFilterCount > 0 ? 'bg-[var(--color-primary-blue)] border-[var(--color-primary-blue)] text-white' : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300'} `}
                             >
                                 <Filter className="w-4 h-4" />
                                 <span>{t('dashboard.menuEditor.filters')}</span>
@@ -238,7 +242,7 @@ export const MenuItemList = ({ onOpenSidebar }: MenuItemListProps) => {
                                                 <button
                                                     key={opt.value}
                                                     onClick={() => toggleStagedFilter('stock', opt.value)}
-                                                    className={`px-3 py-1.5 rounded-lg text-[10px] font-bold transition-colors ${stagedFilters.stock.includes(opt.value as any) ? 'bg-[var(--color-primary-blue)] text-white' : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400'}`}
+                                                    className={`px-3 py-1.5 rounded-lg text-[10px] font-bold transition-colors ${stagedFilters.stock.includes(opt.value as any) ? 'bg-[var(--color-primary-blue)] text-white' : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400'} `}
                                                 >
                                                     {opt.label}
                                                 </button>
@@ -258,7 +262,7 @@ export const MenuItemList = ({ onOpenSidebar }: MenuItemListProps) => {
                                                 <button
                                                     key={opt.value}
                                                     onClick={() => toggleStagedFilter('foodType', opt.value)}
-                                                    className={`px-3 py-1.5 rounded-lg text-[10px] font-bold transition-colors ${stagedFilters.foodType.includes(opt.value as any) ? 'bg-[var(--color-primary-blue)] text-white' : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400'}`}
+                                                    className={`px-3 py-1.5 rounded-lg text-[10px] font-bold transition-colors ${stagedFilters.foodType.includes(opt.value as any) ? 'bg-[var(--color-primary-blue)] text-white' : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400'} `}
                                                 >
                                                     {opt.label}
                                                 </button>
@@ -277,7 +281,7 @@ export const MenuItemList = ({ onOpenSidebar }: MenuItemListProps) => {
                                                 <button
                                                     key={opt.label}
                                                     onClick={() => setStagedFilters({ ...stagedFilters, discounted: stagedFilters.discounted === opt.value ? null : opt.value })}
-                                                    className={`px-3 py-1.5 rounded-lg text-[10px] font-bold transition-colors ${stagedFilters.discounted === opt.value ? 'bg-[var(--color-primary-blue)] text-white' : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400'}`}
+                                                    className={`px-3 py-1.5 rounded-lg text-[10px] font-bold transition-colors ${stagedFilters.discounted === opt.value ? 'bg-[var(--color-primary-blue)] text-white' : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400'} `}
                                                 >
                                                     {opt.label}
                                                 </button>
@@ -302,7 +306,10 @@ export const MenuItemList = ({ onOpenSidebar }: MenuItemListProps) => {
 
                         <div className="hidden md:block flex-1" />
 
-                        <button className="flex-1 md:flex-none flex items-center justify-center gap-2 bg-[var(--color-primary-blue)] hover:bg-[#1a3a5f] text-white text-sm font-black px-4 md:px-6 py-2 rounded-xl transition-all shadow-md active:scale-95">
+                        <button
+                            onClick={() => navigate('/dashboard/menu/new')}
+                            className="flex-1 md:flex-none flex items-center justify-center gap-2 bg-[var(--color-primary-blue)] hover:bg-[#1a3a5f] text-white text-sm font-black px-4 md:px-6 py-2 rounded-xl transition-all shadow-md active:scale-95"
+                        >
                             <Plus className="w-5 h-5 shrink-0" />
                             <span className="truncate">{t('dashboard.menuEditor.addNewItem')}</span>
                         </button>
@@ -324,7 +331,7 @@ export const MenuItemList = ({ onOpenSidebar }: MenuItemListProps) => {
                                     </span>
                                 </h2>
                             </div>
-                            <p className={`text-sm md:text-base mt-2 w-full max-w-5xl leading-relaxed ${selectedCategory.description ? 'text-slate-500 dark:text-slate-400' : 'text-orange-500 dark:text-orange-400 font-medium italic'}`}>
+                            <p className={`text-sm md:text-base mt-2 w-full max-w-5xl leading-relaxed ${selectedCategory.description ? 'text-slate-500 dark:text-slate-400' : 'text-orange-500 dark:text-orange-400 font-medium italic'} `}>
                                 {selectedCategory.description || t('dashboard.menuEditor.noDescription')}
                             </p>
                         </div>
@@ -360,7 +367,10 @@ export const MenuItemList = ({ onOpenSidebar }: MenuItemListProps) => {
                             <h3 className="text-base md:text-lg font-black text-slate-800 dark:text-white mb-2 text-center px-4">
                                 {t('dashboard.menuEditor.noItemsInCategory')}
                             </h3>
-                            <button className="mt-4 flex items-center gap-2 bg-[var(--color-primary-blue)] text-white text-xs font-black px-5 py-2.5 rounded-xl hover:bg-[#1a3a5f] transition-all">
+                            <button
+                                onClick={() => navigate('/dashboard/menu/new')}
+                                className="mt-4 flex items-center gap-2 bg-[var(--color-primary-blue)] text-white text-xs font-black px-5 py-2.5 rounded-xl hover:bg-[#1a3a5f] transition-all"
+                            >
                                 <Plus className="w-4 h-4" />
                                 {t('dashboard.menuEditor.addNewItem')}
                             </button>
@@ -415,6 +425,8 @@ export const MenuItemList = ({ onOpenSidebar }: MenuItemListProps) => {
                     </div>
                 </div>
             </Modal>
+
+
         </div>
     );
 };

@@ -116,6 +116,10 @@ export const router = createBrowserRouter([
                                         element: withSuspense(MenuEditor),
                                     },
                                     {
+                                        path: 'new',
+                                        element: withSuspense(MenuEditor),
+                                    },
+                                    {
                                         path: 'review',
                                         element: withSuspense(MenuEditor),
                                     }
