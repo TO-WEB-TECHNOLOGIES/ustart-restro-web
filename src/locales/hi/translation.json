@@ -688,13 +688,44 @@
       "discountType": "छूट का प्रकार",
       "discountLabel": "छूट",
       "originalPrice": "मूल मूल्य",
+      "itemName": "आइटम का नाम",
+      "itemDescription": "आइटम का विवरण",
       "items": "आइटम",
       "customisable": "कस्टमाइज़ करने योग्य",
       "searchCategories": "श्रेणियां खोजें...",
       "noCategoriesFound": "कोई श्रेणी नहीं मिली",
       "fetchingItems": "आइटम प्राप्त कर रहा है...",
       "noItemsInCategory": "इस श्रेणी में कोई आइटम उपलब्ध नहीं है।",
-      "off": "{{amount}} की छूट"
+      "off": "{{amount}} की छूट",
+      "review": {
+        "title": "अपने परिवर्तनों की समीक्षा करें",
+        "subtitle": "प्रकाशित करने से पहले लाइव मेनू के साथ अपने स्थानीय संपादन की तुलना करें।",
+        "publish": "परिवर्तन प्रकाशित करें",
+        "cancel": "रद्द करें",
+        "goBack": "संपादक पर वापस जाएं",
+        "noChangesTitle": "सब कुछ अद्यतित है",
+        "noChangesDesc": "आपने अभी तक अपने मेनू आइटम में कोई बदलाव नहीं किया है।",
+        "infoNote": "परिवर्तन आपके सत्र में स्थानीय रूप से सहेजे गए हैं। प्रकाशित करने से सभी ग्राहकों के लिए मेनू तुरंत अपडेट हो जाएगा।",
+        "item": "आइटम",
+        "items": "आइटम",
+        "modified": "संशोधित",
+        "detectedModifications": "पता लगाए गए संशोधन",
+        "detected": "पता चला"
+      },
+      "filter": {
+        "apply": "फिल्टर लागू करें",
+        "clearAll": "सभी साफ़ करें",
+        "stockStatus": "स्टॉक की स्थिति",
+        "dietaryPreference": "आहार वरीयता",
+        "pricing": "मूल्य निर्धारण",
+        "inStock": "स्टॉक में",
+        "outOfStock": "स्टॉक में नहीं",
+        "veg": "शाकाहारी",
+        "nonVeg": "माँसाहारी",
+        "containsEgg": "अंडा शामिल है",
+        "discounted": "छूट वाले",
+        "noDiscount": "कोई छूट नहीं"
+      }
     }
   }
 }

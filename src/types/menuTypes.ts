@@ -8,7 +8,7 @@ export type FoodType = 'veg' | 'non_veg' | 'contains_egg';
  */
 export interface MenuItem {
     /** Unique identifier for the menu item */
-    id: string;
+    id: number;
     /** Display name of the item */
     name: string;
     /** Detailed description of the item */
@@ -42,13 +42,13 @@ export interface MenuItem {
  */
 export interface Category {
     /** Unique identifier for the category */
-    id: string;
+    id: number;
     /** Display name of the category */
     name: string;
     /** Detailed description of the category */
     description?: string;
     /** ID of the parent category if this is a subcategory */
-    parentCategoryId?: string | null;
+    parentCategoryId?: number | null;
     /** List of child categories (populated on frontend) */
     subCategories?: Category[];
     /** Total number of items in this category (Calculated on frontend) */

@@ -114,6 +114,10 @@ export const router = createBrowserRouter([
                                     {
                                         path: 'charges',
                                         element: withSuspense(MenuEditor),
+                                    },
+                                    {
+                                        path: 'review',
+                                        element: withSuspense(MenuEditor),
                                     }
                                 ]
                             },

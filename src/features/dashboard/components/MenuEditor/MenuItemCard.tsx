@@ -56,7 +56,7 @@ export const MenuItemCard = ({ item }: MenuItemCardProps) => {
      */
     const handleToggleType = (e: React.MouseEvent) => {
         e.stopPropagation();
-        if (!selectedCategoryId) return;
+        if (selectedCategoryId === null) return;
         const types: FoodType[] = ['veg', 'contains_egg', 'non_veg'];
         const currentIndex = types.indexOf(item.foodType);
         const nextType = types[(currentIndex + 1) % types.length];
@@ -67,7 +67,7 @@ export const MenuItemCard = ({ item }: MenuItemCardProps) => {
      * Generic field updater
      */
     const handleUpdateField = (field: keyof MenuItem, value: any) => {
-        if (!selectedCategoryId) return;
+        if (selectedCategoryId === null) return;
         updateMenuItem(selectedCategoryId, item.id, { [field]: value });
     };
 
@@ -75,7 +75,7 @@ export const MenuItemCard = ({ item }: MenuItemCardProps) => {
      * Commit local edits to global store
      */
     const handleCommitChanges = () => {
-        if (!selectedCategoryId) return;
+        if (selectedCategoryId === null) return;
         updateMenuItem(selectedCategoryId, item.id, {
             itemPrice: localItem.itemPrice,
             discountAmount: localItem.discountAmount,
@@ -95,7 +95,7 @@ export const MenuItemCard = ({ item }: MenuItemCardProps) => {
 
     return (
         <motion.div
-            layoutId={item.id}
+            layoutId={String(item.id.toString())}
             className="bg-white dark:bg-slate-900 rounded-3xl p-4 border border-slate-100 dark:border-slate-800 shadow-sm hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-all flex flex-col lg:flex-row gap-4 group relative"
         >
             {/* Left Section: Image and Primary Details */}

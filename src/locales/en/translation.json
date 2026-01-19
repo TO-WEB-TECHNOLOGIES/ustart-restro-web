@@ -689,13 +689,44 @@
       "discountType": "Discount Type",
       "discountLabel": "Discount",
       "originalPrice": "Original Price",
+      "itemName": "Item Name",
+      "itemDescription": "Item Description",
       "items": "Items",
       "customisable": "Customisable",
       "searchCategories": "Search categories...",
       "noCategoriesFound": "No categories found",
       "fetchingItems": "Fetching items...",
       "noItemsInCategory": "No items available in this category.",
-      "off": "{{amount}} OFF"
+      "off": "{{amount}} OFF",
+      "review": {
+        "title": "Review Your Changes",
+        "subtitle": "Compare your local edits with the live menu before publishing.",
+        "publish": "Publish Changes",
+        "cancel": "Cancel",
+        "goBack": "Go Back to Editor",
+        "noChangesTitle": "Everything is Up to Date",
+        "noChangesDesc": "You haven't made any changes to your menu items yet.",
+        "infoNote": "Changes are saved locally in your session. Publishing will update the menu for all customers immediately.",
+        "item": "Item",
+        "items": "Items",
+        "modified": "Modified",
+        "detectedModifications": "Detected Modifications",
+        "detected": "Detected"
+      },
+      "filter": {
+        "apply": "Apply Filters",
+        "clearAll": "Clear All",
+        "stockStatus": "Stock Status",
+        "dietaryPreference": "Dietary preference",
+        "pricing": "Pricing",
+        "inStock": "In Stock",
+        "outOfStock": "Out of Stock",
+        "veg": "Veg",
+        "nonVeg": "Non-veg",
+        "containsEgg": "Contains Egg",
+        "discounted": "Discounted",
+        "noDiscount": "No Discount"
+      }
     }
   }
 }

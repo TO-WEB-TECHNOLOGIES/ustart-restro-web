@@ -11,7 +11,7 @@ export interface MenuStore {
     /** Array of menu categories */
     categories: Category[];
     /** ID of the currently selected category */
-    selectedCategoryId: string | null;
+    selectedCategoryId: number | null;
     /** Current search query for filtering menu items */
     searchQuery: string;
     /** Current filters for menu items */
@@ -27,14 +27,14 @@ export interface MenuStore {
     /** Loading state for categories fetching */
     isCategoriesLoading: boolean;
     /** Loading state for items within categories (mapped by categoryId) */
-    isItemsLoading: Record<string, boolean>;
+    isItemsLoading: Record<number, boolean>;
     /** Timestamp of the last successful categories fetch */
     lastCategoriesFetch: number | null;
 
     /** Updates the categories in the store */
     setCategories: (categories: Category[]) => void;
     /** Updates the selected category ID and fetches items if needed */
-    setSelectedCategoryId: (id: string | null) => void;
+    setSelectedCategoryId: (id: number | null) => void;
     /** Updates the search query string */
     setSearchQuery: (query: string) => void;
     /** Updates the filters */
@@ -42,7 +42,7 @@ export interface MenuStore {
     /** Clears all filters */
     clearFilters: () => void;
     /** Updates a specific menu item */
-    updateMenuItem: (categoryId: string, itemId: string, updates: Partial<MenuItem>) => void;
+    updateMenuItem: (categoryId: number, itemId: number, updates: Partial<MenuItem>) => void;
     /** Helper function to get the full category object for the selected ID */
     getSelectedCategory: () => Category | undefined;
     /** Submits all local changes to the API */
@@ -50,9 +50,9 @@ export interface MenuStore {
     /** Fetches categories from the API with caching and revalidation */
     fetchCategories: (force?: boolean) => Promise<void>;
     /** Fetches items for a specific category on demand (initial or refresh) */
-    fetchCategoryItems: (categoryId: string) => Promise<void>;
+    fetchCategoryItems: (categoryId: number) => Promise<void>;
     /** Fetches the next page of items for infinite scroll */
-    fetchNextPage: (categoryId: string) => Promise<void>;
+    fetchNextPage: (categoryId: number) => Promise<void>;
 
     // --- Menu Score State ---
     /** Overall health score of the menu */
@@ -74,7 +74,7 @@ export interface MenuStore {
  * Uses itemCount provided by the API and maintains hierarchy.
  */
 const buildCategoryTree = (flatCategories: Category[]): Category[] => {
-    const categoryMap: Record<string, Category> = {};
+    const categoryMap: Record<number, Category> = {};
     const roots: Category[] = [];
 
     // Initialize map
@@ -104,7 +104,7 @@ const buildCategoryTree = (flatCategories: Category[]): Category[] => {
 /**
  * Helper to update a single category within the hierarchical tree.
  */
-const updateCategoryInTree = (categories: Category[], categoryId: string, updates: Partial<Category>): Category[] => {
+const updateCategoryInTree = (categories: Category[], categoryId: number, updates: Partial<Category>): Category[] => {
     return categories.map(cat => {
         if (cat.id === categoryId) {
             return { ...cat, ...updates };
@@ -239,7 +239,7 @@ export const useMenuStore = create<MenuStore>()(
             /**
              * Initial items fetch for a category.
              */
-            fetchCategoryItems: async (categoryId: string) => {
+            fetchCategoryItems: async (categoryId: number) => {
                 const { isItemsLoading, categories, filters, searchQuery } = get();
                 if (isItemsLoading[categoryId]) return;
 
@@ -276,7 +276,7 @@ export const useMenuStore = create<MenuStore>()(
             /**
              * Infinite scroll next page fetch.
              */
-            fetchNextPage: async (categoryId: string) => {
+            fetchNextPage: async (categoryId: number) => {
                 const { isItemsLoading, categories, filters, searchQuery } = get();
                 if (isItemsLoading[categoryId]) return;
 
@@ -331,7 +331,7 @@ export const useMenuStore = create<MenuStore>()(
                 }
             },
 
-            updateMenuItem: (categoryId, itemId, updates) => {
+            updateMenuItem: (categoryId: number, itemId: number, updates: Partial<MenuItem>) => {
                 const { categories } = get();
 
                 const updateRecursive = (list: Category[]): Category[] => {

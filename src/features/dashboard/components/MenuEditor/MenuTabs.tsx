@@ -54,7 +54,10 @@ export const MenuTabs = () => {
             <div className="flex items-center gap-2 md:gap-6 ml-4 shrink-0 py-2">
                 {/* Utility button for change awareness - only shown when there are unsaved changes */}
                 {isDirty && (
-                    <button className="flex items-center gap-2 text-[var(--color-primary-blue)] dark:text-blue-400 text-sm font-bold transition-all animate-in fade-in slide-in-from-right-4">
+                    <button
+                        onClick={() => navigate('../review')}
+                        className="flex items-center gap-2 text-[var(--color-primary-blue)] dark:text-blue-400 text-sm font-bold transition-all animate-in fade-in slide-in-from-right-4 hover:opacity-80"
+                    >
                         <Sparkles className="w-4 h-4 text-[#f97316]" />
                         <span className="hidden sm:inline">{t('dashboard.menuEditor.tabs.seeChanges')}</span>
                     </button>

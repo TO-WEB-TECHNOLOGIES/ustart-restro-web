@@ -57,7 +57,7 @@ export const MenuItemList = ({ onOpenSidebar }: MenuItemListProps) => {
     useEffect(() => {
         const observer = new IntersectionObserver(
             (entries) => {
-                if (entries[0].isIntersecting && hasMore && !isCurrentCategoryItemsLoading && selectedCategoryId) {
+                if (entries[0].isIntersecting && hasMore && !isCurrentCategoryItemsLoading && selectedCategoryId !== null) {
                     fetchNextPage(selectedCategoryId);
                 }
             },
@@ -144,21 +144,21 @@ export const MenuItemList = ({ onOpenSidebar }: MenuItemListProps) => {
                                     className="absolute right-0 top-full mt-2 w-72 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-xl p-4 z-50 overflow-hidden"
                                 >
                                     <div className="flex items-center justify-between mb-4">
-                                        <h4 className="text-xs font-black uppercase tracking-widest text-slate-400">Apply Filters</h4>
+                                        <h4 className="text-xs font-black uppercase tracking-widest text-slate-400">{t('dashboard.menuEditor.filter.apply')}</h4>
                                         {activeFilterCount > 0 && (
                                             <button onClick={handleClearFilters} className="text-[10px] font-black text-red-500 hover:underline uppercase tracking-tighter">
-                                                Clear All
+                                                {t('dashboard.menuEditor.filter.clearAll')}
                                             </button>
                                         )}
                                     </div>
 
                                     {/* 1. Stock Status */}
                                     <div className="mb-4">
-                                        <span className="text-[10px] font-bold text-slate-500 block mb-2 uppercase tracking-tight">Stock Status</span>
+                                        <span className="text-[10px] font-bold text-slate-500 block mb-2 uppercase tracking-tight">{t('dashboard.menuEditor.filter.stockStatus')}</span>
                                         <div className="flex flex-wrap gap-2">
                                             {[
-                                                { label: 'In Stock', value: 'in_stock' },
-                                                { label: 'Out of Stock', value: 'out_of_stock' }
+                                                { label: t('dashboard.menuEditor.filter.inStock'), value: 'in_stock' },
+                                                { label: t('dashboard.menuEditor.filter.outOfStock'), value: 'out_of_stock' }
                                             ].map((opt) => (
                                                 <button
                                                     key={opt.value}
@@ -173,12 +173,12 @@ export const MenuItemList = ({ onOpenSidebar }: MenuItemListProps) => {
 
                                     {/* 2. Food Type */}
                                     <div className="mb-4">
-                                        <span className="text-[10px] font-bold text-slate-500 block mb-2 uppercase tracking-tight">Dietary preference</span>
+                                        <span className="text-[10px] font-bold text-slate-500 block mb-2 uppercase tracking-tight">{t('dashboard.menuEditor.filter.dietaryPreference')}</span>
                                         <div className="flex flex-wrap gap-2">
                                             {[
-                                                { label: 'Veg', value: 'veg' },
-                                                { label: 'Non-veg', value: 'non_veg' },
-                                                { label: 'Contains Egg', value: 'contains_egg' }
+                                                { label: t('dashboard.menuEditor.filter.veg'), value: 'veg' },
+                                                { label: t('dashboard.menuEditor.filter.nonVeg'), value: 'non_veg' },
+                                                { label: t('dashboard.menuEditor.filter.containsEgg'), value: 'contains_egg' }
                                             ].map((opt) => (
                                                 <button
                                                     key={opt.value}
@@ -193,11 +193,11 @@ export const MenuItemList = ({ onOpenSidebar }: MenuItemListProps) => {
 
                                     {/* 3. Discount */}
                                     <div className="mb-6">
-                                        <span className="text-[10px] font-bold text-slate-500 block mb-2 uppercase tracking-tight">Pricing</span>
+                                        <span className="text-[10px] font-bold text-slate-500 block mb-2 uppercase tracking-tight">{t('dashboard.menuEditor.filter.pricing')}</span>
                                         <div className="grid grid-cols-2 gap-2">
                                             {[
-                                                { label: 'Discounted', value: true },
-                                                { label: 'No Discount', value: false }
+                                                { label: t('dashboard.menuEditor.filter.discounted'), value: true },
+                                                { label: t('dashboard.menuEditor.filter.noDiscount'), value: false }
                                             ].map((opt) => (
                                                 <button
                                                     key={opt.label}
@@ -214,7 +214,7 @@ export const MenuItemList = ({ onOpenSidebar }: MenuItemListProps) => {
                                         onClick={handleApplyFilters}
                                         className="w-full py-2 bg-[var(--color-primary-blue)] text-white text-[10px] font-black uppercase tracking-widest rounded-xl hover:opacity-90 transition-opacity"
                                     >
-                                        Apply Filters
+                                        {t('dashboard.menuEditor.filter.apply')}
                                     </button>
                                 </motion.div>
                             )}

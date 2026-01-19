@@ -38,7 +38,7 @@ export interface PaginatedItems {
 
 /**
  * Fetches items for a specific category with pagination.
- * @param {string} categoryId 
+ * @param {number} categoryId 
  * @param {number} page 
  * @param {number} limit 
  * @param {string} searchQuery
@@ -46,7 +46,7 @@ export interface PaginatedItems {
  * @returns {Promise<PaginatedItems>}
  */
 export const fetchCategoryItems = async (
-    categoryId: string,
+    categoryId: number,
     page = 1,
     limit = 5,
     searchQuery = '',
