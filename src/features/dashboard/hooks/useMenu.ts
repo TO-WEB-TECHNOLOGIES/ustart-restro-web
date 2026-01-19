@@ -42,12 +42,16 @@ export const useMenu = () => {
         : false;
 
     /**
-     * Recursively flattens all items from a category and its subcategories.
+     * Recursively flattens all items and applies draft changes from updatedItems.
      */
     const getAllItems = (cat: Category): MenuItem[] => {
-        // Ensure items is an array before spreading (defensive against corrupted state)
         const currentItems = Array.isArray(cat.items) ? cat.items : [];
-        let items = [...currentItems];
+        const mergedItems = currentItems.map(item => {
+            const draft = useMenuStore.getState().updatedItems[item.id];
+            return draft ? draft.current : item;
+        });
+
+        let items = [...mergedItems];
 
         if (cat.subCategories && cat.subCategories.length > 0) {
             cat.subCategories.forEach(sub => {
@@ -60,12 +64,22 @@ export const useMenu = () => {
     /** All items including those from subcategories if a parent is selected */
     const allItems = selectedCategory ? getAllItems(selectedCategory) : [];
 
+    /** Draft-aware selected category */
+    const draftSelectedCategory = selectedCategory ? {
+        ...selectedCategory,
+        items: selectedCategory.items?.map(item => {
+            const draft = useMenuStore.getState().updatedItems[item.id];
+            return draft ? draft.current : item;
+        })
+    } : undefined;
+
     return {
         categories,
-        selectedCategory,
+        selectedCategory: draftSelectedCategory,
         selectedCategoryId,
         searchQuery,
         filters,
+        updatedItems: useMenuStore().updatedItems,
         allItems,
         isDirty,
         isSubmitting,
@@ -82,6 +96,7 @@ export const useMenu = () => {
         clearFilters,
         updateMenuItem,
         submitChanges,
+        revertChanges: useMenuStore().revertChanges,
         fetchCategories,
         fetchNextPage
     };

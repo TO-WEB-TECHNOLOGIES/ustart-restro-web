@@ -10,6 +10,8 @@ export interface MenuStore {
     // --- Menu Editor State ---
     /** Array of menu categories */
     categories: Category[];
+    /** Map of modified items: Key is Item ID, Value is { original, current } */
+    updatedItems: Record<number, { original: MenuItem; current: MenuItem }>;
     /** ID of the currently selected category */
     selectedCategoryId: number | null;
     /** Current search query for filtering menu items */
@@ -53,6 +55,8 @@ export interface MenuStore {
     fetchCategoryItems: (categoryId: number) => Promise<void>;
     /** Fetches the next page of items for infinite scroll */
     fetchNextPage: (categoryId: number) => Promise<void>;
+    /** Reverts all local changes for updated items */
+    revertChanges: () => void;
 
     // --- Menu Score State ---
     /** Overall health score of the menu */
@@ -128,6 +132,7 @@ export const useMenuStore = create<MenuStore>()(
         (set, get) => ({
             // --- Initial Menu Editor State ---
             categories: [],
+            updatedItems: {},
             selectedCategoryId: null,
             searchQuery: '',
             filters: {
@@ -218,18 +223,11 @@ export const useMenuStore = create<MenuStore>()(
                     const flatData = await fetchCategories();
                     const treeData = buildCategoryTree(flatData);
 
-                    const finalSelectedId = get().selectedCategoryId || (treeData.length > 0 ? treeData[0].id : null);
-
                     set({
                         categories: treeData,
                         isCategoriesLoading: false,
-                        lastCategoriesFetch: Date.now(),
-                        selectedCategoryId: finalSelectedId
+                        lastCategoriesFetch: Date.now()
                     });
-
-                    if (finalSelectedId) {
-                        get().fetchCategoryItems(finalSelectedId);
-                    }
                 } catch (error) {
                     console.error('Menu Store: Failed to fetch categories:', error);
                     set({ isCategoriesLoading: false });
@@ -332,30 +330,55 @@ export const useMenuStore = create<MenuStore>()(
             },
 
             updateMenuItem: (categoryId: number, itemId: number, updates: Partial<MenuItem>) => {
-                const { categories } = get();
+                const { categories, updatedItems } = get();
+                const newUpdatedItems = { ...updatedItems };
 
-                const updateRecursive = (list: Category[]): Category[] => {
-                    return list.map(cat => {
-                        if (cat.id === categoryId && Array.isArray(cat.items)) {
-                            const updatedItems = cat.items.map(item =>
-                                item.id === itemId ? { ...item, ...updates } : item
-                            );
-                            return {
-                                ...cat,
-                                items: updatedItems
-                            };
+                // 1. Find the item in the baseline categories if not already tracked
+                let currentItemState: MenuItem | undefined = newUpdatedItems[itemId]?.current;
+                let originalBaseline: MenuItem | undefined = newUpdatedItems[itemId]?.original;
+
+                if (!originalBaseline) {
+                    // Item not tracked yet, find it in the current categories tree
+                    const findItem = (list: Category[]): MenuItem | undefined => {
+                        for (const cat of list) {
+                            if (cat.id === categoryId && Array.isArray(cat.items)) {
+                                const found = cat.items.find(i => i.id === itemId);
+                                if (found) return found;
+                            }
+                            if (cat.subCategories) {
+                                const found = findItem(cat.subCategories);
+                                if (found) return found;
+                            }
                         }
-                        if (cat.subCategories && cat.subCategories.length > 0) {
-                            return {
-                                ...cat,
-                                subCategories: updateRecursive(cat.subCategories)
-                            };
-                        }
-                        return cat;
-                    });
+                    };
+                    originalBaseline = findItem(categories);
+                    currentItemState = originalBaseline;
+                }
+
+                if (!originalBaseline || !currentItemState) {
+                    console.warn(`Menu Store: Item ${itemId} not found in category ${categoryId}.`);
+                    return;
+                }
+
+                // 2. Apply updates to the current state
+                const updatedItem = { ...currentItemState, ...updates };
+
+                // 3. Update the tracking map
+                newUpdatedItems[itemId] = {
+                    original: originalBaseline,
+                    current: updatedItem
                 };
 
-                set({ categories: updateRecursive(categories), isDirty: true });
+                // 4. Self-Correction: If reverted to original, remove from tracking
+                if (JSON.stringify(originalBaseline) === JSON.stringify(updatedItem)) {
+                    delete newUpdatedItems[itemId];
+                }
+
+                // 5. Update state (categories remains untouched baseline)
+                set({
+                    updatedItems: newUpdatedItems,
+                    isDirty: Object.keys(newUpdatedItems).length > 0
+                });
             },
 
             getSelectedCategory: () => {
@@ -386,6 +409,7 @@ export const useMenuStore = create<MenuStore>()(
                     if (response.success) {
                         set({
                             isDirty: false,
+                            updatedItems: {},
                             isSubmitting: false,
                             lastCategoriesFetch: null
                         });
@@ -398,7 +422,37 @@ export const useMenuStore = create<MenuStore>()(
                 }
             },
 
-            // --- Initial Menu Score State ---
+            revertChanges: () => {
+                const { categories, updatedItems } = get();
+
+                // Helper to revert items recursively
+                const revertRecursive = (list: Category[]): Category[] => {
+                    return list.map(cat => {
+                        let newItems = cat.items;
+                        if (Array.isArray(cat.items)) {
+                            newItems = cat.items.map(item => {
+                                if (updatedItems[item.id]) {
+                                    return updatedItems[item.id].original;
+                                }
+                                return item;
+                            });
+                        }
+                        return {
+                            ...cat,
+                            items: newItems,
+                            subCategories: cat.subCategories ? revertRecursive(cat.subCategories) : []
+                        };
+                    });
+                };
+
+                set({
+                    categories: revertRecursive(categories),
+                    updatedItems: {},
+                    isDirty: false
+                });
+            },
+
+            // --- Menu Score State ---
             score: 0,
             thresholdScore: 0,
             status: '',
@@ -428,6 +482,7 @@ export const useMenuStore = create<MenuStore>()(
             storage: createJSONStorage(() => sessionStorage),
             partialize: (state) => ({
                 categories: state.categories,
+                updatedItems: state.updatedItems,
                 selectedCategoryId: state.selectedCategoryId,
                 isDirty: state.isDirty,
                 lastCategoriesFetch: state.lastCategoriesFetch,

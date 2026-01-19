@@ -92,8 +92,22 @@ export const MenuItemList = ({ onOpenSidebar }: MenuItemListProps) => {
 
     const activeFilterCount = filters.stock.length + filters.foodType.length + (filters.discounted !== null ? 1 : 0);
 
-    // Do not render anything if no category is selected
-    if (!selectedCategory) return null;
+    // Show empty state if no category is selected
+    if (!selectedCategory) {
+        return (
+            <div className="flex-1 flex flex-col items-center justify-center p-8 bg-[#fdfdfd] dark:bg-slate-950">
+                <div className="w-16 h-16 bg-slate-100 dark:bg-slate-800 rounded-full flex items-center justify-center mb-6">
+                    <Utensils className="w-8 h-8 text-slate-300 dark:text-slate-600" />
+                </div>
+                <h3 className="text-xl font-black text-slate-900 dark:text-white mb-2">
+                    {t('dashboard.menuEditor.noCategorySelected')}
+                </h3>
+                <p className="text-sm text-slate-500 dark:text-slate-400 text-center max-w-xs">
+                    {t('dashboard.menuEditor.searchCategories')}
+                </p>
+            </div>
+        );
+    }
 
     return (
         <div className="flex-1 flex flex-col h-full bg-[#fdfdfd] dark:bg-slate-950 overflow-hidden">

@@ -1,7 +1,7 @@
 import { motion } from 'framer-motion';
 import { useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
-import { Tag, Image as ImageIcon, Pencil, Ban, Trash2, Percent, IndianRupee } from 'lucide-react';
+import { Tag, Image as ImageIcon, Pencil, Ban, Trash2, Percent, IndianRupee, Dot } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { type MenuItem, type FoodType } from '../../../../types/menuTypes';
 import { useMenu } from '../../hooks/useMenu';
@@ -39,17 +39,15 @@ const FoodTypeMarker = ({ type }: { type: FoodType }) => {
 export const MenuItemCard = ({ item }: MenuItemCardProps) => {
     const { t } = useTranslation();
     const location = useLocation();
-    const { updateMenuItem, selectedCategoryId } = useMenu();
+    const { updateMenuItem, updatedItems, selectedCategoryId } = useMenu();
 
     const activeTab = location.pathname.split('/').pop() || 'edit';
     const [isEditing, setIsEditing] = useState(false);
-    const [localItem, setLocalItem] = useState(item);
 
-    // Reset editing state and sync local item when tab changes
+    // Reset editing state when tab changes
     useEffect(() => {
         setIsEditing(false);
-        setLocalItem(item);
-    }, [activeTab, item]);
+    }, [activeTab]);
 
     /**
      * Toggles the food type of the item for testing purposes.
@@ -71,27 +69,9 @@ export const MenuItemCard = ({ item }: MenuItemCardProps) => {
         updateMenuItem(selectedCategoryId, item.id, { [field]: value });
     };
 
-    /**
-     * Commit local edits to global store
-     */
-    const handleCommitChanges = () => {
-        if (selectedCategoryId === null) return;
-        updateMenuItem(selectedCategoryId, item.id, {
-            itemPrice: localItem.itemPrice,
-            discountAmount: localItem.discountAmount,
-            discountIsAbsolute: localItem.discountIsAbsolute,
-            packagingCharges: localItem.packagingCharges
-        });
-        setIsEditing(false);
-    };
-
     // Calculate final price (simplified for display)
     const discountValue = item.discountIsAbsolute ? item.discountAmount : (item.itemPrice * item.discountAmount / 100);
     const finalPrice = item.itemPrice - discountValue;
-
-    // Local final price for live feedback during editing
-    const localDiscountValue = localItem.discountIsAbsolute ? localItem.discountAmount : (localItem.itemPrice * localItem.discountAmount / 100);
-    const localFinalPrice = localItem.itemPrice - localDiscountValue;
 
     return (
         <motion.div
@@ -137,6 +117,14 @@ export const MenuItemCard = ({ item }: MenuItemCardProps) => {
 
                         {/* Contextual Header Actions */}
                         <div className="flex items-center gap-2 shrink-0">
+                            {/* Global 'Edited' Badge - Show in all tabs */}
+                            {updatedItems[item.id] && (
+                                <div className="flex items-center px-2 py-1 bg-orange-50 dark:bg-orange-900/20 text-orange-600 rounded-lg text-[10px] font-black uppercase tracking-wider gap-0.5">
+                                    <Dot className="w-4 h-4" />
+                                    <span>{t('dashboard.menuEditor.edited')}</span>
+                                </div>
+                            )}
+
                             {activeTab === 'edit' && (
                                 <div className="flex items-center gap-2">
                                     <div className={`px-2 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider ${item.inStock ? 'bg-green-50 text-green-600 dark:bg-green-900/20' : 'bg-red-50 text-red-600 dark:bg-red-900/20'}`}>
@@ -257,8 +245,8 @@ export const MenuItemCard = ({ item }: MenuItemCardProps) => {
                                 <div className="bg-slate-50 dark:bg-slate-800/50 px-2.5 py-1 rounded-xl border border-slate-100 dark:border-slate-700/50">
                                     <input
                                         type="number"
-                                        value={localItem.itemPrice}
-                                        onChange={(e) => setLocalItem({ ...localItem, itemPrice: Number(e.target.value) })}
+                                        value={item.itemPrice}
+                                        onChange={(e) => handleUpdateField('itemPrice', Number(e.target.value))}
                                         className="w-14 bg-transparent text-sm font-black text-slate-900 dark:text-white outline-none text-right"
                                     />
                                 </div>
@@ -272,14 +260,14 @@ export const MenuItemCard = ({ item }: MenuItemCardProps) => {
                                 <div className="flex items-center gap-1.5 ml-auto">
                                     <div className="flex items-center gap-0.5 p-0.5 bg-slate-100 dark:bg-slate-800 rounded-lg">
                                         <button
-                                            onClick={() => setLocalItem({ ...localItem, discountIsAbsolute: true })}
-                                            className={`p-1 rounded ${localItem.discountIsAbsolute ? 'bg-white dark:bg-slate-700 shadow-sm' : 'text-slate-400'}`}
+                                            onClick={() => handleUpdateField('discountIsAbsolute', true)}
+                                            className={`p-1 rounded ${item.discountIsAbsolute ? 'bg-white dark:bg-slate-700 shadow-sm' : 'text-slate-400'}`}
                                         >
                                             <IndianRupee className="w-2.5 h-2.5" />
                                         </button>
                                         <button
-                                            onClick={() => setLocalItem({ ...localItem, discountIsAbsolute: false })}
-                                            className={`p-1 rounded ${!localItem.discountIsAbsolute ? 'bg-white dark:bg-slate-700 shadow-sm' : 'text-slate-400'}`}
+                                            onClick={() => handleUpdateField('discountIsAbsolute', false)}
+                                            className={`p-1 rounded ${!item.discountIsAbsolute ? 'bg-white dark:bg-slate-700 shadow-sm' : 'text-slate-400'}`}
                                         >
                                             <Percent className="w-2.5 h-2.5" />
                                         </button>
@@ -287,8 +275,8 @@ export const MenuItemCard = ({ item }: MenuItemCardProps) => {
                                     <div className="bg-slate-50 dark:bg-slate-800/50 px-2.5 py-1 rounded-xl border border-slate-100 dark:border-slate-700/50">
                                         <input
                                             type="number"
-                                            value={localItem.discountAmount}
-                                            onChange={(e) => setLocalItem({ ...localItem, discountAmount: Number(e.target.value) })}
+                                            value={item.discountAmount}
+                                            onChange={(e) => handleUpdateField('discountAmount', Number(e.target.value))}
                                             className="w-14 bg-transparent text-sm font-black text-slate-900 dark:text-white outline-none text-right"
                                         />
                                     </div>
@@ -303,26 +291,26 @@ export const MenuItemCard = ({ item }: MenuItemCardProps) => {
                                 <div className="bg-slate-50 dark:bg-slate-800/50 px-2.5 py-1 rounded-xl border border-slate-100 dark:border-slate-700/50">
                                     <input
                                         type="number"
-                                        value={localItem.packagingCharges}
-                                        onChange={(e) => setLocalItem({ ...localItem, packagingCharges: Number(e.target.value) })}
+                                        value={item.packagingCharges}
+                                        onChange={(e) => handleUpdateField('packagingCharges', Number(e.target.value))}
                                         className="w-14 bg-transparent text-sm font-black text-slate-900 dark:text-white outline-none text-right"
                                     />
                                 </div>
                             </div>
 
-                            {/* 4. Footer: Live Total & Done Button */}
+                            {/* 4. Footer: Live Total & Close Button */}
                             <div className="flex items-center justify-between gap-2 mt-1 pt-2 border-t border-slate-100 dark:border-slate-800">
                                 <div className="flex flex-col">
                                     <span className="text-[8px] font-black text-[var(--color-primary-blue)] dark:text-[#539987] uppercase tracking-widest leading-none">Total</span>
                                     <span className="text-xs font-black text-[var(--color-primary-blue)] dark:text-[#539987]">
-                                        ₹{(localFinalPrice + localItem.packagingCharges).toFixed(2)}
+                                        ₹{(finalPrice + item.packagingCharges).toFixed(2)}
                                     </span>
                                 </div>
                                 <button
-                                    onClick={handleCommitChanges}
-                                    className="py-1.5 px-3 text-[10px] font-black uppercase tracking-widest bg-[var(--color-primary-blue)] dark:bg-[#539987] text-white rounded-xl shadow-sm hover:opacity-90 transition-opacity"
+                                    onClick={() => setIsEditing(false)}
+                                    className="py-1.5 px-3 text-[10px] font-black uppercase tracking-widest bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 rounded-xl shadow-sm hover:opacity-90 transition-opacity"
                                 >
-                                    Done
+                                    {t('dashboard.menuEditor.close')}
                                 </button>
                             </div>
                         </div>

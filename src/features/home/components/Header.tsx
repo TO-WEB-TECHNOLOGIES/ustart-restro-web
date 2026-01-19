@@ -20,7 +20,7 @@ export const Header = () => {
 
     return (
         <>
-            <header className="flex items-center justify-between px-6 py-4 bg-primary-blue text-background-white">
+            <header className="relative z-50 flex items-center justify-between px-6 py-4 bg-primary-blue text-background-white">
                 <div className="flex items-center gap-2">
                     <div className="px-2 rounded-md">
                         <Logo color="#FFFFFF" />
