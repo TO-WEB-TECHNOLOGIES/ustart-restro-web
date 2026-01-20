@@ -1,6 +1,6 @@
 import { motion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
-import { ArrowLeft, AlertCircle, Tag, Calendar, Plus } from 'lucide-react';
+import { ArrowLeft, AlertCircle, Tag, Calendar, Plus, Flame, Info } from 'lucide-react';
 import type { MenuItem } from '../../../../types/menuTypes';
 import { useRestaurantStore } from '../../store/useRestaurantStore';
 
@@ -36,6 +36,35 @@ const ChangeLine = ({
                 <ArrowLeft className="w-3 h-3 text-slate-300 rotate-180 shrink-0" />
                 <span className="text-green-500 font-bold truncate">{newVal}{sNew}</span>
             </div>
+        </div>
+    );
+};
+
+/**
+ * Helper to render a single field value for new items
+ */
+const InfoLine = ({
+    label,
+    value,
+    suffix = '',
+    icon: Icon
+}: {
+    label: string,
+    value: React.ReactNode,
+    suffix?: string,
+    icon?: any
+}) => {
+    if (value === undefined || value === null || value === '') return null;
+
+    return (
+        <div className="flex items-center gap-3 text-[10px] md:text-xs py-1.5 border-b border-slate-100 dark:border-slate-800/40 last:border-none">
+            <span className="text-slate-400 w-28 shrink-0 font-medium flex items-center gap-1.5">
+                {Icon && <Icon className="w-3 h-3" />}
+                {label}
+            </span>
+            <span className="text-slate-900 dark:text-slate-200 font-bold flex-1 truncate">
+                {value}{suffix}
+            </span>
         </div>
     );
 };
@@ -160,8 +189,15 @@ export const ModifiedItemCard = ({
                                     {t('dashboard.menuEditor.review.newItemDetails')}
                                 </h5>
                             </div>
-                            <div className="space-y-2">
-                                {/* Stock Status */}
+                            <div className="space-y-0.5">
+                                {/* Core Info */}
+                                <InfoLine label={t('dashboard.menuEditor.itemName')} value={current.name} />
+                                <InfoLine label={t('dashboard.menuEditor.itemDescription')} value={current.description} />
+                                <InfoLine label={t('dashboard.menuEditor.originalPrice')} value={current.itemPrice} suffix="₹" />
+                                <InfoLine label={t('dashboard.menuEditor.taxAmount')} value={current.taxAmount} suffix="%" />
+                                <InfoLine label={t('dashboard.menuEditor.packaging')} value={current.packagingCharges} suffix="₹" />
+
+                                {/* Stock & Scheduling */}
                                 <div className="flex items-center gap-3 text-[10px] md:text-xs py-1.5 border-b border-slate-100 dark:border-slate-800/40">
                                     <span className="text-slate-400 w-28 shrink-0 font-medium">
                                         {t('dashboard.menuEditor.review.stockStatus')}
@@ -175,38 +211,47 @@ export const ModifiedItemCard = ({
                                         ) : (
                                             <span className="text-orange-500 font-bold flex items-center gap-1">
                                                 <Calendar className="w-3 h-3" />
-                                                {t('dashboard.menuEditor.review.scheduledFor')}
+                                                {t('dashboard.menuEditor.review.scheduledFor')}: {formattedScheduledDate}
                                             </span>
                                         )}
                                     </div>
                                 </div>
 
-                                {/* Scheduled Date - Only show if scheduled */}
-                                {!addToStockImmediately && formattedScheduledDate && (
-                                    <div className="flex items-center gap-3 text-[10px] md:text-xs py-1.5 border-b border-slate-100 dark:border-slate-800/40">
-                                        <span className="text-slate-400 w-28 shrink-0 font-medium">
-                                            {t('dashboard.menuEditor.review.scheduledDate')}
-                                        </span>
-                                        <div className="flex items-center gap-2 flex-1 min-w-0">
-                                            <span className="text-orange-500 font-bold">{formattedScheduledDate}</span>
-                                        </div>
-                                    </div>
-                                )}
+                                {/* Detailed Specs */}
+                                <InfoLine label={t('dashboard.menuEditor.filter.dietaryPreference')} value={current.foodType} icon={Info} />
+                                <InfoLine label="Service Type" value={current.serviceType} />
+                                <InfoLine label="Consistency" value={current.itemType?.join(', ')} />
+                                <InfoLine label="Frosting" value={current.isFrosting} />
+                                <InfoLine label="Serves" value={current.serves} suffix=" ppl" />
+                                <InfoLine label="Portion Size" value={current.portionSize} suffix=" pcs" />
+                                <InfoLine label="Weight" value={current.weight} />
+                                <InfoLine label="Max Qty" value={current.maxQuantity} />
+                                <InfoLine label="Spice Level" value={current.spiceLevel} icon={Flame} />
 
-                                {/* Price */}
-                                <div className="flex items-center gap-3 text-[10px] md:text-xs py-1.5 border-b border-slate-100 dark:border-slate-800/40">
-                                    <span className="text-slate-400 w-28 shrink-0 font-medium">
-                                        {t('dashboard.menuEditor.originalPrice')}
-                                    </span>
-                                    <span className="text-green-500 font-bold">₹{current.itemPrice}</span>
-                                </div>
+                                {/* Tags & Allergens */}
+                                <InfoLine
+                                    label="Tags"
+                                    value={current.tags?.filter(t => t !== 'none_of_these').join(', ')}
+                                />
+                                <InfoLine
+                                    label="Allergens"
+                                    value={current.allergens?.filter(a => a !== 'none_of_these').join(', ')}
+                                />
 
-                                {/* Food Type */}
+                                {/* Nutritional Info */}
+                                <InfoLine label="Calories" value={current.nutritionalInfo?.calories} suffix=" kcal" />
+                                <InfoLine label="Protein" value={current.nutritionalInfo?.protein} />
+                                <InfoLine label="Carbs" value={current.nutritionalInfo?.carbs} />
+                                <InfoLine label="Fats" value={current.nutritionalInfo?.fats} />
+
+                                {/* Availability */}
                                 <div className="flex items-center gap-3 text-[10px] md:text-xs py-1.5 border-b border-slate-100 dark:border-slate-800/40 last:border-none">
                                     <span className="text-slate-400 w-28 shrink-0 font-medium">
-                                        {t('dashboard.menuEditor.filter.dietaryPreference')}
+                                        Timing
                                     </span>
-                                    <span className="text-green-500 font-bold capitalize">{current.foodType}</span>
+                                    <span className="text-slate-900 dark:text-slate-200 font-bold flex-1 truncate">
+                                        {current.availability?.allDay ? 'All Day' : `${current.availability?.startTime} - ${current.availability?.endTime}`}
+                                    </span>
                                 </div>
                             </div>
                         </>
@@ -245,6 +290,29 @@ export const ModifiedItemCard = ({
                                 <ChangeLine label={t('dashboard.menuEditor.packaging')} oldVal={original.packagingCharges} newVal={current.packagingCharges} suffix="₹" />
                                 <ChangeLine label={t('dashboard.menuEditor.itemName')} oldVal={original.name} newVal={current.name} />
                                 <ChangeLine label={t('dashboard.menuEditor.itemDescription')} oldVal={original.description} newVal={current.description} />
+
+                                {/* Detailed Spec Changes */}
+                                <ChangeLine label="Service Type" oldVal={original.serviceType} newVal={current.serviceType} />
+                                <ChangeLine label="Consistency" oldVal={original.itemType?.join(', ')} newVal={current.itemType?.join(', ')} />
+                                <ChangeLine label="Frosting" oldVal={original.isFrosting} newVal={current.isFrosting} />
+                                <ChangeLine label="Serves" oldVal={original.serves} newVal={current.serves} suffix=" ppl" />
+                                <ChangeLine label="Portion Size" oldVal={original.portionSize} newVal={current.portionSize} suffix=" pcs" />
+                                <ChangeLine label="Weight" oldVal={original.weight} newVal={current.weight} />
+                                <ChangeLine label="Max Qty" oldVal={original.maxQuantity} newVal={current.maxQuantity} />
+                                <ChangeLine label="Spice Level" oldVal={original.spiceLevel} newVal={current.spiceLevel} />
+                                <ChangeLine label="Tags" oldVal={original.tags?.join(', ')} newVal={current.tags?.join(', ')} />
+                                <ChangeLine label="Allergens" oldVal={original.allergens?.join(', ')} newVal={current.allergens?.join(', ')} />
+
+                                {/* Nutrition Changes */}
+                                <ChangeLine label="Calories" oldVal={original.nutritionalInfo?.calories} newVal={current.nutritionalInfo?.calories} />
+                                <ChangeLine label="Protein" oldVal={original.nutritionalInfo?.protein} newVal={current.nutritionalInfo?.protein} />
+                                <ChangeLine label="Carbs" oldVal={original.nutritionalInfo?.carbs} newVal={current.nutritionalInfo?.carbs} />
+                                <ChangeLine label="Fats" oldVal={original.nutritionalInfo?.fats} newVal={current.nutritionalInfo?.fats} />
+
+                                {/* Availability Changes */}
+                                <ChangeLine label="Avail. All Day" oldVal={original.availability?.allDay ? 'Yes' : 'No'} newVal={current.availability?.allDay ? 'Yes' : 'No'} />
+                                <ChangeLine label="Avail. Start" oldVal={original.availability?.startTime} newVal={current.availability?.startTime} />
+                                <ChangeLine label="Avail. End" oldVal={original.availability?.endTime} newVal={current.availability?.endTime} />
 
                                 {/* Status Changes */}
                                 <ChangeLine

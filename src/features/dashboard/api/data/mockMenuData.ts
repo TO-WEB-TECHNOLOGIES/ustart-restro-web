@@ -31,7 +31,9 @@ export const MOCK_CATEGORIES: Category[] = [
                 spiceLevel: 2,
                 availability: { startTime: '09:00', endTime: '22:00', allDay: true },
                 nutritionalInfo: { calories: '320', protein: '12g', carbs: '45g', fats: '10g' },
-                isAiGeneratedImage: false
+                isAiGeneratedImage: false,
+                weight: '400g',
+                categoryId: 1
             },
             {
                 id: 102,
@@ -51,8 +53,9 @@ export const MOCK_CATEGORIES: Category[] = [
                 maxQuantity: 15,
                 tags: ['chefs_special'],
                 spiceLevel: 1,
-                availability: { startTime: '10:00', endTime: '23:00', allDay: true },
-                nutritionalInfo: { calories: '350', protein: '10g', carbs: '50g', fats: '15g' }
+                nutritionalInfo: { calories: '350', protein: '10g', carbs: '50g', fats: '15g' },
+                weight: '350g',
+                categoryId: 1
             },
             {
                 id: 103,
@@ -61,7 +64,8 @@ export const MOCK_CATEGORIES: Category[] = [
                 itemPrice: 180,
                 discountAmount: 15,
                 foodType: 'veg',
-                isCustomisable: true, inStock: { '1': true, '2': true, '3': false }, taxAmount: 5, packagingCharges: 10, discountIsAbsolute: true
+                isCustomisable: true, inStock: { '1': true, '2': true, '3': false }, taxAmount: 5, packagingCharges: 10, discountIsAbsolute: true,
+                categoryId: 1
             },
             {
                 id: 104,
@@ -70,7 +74,8 @@ export const MOCK_CATEGORIES: Category[] = [
                 itemPrice: 190,
                 discountAmount: 10,
                 foodType: 'veg',
-                isCustomisable: false, inStock: { '1': true, '2': true, '3': true }, taxAmount: 5, packagingCharges: 10, discountIsAbsolute: true
+                isCustomisable: false, inStock: { '1': true, '2': true, '3': true }, taxAmount: 5, packagingCharges: 10, discountIsAbsolute: true,
+                categoryId: 1
             },
             {
                 id: 105,
@@ -79,7 +84,8 @@ export const MOCK_CATEGORIES: Category[] = [
                 itemPrice: 120,
                 discountAmount: 5,
                 foodType: 'veg',
-                isCustomisable: false, inStock: { '1': false, '2': false, '3': true }, taxAmount: 5, packagingCharges: 10, discountIsAbsolute: true
+                isCustomisable: false, inStock: { '1': false, '2': false, '3': true }, taxAmount: 5, packagingCharges: 10, discountIsAbsolute: true,
+                categoryId: 1
             },
             {
                 id: 106,
@@ -88,7 +94,8 @@ export const MOCK_CATEGORIES: Category[] = [
                 itemPrice: 170,
                 discountAmount: 0,
                 foodType: 'veg',
-                isCustomisable: true, inStock: { '1': true, '2': true, '3': true }, taxAmount: 5, packagingCharges: 10, discountIsAbsolute: true
+                isCustomisable: true, inStock: { '1': true, '2': true, '3': true }, taxAmount: 5, packagingCharges: 10, discountIsAbsolute: true,
+                categoryId: 1
             },
             {
                 id: 107,
@@ -97,7 +104,8 @@ export const MOCK_CATEGORIES: Category[] = [
                 itemPrice: 210,
                 discountAmount: 0,
                 foodType: 'veg',
-                isCustomisable: false, inStock: { '1': true, '2': true, '3': true }, taxAmount: 5, packagingCharges: 10, discountIsAbsolute: true
+                isCustomisable: false, inStock: { '1': true, '2': true, '3': true }, taxAmount: 5, packagingCharges: 10, discountIsAbsolute: true,
+                categoryId: 1
             },
             {
                 id: 108,
@@ -107,6 +115,8 @@ export const MOCK_CATEGORIES: Category[] = [
                 discountAmount: 40,
                 foodType: 'veg',
                 isCustomisable: true, inStock: { '1': true, '2': true, '3': true }, taxAmount: 5, packagingCharges: 10, discountIsAbsolute: true,
+                categoryId: 1,
+                weight: '450g',
                 hasDiscount: true
             }
         ]
@@ -125,7 +135,8 @@ export const MOCK_CATEGORIES: Category[] = [
                 discountAmount: 30,
                 image: 'https://images.unsplash.com/photo-1541518763669-27fef04b14ea?auto=format&fit=crop&q=80&w=200',
                 foodType: 'non_veg',
-                isCustomisable: true, inStock: { '1': true, '2': true, '3': true }, taxAmount: 5, packagingCharges: 10, discountIsAbsolute: true
+                isCustomisable: true, inStock: { '1': true, '2': true, '3': true }, taxAmount: 5, packagingCharges: 10, discountIsAbsolute: true,
+                categoryId: 7
             }
         ]
     },
@@ -142,7 +153,8 @@ export const MOCK_CATEGORIES: Category[] = [
                 discountAmount: 0,
                 image: 'https://images.unsplash.com/photo-1567188040759-fb8a883dc6d8?auto=format&fit=crop&q=80&w=200',
                 foodType: 'veg',
-                isCustomisable: false, inStock: { '1': true, '2': false, '3': false }, taxAmount: 5, packagingCharges: 10, discountIsAbsolute: true
+                isCustomisable: false, inStock: { '1': true, '2': false, '3': false }, taxAmount: 5, packagingCharges: 10, discountIsAbsolute: true,
+                categoryId: 8
             }
         ]
     },
@@ -158,7 +170,9 @@ export const MOCK_CATEGORIES: Category[] = [
                 itemPrice: 180,
                 discountAmount: 15,
                 foodType: 'contains_egg',
-                isCustomisable: true, inStock: { '1': true, '2': true, '3': true }, taxAmount: 5, packagingCharges: 10, discountIsAbsolute: true
+                isCustomisable: true, inStock: { '1': true, '2': true, '3': true }, taxAmount: 5, packagingCharges: 10, discountIsAbsolute: true,
+                categoryId: 9,
+                weight: '200g'
             }
         ]
     },
@@ -175,6 +189,7 @@ export const MOCK_CATEGORIES: Category[] = [
                 discountAmount: 5,
                 foodType: 'veg',
                 isCustomisable: false, inStock: { '1': true, '2': true, '3': true }, taxAmount: 5, packagingCharges: 10, discountIsAbsolute: true,
+                categoryId: 2,
                 hasDiscount: true
             },
             {
@@ -184,7 +199,9 @@ export const MOCK_CATEGORIES: Category[] = [
                 itemPrice: 60,
                 discountAmount: 0,
                 foodType: 'veg',
-                isCustomisable: true, inStock: { '1': false, '2': true, '3': true }, taxAmount: 5, packagingCharges: 10, discountIsAbsolute: true
+                isCustomisable: true, inStock: { '1': false, '2': true, '3': true }, taxAmount: 5, packagingCharges: 10, discountIsAbsolute: true,
+                categoryId: 2,
+                weight: '180g'
             }
         ]
     },
@@ -211,7 +228,9 @@ export const MOCK_CATEGORIES: Category[] = [
                 tags: ['vegan'],
                 spiceLevel: 1,
                 availability: { startTime: '06:00', endTime: '22:00', allDay: true },
-                nutritionalInfo: { calories: '120', protein: '2g', carbs: '15g', fats: '4g' }
+                nutritionalInfo: { calories: '120', protein: '2g', carbs: '15g', fats: '4g' },
+                weight: '150ml',
+                categoryId: 3
             },
             {
                 id: 302,
@@ -220,7 +239,8 @@ export const MOCK_CATEGORIES: Category[] = [
                 itemPrice: 50,
                 discountAmount: 0,
                 foodType: 'veg',
-                isCustomisable: true, inStock: { '1': true, '2': true, '3': false }, taxAmount: 5, packagingCharges: 10, discountIsAbsolute: true
+                isCustomisable: true, inStock: { '1': true, '2': true, '3': false }, taxAmount: 5, packagingCharges: 10, discountIsAbsolute: true,
+                categoryId: 3
             }
         ]
     },
@@ -239,6 +259,7 @@ export const MOCK_CATEGORIES: Category[] = [
                 image: 'https://images.unsplash.com/photo-1546833999-b9f581a1996d?auto=format&fit=crop&q=80&w=200',
                 foodType: 'veg',
                 isCustomisable: false, inStock: { '1': true, '2': true, '3': true }, taxAmount: 5, packagingCharges: 10, discountIsAbsolute: true,
+                categoryId: 4,
                 hasDiscount: true
             }
         ]
@@ -256,7 +277,8 @@ export const MOCK_CATEGORIES: Category[] = [
                 itemPrice: 80,
                 discountAmount: 10,
                 foodType: 'veg',
-                isCustomisable: false, inStock: { '1': true, '2': true, '3': true }, taxAmount: 5, packagingCharges: 10, discountIsAbsolute: true
+                isCustomisable: false, inStock: { '1': true, '2': true, '3': true }, taxAmount: 5, packagingCharges: 10, discountIsAbsolute: true,
+                categoryId: 5
             }
         ]
     },

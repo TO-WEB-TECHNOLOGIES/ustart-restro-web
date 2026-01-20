@@ -76,6 +76,8 @@ export interface MenuStore {
     addMenuItem: (categoryId: number, item: Partial<MenuItem>) => Promise<void>;
     /** Adds a new item locally to updatedItems without calling API */
     addNewItemLocally: (categoryId: number, item: MenuItem, options?: { addToStockImmediately?: boolean; scheduledDate?: string | null }) => void;
+    /** Updates scheduling options for a tracked item */
+    updateItemScheduling: (itemId: number, options: { addToStockImmediately?: boolean; scheduledDate?: string | null }) => void;
 
     // --- Menu Score State ---
     /** Overall health score of the menu */
@@ -633,6 +635,23 @@ export const useMenuStore = create<MenuStore>()(
                     console.error('Failed to add menu item:', error);
                 } finally {
                     set({ isSubmitting: false });
+                }
+            },
+
+            updateItemScheduling: (itemId: number, options: { addToStockImmediately?: boolean; scheduledDate?: string | null }) => {
+                const { updatedItems } = get();
+                // Only update if the item is already being tracked
+                if (updatedItems[itemId]) {
+                    set({
+                        updatedItems: {
+                            ...updatedItems,
+                            [itemId]: {
+                                ...updatedItems[itemId],
+                                addToStockImmediately: options.addToStockImmediately,
+                                scheduledDate: options.scheduledDate
+                            }
+                        }
+                    });
                 }
             },
 

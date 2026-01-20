@@ -31,6 +31,12 @@
       "orders": "Orders Overview",
       "reports": "Analytics & Reports",
       "settings": "Settings"
+    },
+    "units": {
+      "people": "People",
+      "pieces": "Pieces",
+      "unit": "Unit",
+      "order": "Order"
     }
   },
   "landing": {
@@ -915,6 +921,24 @@
           "dineIn": "Dine-In",
           "both": "Both"
         },
+        "validation": {
+          "categoryRequired": "Category is required",
+          "nameRequired": "Item Name is required",
+          "nameTooLong": "Item Name cannot exceed 100 characters",
+          "descriptionTooLong": "Description cannot exceed 100 characters",
+          "priceRequired": "Price is required",
+          "pricePositive": "Price must be positive",
+          "packagingRequired": "Packaging fee is required",
+          "packagingPositive": "Packaging fee must be positive",
+          "taxRequired": "Tax is required",
+          "taxRange": "Tax must be between 0 and 100",
+          "consistencyRequired": "At least one consistency type is required",
+          "frostingRequired": "Frosting option is required",
+          "servesMin": "Serves must be at least 1",
+          "portionMin": "Portion size must be at least 1",
+          "maxQtyMin": "Max quantity must be at least 1",
+          "aiImageRequired": "Please specify if the image is AI generated"
+        },
         "foodTypes": {
           "veg": "Veg",
           "nonVeg": "Non-Veg",
@@ -948,6 +972,13 @@
           "portionMin": "Portion size must be at least 1",
           "maxQtyMin": "Max quantity must be at least 1",
           "aiImageRequired": "Please specify if the image is AI generated"
+        },
+        "nutrition": {
+          "title": "Nutritional Information (Per serving)",
+          "calories": "Calories",
+          "protein": "Protein",
+          "carbs": "Carbs",
+          "fats": "Fats"
         }
       }
     }
