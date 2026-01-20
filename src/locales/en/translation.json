@@ -955,24 +955,6 @@
           "fresh": "Fresh",
           "preFrosted": "Pre-Frosted"
         },
-        "validation": {
-          "nameRequired": "Item Name is required",
-          "priceRequired": "Price is required",
-          "taxRequired": "Tax is required",
-          "packagingRequired": "Packaging charges required",
-          "categoryRequired": "Category is required",
-          "nameTooLong": "Name too long",
-          "descriptionTooLong": "Description cannot exceed 100 characters",
-          "pricePositive": "Price must be positive",
-          "packagingPositive": "Packaging charges must be positive",
-          "taxRange": "Tax cannot exceed 100%",
-          "consistencyRequired": "At least one item consistency must be selected",
-          "frostingRequired": "Frosting option is required",
-          "servesMin": "Must serve at least 1 person",
-          "portionMin": "Portion size must be at least 1",
-          "maxQtyMin": "Max quantity must be at least 1",
-          "aiImageRequired": "Please specify if the image is AI generated"
-        },
         "nutrition": {
           "title": "Nutritional Information (Per serving)",
           "calories": "Calories",

@@ -954,24 +954,6 @@
           "fresh": "ताजा",
           "preFrosted": "पहले से फ्रॉस्टेड"
         },
-        "validation": {
-          "nameRequired": "आइटम का नाम आवश्यक है",
-          "priceRequired": "कीमत आवश्यक है",
-          "taxRequired": "कर आवश्यक है",
-          "packagingRequired": "पैकेजिंग शुल्क आवश्यक है",
-          "categoryRequired": "श्रेणी आवश्यक है",
-          "nameTooLong": "नाम बहुत लंबा है",
-          "descriptionTooLong": "विवरण 100 वर्णों से अधिक नहीं हो सकता",
-          "pricePositive": "कीमत सकारात्मक होनी चाहिए",
-          "packagingPositive": "पैकेजिंग शुल्क सकारात्मक होना चाहिए",
-          "taxRange": "कर 100% से अधिक नहीं हो सकता",
-          "consistencyRequired": "कम से कम एक आइटम स्थिरता का चयन किया जाना चाहिए",
-          "frostingRequired": "फ्रॉस्टिंग विकल्प आवश्यक है",
-          "servesMin": "कम से कम 1 व्यक्ति को परोसना चाहिए",
-          "portionMin": "हिस्से का आकार कम से कम 1 होना चाहिए",
-          "maxQtyMin": "अधिकतम मात्रा कम से कम 1 होनी चाहिए",
-          "aiImageRequired": "कृपया निर्दिष्ट करें कि क्या छवि AI जनरेटेड है"
-        },
         "nutrition": {
           "title": "पोषण संबंधी जानकारी (प्रति सर्विंग)",
           "calories": "कैलोरी",
