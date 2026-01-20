@@ -22,6 +22,7 @@ export type CategoryFormData = z.infer<typeof categorySchema>;
  * Schema for creating and updating menu items.
  */
 export const menuItemSchema = z.object({
+    categoryId: z.number({ error: "dashboard.menuEditor.addItem.validation.categoryRequired" }),
     name: z.string().min(1, "dashboard.menuEditor.addItem.validation.nameRequired").max(100, "dashboard.menuEditor.addItem.validation.nameTooLong"),
     description: z.string().max(100, "dashboard.menuEditor.addItem.validation.descriptionTooLong").optional().or(z.literal('')),
     image: z.string().optional(),

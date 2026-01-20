@@ -66,6 +66,7 @@ export interface MenuItem {
         fats: string;
     };
     isAiGeneratedImage?: boolean;
+    categoryId: number;
 }
 
 /**

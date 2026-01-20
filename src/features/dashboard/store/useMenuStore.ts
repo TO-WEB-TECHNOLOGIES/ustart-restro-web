@@ -11,7 +11,14 @@ export interface MenuStore {
     /** Array of menu categories */
     categories: Category[];
     /** Map of modified items: Key is Item ID, Value is { original, current } */
-    updatedItems: Record<number, { original: MenuItem; current: MenuItem; modifiedByAddressId?: string | null }>;
+    updatedItems: Record<number, {
+        original: MenuItem;
+        current: MenuItem;
+        modifiedByAddressId?: string | null;
+        isNewItem?: boolean;
+        scheduledDate?: string | null;
+        addToStockImmediately?: boolean;
+    }>;
     /** ID of the currently selected category */
     selectedCategoryId: number | null;
     /** Current search query for filtering menu items */
@@ -67,6 +74,8 @@ export interface MenuStore {
     toggleCategoryStatus: (categoryId: number, status: 'active' | 'inactive') => Promise<void>;
     /** Directly adds a new item via API */
     addMenuItem: (categoryId: number, item: Partial<MenuItem>) => Promise<void>;
+    /** Adds a new item locally to updatedItems without calling API */
+    addNewItemLocally: (categoryId: number, item: MenuItem, options?: { addToStockImmediately?: boolean; scheduledDate?: string | null }) => void;
 
     // --- Menu Score State ---
     /** Overall health score of the menu */
@@ -625,6 +634,73 @@ export const useMenuStore = create<MenuStore>()(
                 } finally {
                     set({ isSubmitting: false });
                 }
+            },
+
+            addNewItemLocally: (categoryId: number, item: MenuItem, options?: { addToStockImmediately?: boolean; scheduledDate?: string | null }) => {
+                const { updatedItems, categories } = get();
+
+                // Generate a temporary negative ID to avoid conflicts with real IDs
+                const tempId = -Date.now();
+
+                const newItem: MenuItem = {
+                    ...item,
+                    id: tempId,
+                    categoryId: categoryId,
+                };
+
+                // Create an empty original to indicate this is a new item
+                const emptyOriginal: MenuItem = {
+                    id: tempId,
+                    name: '',
+                    itemPrice: 0,
+                    discountAmount: 0,
+                    foodType: 'veg',
+                    isCustomisable: false,
+                    inStock: {},
+                    taxAmount: 0,
+                    packagingCharges: 0,
+                    discountIsAbsolute: false,
+                    categoryId: categoryId,
+                };
+
+                // Add to updatedItems with scheduling options
+                const newUpdatedItems = {
+                    ...updatedItems,
+                    [tempId]: {
+                        original: emptyOriginal,
+                        current: newItem,
+                        modifiedByAddressId: null,
+                        isNewItem: true,
+                        addToStockImmediately: options?.addToStockImmediately ?? true,
+                        scheduledDate: options?.scheduledDate ?? null
+                    }
+                };
+
+                // Also add to categories for immediate display
+                const addItemRecursive = (list: Category[]): Category[] => {
+                    return list.map(cat => {
+                        if (cat.id === categoryId) {
+                            return {
+                                ...cat,
+                                items: [newItem, ...(cat.items || [])],
+                                itemCount: (cat.itemCount || 0) + 1
+                            };
+                        }
+                        if (cat.subCategories) {
+                            return {
+                                ...cat,
+                                subCategories: addItemRecursive(cat.subCategories)
+                            };
+                        }
+                        return cat;
+                    });
+                };
+
+                set({
+                    updatedItems: newUpdatedItems,
+                    categories: addItemRecursive(categories),
+                    isDirty: true
+                });
             },
 
             deleteCategory: async (categoryId) => {
