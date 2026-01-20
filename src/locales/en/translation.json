@@ -817,6 +817,106 @@
         "info": "Blocked items can be re-activated instantly from the menu editor.",
         "confirm": "Yes, Block Dish",
         "cancel": "No, Keep Dish"
+      },
+      "addItem": {
+        "title": "Add New Item",
+        "categorySuffix": "Category",
+        "discard": "Discard",
+        "save": "Save Item",
+        "basicInfo": "Basic Info",
+        "itemName": "Item Name",
+        "descriptionPlaceholder": "Enter a delicious description...",
+        "media": "Media",
+        "dropImage": "Drop your image here",
+        "clickBrowse": "or click to browse files",
+        "changeImage": "Change Image",
+        "aiGeneratedLabel": "AI Generated / Web Download?",
+        "details": "Details",
+        "availability": "Availability Schedule",
+        "sameAsRestaurant": "Same as restaurant hours",
+        "from": "From",
+        "to": "To",
+        "allergyInfo": "Allergy Info",
+        "spiceLevel": "Spice Level",
+        "tags": "Tags",
+        "pricing": "Pricing",
+        "basePrice": "Base Price (INR)",
+        "taxes": "Taxes (%)",
+        "packaging": "Pkg. Fee (₹)",
+        "classification": "Classification",
+        "serviceType": "Service Type",
+        "foodType": "Food Type",
+        "attributes": "Attributes",
+        "portion": "Portion (Pcs)",
+        "serves": "Serves (Ppl)",
+        "weight": "Weight (e.g. 200g)",
+        "maxQty": "Max Qty / Order",
+        "consistency": "Item Consistency (Select all that apply)",
+        "consistencyPlaceholder": "Select consistency...",
+        "frosting": "Frosting Option",
+        "frostingPlaceholder": "Select option...",
+        "allergens": {
+          "milk": "Milk",
+          "eggs": "Eggs",
+          "fish": "Fish",
+          "shellfish": "Shellfish",
+          "tree_nuts": "Tree Nuts",
+          "peanuts": "Peanuts",
+          "wheat": "Wheat",
+          "soy": "Soy",
+          "sesame": "Sesame"
+        },
+        "spiceLevels": {
+          "mild": "Mild",
+          "medium": "Medium",
+          "hot": "Hot"
+        },
+        "menuTags": {
+          "gluten_free": "Gluten Free",
+          "sugar_free": "Sugar Free",
+          "jain": "Jain",
+          "vegan": "Vegan",
+          "chefs_special": "Chef's Special",
+          "high_protien": "High Protein"
+        },
+        "serviceTypes": {
+          "delivery": "Delivery",
+          "dineIn": "Dine-In",
+          "both": "Both"
+        },
+        "foodTypes": {
+          "veg": "Veg",
+          "nonVeg": "Non-Veg",
+          "egg": "Egg"
+        },
+        "consistencies": {
+          "solid": "Solid",
+          "liquid": "Liquid",
+          "semiSolid": "Semi-Solid",
+          "frozen": "Frozen"
+        },
+        "frostingOptions": {
+          "no": "No",
+          "fresh": "Fresh",
+          "preFrosted": "Pre-Frosted"
+        },
+        "validation": {
+          "nameRequired": "Item Name is required",
+          "priceRequired": "Price is required",
+          "taxRequired": "Tax is required",
+          "packagingRequired": "Packaging charges required",
+          "nameTooLong": "Name too long",
+          "descriptionTooLong": "Description cannot exceed 100 characters",
+          "pricePositive": "Price must be positive",
+          "packagingPositive": "Packaging charges must be positive",
+          "taxRange": "Tax cannot exceed 100%",
+          "consistencyRequired": "At least one item consistency must be selected",
+          "frostingRequired": "Frosting option is required",
+          "servesMin": "Must serve at least 1 person",
+          "portionMin": "Portion size must be at least 1",
+          "maxQtyMin": "Max quantity must be at least 1",
+          "aiImageRequired": "Please specify if the image is AI generated"
+        }
       }
     }
   }

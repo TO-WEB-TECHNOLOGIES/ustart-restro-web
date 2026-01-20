@@ -3,6 +3,9 @@
  */
 export type FoodType = 'veg' | 'non_veg' | 'contains_egg';
 
+export type Allergen = 'milk' | 'eggs' | 'fish' | 'shellfish' | 'tree_nuts' | 'peanuts' | 'wheat' | 'soy' | 'sesame' | 'none_of_these';
+export type MenuTag = 'gluten_free' | 'sugar_free' | 'jain' | 'vegan' | 'chefs_special' | 'high_protien' | 'none_of_these';
+
 /**
  * Represents a single item in the restaurant menu.
  */
@@ -42,7 +45,7 @@ export interface MenuItem {
 
     // --- New Fields for Detailed Editor ---
     serviceType?: 'Delivery' | 'Dine-In' | 'Both';
-    itemType?: 'Solid' | 'Liquid' | 'Semi-Solid' | 'Frozen';
+    itemType?: ('Solid' | 'Liquid' | 'Semi-Solid' | 'Frozen')[];
     isFrosting?: 'Fresh' | 'Pre-Frosted' | 'No';
     availability?: {
         startTime: string;
@@ -51,9 +54,10 @@ export interface MenuItem {
     };
     serves?: number;
     portionSize?: number;
+    weight?: string; // Weight of the item (e.g. "200g")
     maxQuantity?: number;
-    tags?: string[];
-    allergens?: string[];
+    tags?: MenuTag[];
+    allergens?: Allergen[];
     spiceLevel?: number; // 0 (None) to 3 (Hot)
     nutritionalInfo?: {
         calories: string;

@@ -816,6 +816,106 @@
         "info": "ब्लॉक किए गए आइटमों को मेनू संपादक से तुरंत फिर से सक्रिय किया जा सकता है।",
         "confirm": "हाँ, डिश ब्लॉक करें",
         "cancel": "नहीं, डिश रखें"
+      },
+      "addItem": {
+        "title": "नया आइटम जोड़ें",
+        "categorySuffix": "श्रेणी",
+        "discard": "रद्द करें",
+        "save": "आइटम सहेजें",
+        "basicInfo": "मूल जानकारी",
+        "itemName": "आइटम का नाम",
+        "descriptionPlaceholder": "एक स्वादिष्ट विवरण दर्ज करें...",
+        "media": "मीडिया",
+        "dropImage": "अपनी छवि यहाँ छोड़ें",
+        "clickBrowse": "या फ़ाइलें ब्राउज़ करने के लिए क्लिक करें",
+        "changeImage": "छवि बदलें",
+        "aiGeneratedLabel": "AI जनरेटेड ?",
+        "details": "विवरण",
+        "availability": "उपलब्धता कार्यक्रम",
+        "sameAsRestaurant": "रेस्तरां के घंटों के समान",
+        "from": "से",
+        "to": "तक",
+        "allergyInfo": "एलर्जी की जानकारी",
+        "spiceLevel": "तीखापन",
+        "tags": "टैग",
+        "pricing": "मूल्य निर्धारण",
+        "basePrice": "आधार मूल्य (INR)",
+        "taxes": "कर (%)",
+        "packaging": "पैकेजिंग शुल्क (₹)",
+        "classification": "वर्गीकरण",
+        "serviceType": "सेवा का प्रकार",
+        "foodType": "भोजन का प्रकार",
+        "attributes": "विशेषताएं",
+        "portion": "हिस्सा (नग)",
+        "serves": "कितने लोगों के लिए (लोग)",
+        "weight": "वजन (उदा. 200 ग्राम)",
+        "maxQty": "अधिकतम मात्रा / ऑर्डर",
+        "consistency": "आइटम की स्थिरता (सभी लागू चुनें)",
+        "consistencyPlaceholder": "स्थिरता चुनें...",
+        "frosting": "फ्रॉस्टिंग विकल्प",
+        "frostingPlaceholder": "विकल्प चुनें...",
+        "allergens": {
+          "milk": "दूध",
+          "eggs": "अंडे",
+          "fish": "मछली",
+          "shellfish": "शेलफिश",
+          "tree_nuts": "ट्री नट्स",
+          "peanuts": "मूंगफली",
+          "wheat": "गेहूं",
+          "soy": "सोया",
+          "sesame": "तिल"
+        },
+        "spiceLevels": {
+          "mild": "हल्का",
+          "medium": "मध्यम",
+          "hot": "तीखा"
+        },
+        "menuTags": {
+          "gluten_free": "ग्लूटेन फ्री",
+          "sugar_free": "शुगर फ्री",
+          "jain": "जैन",
+          "vegan": "शाकाहारी",
+          "chefs_special": "शेफ की विशेषता",
+          "high_protien": "हाई प्रोटीन"
+        },
+        "serviceTypes": {
+          "delivery": "डिलीवरी",
+          "dineIn": "डाइन-इन",
+          "both": "दोनों"
+        },
+        "foodTypes": {
+          "veg": "शाकाहारी",
+          "nonVeg": "माँसाहारी",
+          "egg": "अंडा"
+        },
+        "consistencies": {
+          "solid": "ठोस",
+          "liquid": "तरल",
+          "semiSolid": "अर्ध-ठोस",
+          "frozen": "जमे हुए"
+        },
+        "frostingOptions": {
+          "no": "नहीं",
+          "fresh": "ताजा",
+          "preFrosted": "पहले से फ्रॉस्टेड"
+        },
+        "validation": {
+          "nameRequired": "आइटम का नाम आवश्यक है",
+          "priceRequired": "कीमत आवश्यक है",
+          "taxRequired": "कर आवश्यक है",
+          "packagingRequired": "पैकेजिंग शुल्क आवश्यक है",
+          "nameTooLong": "नाम बहुत लंबा है",
+          "descriptionTooLong": "विवरण 100 वर्णों से अधिक नहीं हो सकता",
+          "pricePositive": "कीमत सकारात्मक होनी चाहिए",
+          "packagingPositive": "पैकेजिंग शुल्क सकारात्मक होना चाहिए",
+          "taxRange": "कर 100% से अधिक नहीं हो सकता",
+          "consistencyRequired": "कम से कम एक आइटम स्थिरता का चयन किया जाना चाहिए",
+          "frostingRequired": "फ्रॉस्टिंग विकल्प आवश्यक है",
+          "servesMin": "कम से कम 1 व्यक्ति को परोसना चाहिए",
+          "portionMin": "हिस्से का आकार कम से कम 1 होना चाहिए",
+          "maxQtyMin": "अधिकतम मात्रा कम से कम 1 होनी चाहिए",
+          "aiImageRequired": "कृपया निर्दिष्ट करें कि क्या छवि AI जनरेटेड है"
+        }
       }
     }
   }
