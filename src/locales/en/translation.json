@@ -658,8 +658,10 @@
       "badge": "Feature In Progress",
       "developersAtWork": "Developers at work",
       "title": "We're still",
-      "titleSecondary": "cooking this up.",
-      "description": "This feature isn't quite ready to be served yet. Our team is adding the final ingredients to make it perfect for you."
+      "titleSecondary": "developing this up.",
+      "description": "This feature isn't quite ready to be served yet. Our team is adding the final ingredients to make it perfect for you.",
+      "phase": "Development Phase",
+      "status": "Simmering... 80%"
     },
     "menuEditor": {
       "title": "Menu Editor",

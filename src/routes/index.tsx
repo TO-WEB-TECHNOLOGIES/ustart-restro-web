@@ -16,6 +16,7 @@ const HelpCenter = lazy(() => import('@/pages/HelpCenter').then(module => ({ def
 const NotFound = lazy(() => import('@/pages/NotFound').then(module => ({ default: module.NotFound })));
 const DashboardLayout = lazy(() => import('@/features/dashboard/layouts/DashboardLayout').then(module => ({ default: module.DashboardLayout })));
 const MenuEditor = lazy(() => import('@/features/dashboard/outlets/MenuEditor').then(module => ({ default: module.MenuEditor })));
+const ComingSoon = lazy(() => import('@/features/dashboard/outlets/ComingSoon').then(module => ({ default: module.ComingSoon })));
 
 const Loading = () => (
     <div className="flex items-center justify-center min-h-screen">
@@ -125,6 +126,10 @@ export const router = createBrowserRouter([
                                     }
                                 ]
                             },
+                            {
+                                path:"*",
+                                element: withSuspense(ComingSoon)
+                            }
                         ],
                     }
                 ]
