@@ -2,7 +2,7 @@ import { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useMenu } from '../../hooks/useMenu';
 import type { MenuItem, Allergen, MenuTag } from '../../../../types/menuTypes';
-import { Check, ImagePlus, Sparkles, AlertCircle, X, Flame, Calendar } from 'lucide-react';
+import { Check, ImagePlus, Sparkles, AlertCircle, X, Flame, Calendar, Candy } from 'lucide-react';
 import { menuItemSchema } from '../../validations/menuSchemas';
 import { z } from 'zod';
 import ReactSelect from 'react-select';
@@ -254,13 +254,13 @@ export const AddItemPage = () => {
 
                             {/* Basic Info */}
                             <div className="group flex flex-col">
-                                <h3 className="font-mono text-xs font-bold text-gray-400 uppercase tracking-widest mb-6 flex items-center gap-2">
+                                <h3 className="font-mono text-sm font-bold text-gray-400 uppercase tracking-widest mb-6 flex items-center gap-2">
                                     <span className="w-2 h-2 rounded-full bg-[var(--color-primary-blue)]"></span>
                                     {t('dashboard.menuEditor.addItem.basicInfo')}
                                 </h3>
                                 <div className="space-y-6 flex-1">
                                     <div className={`bg-white dark:bg-slate-900 p-1 rounded-2xl shadow-sm border ${errors.name ? 'border-red-500' : 'border-slate-100'} dark:border-slate-800 ring-1 ring-slate-100 dark:ring-slate-800 focus-within:ring-2 focus-within:ring-[var(--color-primary-blue)] transition-all`}>
-                                        <label className="block text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider px-4 pt-3">{t('dashboard.menuEditor.addItem.itemName')}</label>
+                                        <label className="block text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider px-4 pt-3">{t('dashboard.menuEditor.addItem.itemName')}</label>
                                         <div className="px-4 pb-2">
                                             <input
                                                 name="name"
@@ -271,7 +271,7 @@ export const AddItemPage = () => {
                                                 type="text"
                                             />
                                         </div>
-                                        {errors.name && <p className="text-red-500 text-[10px] px-4 pb-2 flex items-center gap-1"><AlertCircle className="w-3 h-3" /> {errors.name}</p>}
+                                        {errors.name && <p className="text-red-500 text-xs px-4 pb-2 flex items-center gap-1"><AlertCircle className="w-3 h-3" /> {errors.name}</p>}
                                     </div>
 
                                     <div className={`bg-white dark:bg-slate-900 p-1 rounded-2xl shadow-sm border ${errors.description ? 'border-red-500' : 'border-slate-100'} dark:border-slate-800 ring-1 ring-slate-100 dark:ring-slate-800 focus-within:ring-2 focus-within:ring-[var(--color-primary-blue)] transition-all`}>
@@ -284,18 +284,18 @@ export const AddItemPage = () => {
                                                 placeholder={t('dashboard.menuEditor.addItem.descriptionPlaceholder')}
                                                 rows={3}
                                             ></textarea>
-                                            <div className="absolute top-3 right-4 text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">
+                                            <div className="absolute top-3 right-4 text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">
                                                 {formData.description?.length || 0}/100
                                             </div>
                                         </div>
-                                        {errors.description && <p className="text-red-500 text-[10px] px-4 pb-2 flex items-center gap-1"><AlertCircle className="w-3 h-3" /> {errors.description}</p>}
+                                        {errors.description && <p className="text-red-500 text-xs px-4 pb-2 flex items-center gap-1"><AlertCircle className="w-3 h-3" /> {errors.description}</p>}
                                     </div>
                                 </div>
                             </div>
 
                             {/* Media */}
                             <div>
-                                <h3 className="font-mono text-xs font-bold text-gray-400 uppercase tracking-widest mb-6 flex items-center gap-2">
+                                <h3 className="font-mono text-sm font-bold text-gray-400 uppercase tracking-widest mb-6 flex items-center gap-2">
                                     <span className="w-2 h-2 rounded-full bg-orange-500"></span>
                                     {t('dashboard.menuEditor.addItem.media')}
                                 </h3>
@@ -348,19 +348,19 @@ export const AddItemPage = () => {
                                         <div className="w-10 h-6 bg-gray-200 rounded-full peer peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-[var(--color-primary-blue)]"></div>
                                     </label>
                                 </div>
-                                {errors.isAiGeneratedImage && <p className="text-red-500 text-[10px] px-2 mt-2 flex items-center gap-1"><AlertCircle className="w-3 h-3" /> {errors.isAiGeneratedImage}</p>}
+                                {errors.isAiGeneratedImage && <p className="text-red-500 text-xs px-2 mt-2 flex items-center gap-1"><AlertCircle className="w-3 h-3" /> {errors.isAiGeneratedImage}</p>}
                             </div>
 
                             {/* Details */}
                             <div>
-                                <h3 className="font-mono text-xs font-bold text-gray-400 uppercase tracking-widest mb-6 flex items-center gap-2">
+                                <h3 className="font-mono text-sm font-bold text-gray-400 uppercase tracking-widest mb-6 flex items-center gap-2">
                                     <span className="w-2 h-2 rounded-full bg-teal-500"></span>
                                     {t('dashboard.menuEditor.addItem.details')}
                                 </h3>
                                 <div className="space-y-8">
                                     <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl border border-gray-100 dark:border-slate-700 shadow-sm">
                                         <div className="flex items-center justify-between mb-6">
-                                            <label className="text-sm font-bold text-navy text-slate-900 dark:text-white">{t('dashboard.menuEditor.addItem.availability')}</label>
+                                            <label className="text-base font-bold text-navy text-slate-900 dark:text-white">{t('dashboard.menuEditor.addItem.availability')}</label>
                                             <div className="flex items-center gap-2">
                                                 <input
                                                     checked={formData.availability?.allDay}
@@ -395,7 +395,7 @@ export const AddItemPage = () => {
                                     </div>
 
                                     <div className="flex-1 space-y-3">
-                                        <label className="text-sm font-bold text-navy text-slate-900 dark:text-white">{t('dashboard.menuEditor.addItem.allergyInfo')}</label>
+                                        <label className="text-base font-bold text-navy text-slate-900 dark:text-white">{t('dashboard.menuEditor.addItem.allergyInfo')}</label>
                                         <div className="flex flex-wrap gap-3">
                                             {[
                                                 { value: 'milk', label: t('dashboard.menuEditor.addItem.allergens.milk') },
@@ -424,7 +424,7 @@ export const AddItemPage = () => {
                                     </div>
 
                                     <div className="space-y-3">
-                                        <label className="text-sm font-bold text-navy text-slate-900 dark:text-white">{t('dashboard.menuEditor.addItem.tags')}</label>
+                                        <label className="text-base font-bold text-navy text-slate-900 dark:text-white">{t('dashboard.menuEditor.addItem.tags')}</label>
                                         <div className="flex flex-wrap gap-3">
                                             {[
                                                 { value: 'gluten_free', label: t('dashboard.menuEditor.addItem.menuTags.gluten_free') },
@@ -456,13 +456,13 @@ export const AddItemPage = () => {
                         <div className="lg:col-span-5 space-y-12">
                             {/* Pricing */}
                             <div>
-                                <h3 className="font-mono text-xs font-bold text-gray-400 uppercase tracking-widest mb-6 flex items-center gap-2">
+                                <h3 className="font-mono text-sm font-bold text-gray-400 uppercase tracking-widest mb-6 flex items-center gap-2">
                                     <span className="w-2 h-2 rounded-full bg-green-500"></span>
                                     {t('dashboard.menuEditor.addItem.pricing')}
                                 </h3>
                                 <div className="space-y-4">
                                     <div className={`bg-white dark:bg-slate-900 p-1 rounded-2xl shadow-sm border ${errors.itemPrice ? 'border-red-500' : 'border-slate-100'} dark:border-slate-800 ring-1 ring-slate-100 dark:ring-slate-800 focus-within:ring-2 focus-within:ring-[var(--color-primary-blue)] transition-all`}>
-                                        <label className="block text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider px-4 pt-3">{t('dashboard.menuEditor.addItem.basePrice')}</label>
+                                        <label className="block text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider px-4 pt-3">{t('dashboard.menuEditor.addItem.basePrice')}</label>
                                         <div className="flex items-center px-4 pb-2">
                                             <span className="text-2xl font-bold text-slate-400 dark:text-slate-600 mr-2">₹</span>
                                             <input
@@ -474,11 +474,11 @@ export const AddItemPage = () => {
                                                 type="number"
                                             />
                                         </div>
-                                        {errors.itemPrice && <p className="text-red-500 text-[10px] px-4 pb-2">{errors.itemPrice}</p>}
+                                        {errors.itemPrice && <p className="text-red-500 text-xs px-4 pb-2">{errors.itemPrice}</p>}
                                     </div>
                                     <div className="grid grid-cols-2 gap-4">
                                         <div className="bg-white dark:bg-slate-900 p-3 rounded-xl border border-slate-100 dark:border-slate-800 focus-within:ring-2 focus-within:ring-[var(--color-primary-blue)] transition-all">
-                                            <label className="block text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase mb-1">{t('dashboard.menuEditor.addItem.taxes')}</label>
+                                            <label className="block text-xs font-bold text-slate-400 dark:text-slate-500 uppercase mb-1">{t('dashboard.menuEditor.addItem.taxes')}</label>
                                             <input
                                                 name="taxAmount"
                                                 value={formData.taxAmount ?? ''}
@@ -487,10 +487,10 @@ export const AddItemPage = () => {
                                                 placeholder="5%"
                                                 type="number"
                                             />
-                                            {errors.taxAmount && <p className="text-red-500 text-[10px] mt-1">{errors.taxAmount}</p>}
+                                            {errors.taxAmount && <p className="text-red-500 text-xs mt-1">{errors.taxAmount}</p>}
                                         </div>
                                         <div className="bg-white dark:bg-slate-900 p-3 rounded-xl border border-slate-100 dark:border-slate-800 focus-within:ring-2 focus-within:ring-[var(--color-primary-blue)] transition-all">
-                                            <label className="block text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase mb-1">{t('dashboard.menuEditor.addItem.packaging')}</label>
+                                            <label className="block text-xs font-bold text-slate-400 dark:text-slate-500 uppercase mb-1">{t('dashboard.menuEditor.addItem.packaging')}</label>
                                             <input
                                                 name="packagingCharges"
                                                 value={formData.packagingCharges ?? ''}
@@ -499,7 +499,7 @@ export const AddItemPage = () => {
                                                 placeholder="0.00"
                                                 type="number"
                                             />
-                                            {errors.packagingCharges && <p className="text-red-500 text-[10px] mt-1">{errors.packagingCharges}</p>}
+                                            {errors.packagingCharges && <p className="text-red-500 text-xs mt-1">{errors.packagingCharges}</p>}
                                         </div>
                                     </div>
                                 </div>
@@ -507,13 +507,13 @@ export const AddItemPage = () => {
 
                             {/* Classification */}
                             <div>
-                                <h3 className="font-mono text-xs font-bold text-gray-400 uppercase tracking-widest mb-6 flex items-center gap-2">
+                                <h3 className="font-mono text-sm font-bold text-gray-400 uppercase tracking-widest mb-6 flex items-center gap-2">
                                     <span className="w-2 h-2 rounded-full bg-orange-400"></span>
                                     {t('dashboard.menuEditor.addItem.classification')}
                                 </h3>
                                 <div className="space-y-6">
                                     <div className="space-y-3">
-                                        <label className="text-sm font-bold text-navy text-slate-900 dark:text-white">{t('dashboard.menuEditor.addItem.serviceType')}</label>
+                                        <label className="text-base font-bold text-navy text-slate-900 dark:text-white">{t('dashboard.menuEditor.addItem.serviceType')}</label>
                                         <div className="flex bg-white dark:bg-slate-800 p-1 rounded-xl border border-gray-200 dark:border-slate-700 shadow-sm">
                                             {[
                                                 { value: 'Delivery', label: t('dashboard.menuEditor.addItem.serviceTypes.delivery') },
@@ -523,7 +523,7 @@ export const AddItemPage = () => {
                                                 <button
                                                     key={opt.value}
                                                     onClick={() => updateField('serviceType', opt.value)}
-                                                    className={`flex-1 py-2 rounded-lg text-xs font-bold transition-colors ${formData.serviceType === opt.value ? 'bg-[var(--color-primary-blue)] text-white shadow-sm' : 'text-gray-500 hover:text-navy dark:hover:text-white'}`}
+                                                    className={`flex-1 py-2 rounded-lg text-sm font-bold transition-colors ${formData.serviceType === opt.value ? 'bg-[var(--color-primary-blue)] text-white shadow-sm' : 'text-gray-500 hover:text-navy dark:hover:text-white'}`}
                                                 >
                                                     {opt.label}
                                                 </button>
@@ -531,7 +531,7 @@ export const AddItemPage = () => {
                                         </div>
                                     </div>
                                     <div className="space-y-3">
-                                        <label className="text-sm font-bold text-navy text-slate-900 dark:text-white">{t('dashboard.menuEditor.addItem.foodType')}</label>
+                                        <label className="text-base font-bold text-navy text-slate-900 dark:text-white">{t('dashboard.menuEditor.addItem.foodType')}</label>
                                         <div className="grid grid-cols-3 gap-2">
                                             {[
                                                 { id: 'veg', label: t('dashboard.menuEditor.addItem.foodTypes.veg'), color: 'green' },
@@ -550,7 +550,7 @@ export const AddItemPage = () => {
                                                         <div className="size-3 border border-current flex items-center justify-center rounded-[1px] p-[1.5px]">
                                                             <div className="size-full rounded-full bg-current"></div>
                                                         </div>
-                                                        <span className="text-[10px] font-bold">{type.label}</span>
+                                                        <span className="text-xs font-bold">{type.label}</span>
                                                     </div>
                                                 </label>
                                             ))}
@@ -561,14 +561,14 @@ export const AddItemPage = () => {
 
                             {/* Attributes */}
                             <div>
-                                <h3 className="font-mono text-xs font-bold text-gray-400 uppercase tracking-widest mb-6 flex items-center gap-2">
+                                <h3 className="font-mono text-sm font-bold text-gray-400 uppercase tracking-widest mb-6 flex items-center gap-2">
                                     <span className="w-2 h-2 rounded-full bg-purple-500"></span>
                                     {t('dashboard.menuEditor.addItem.attributes')}
                                 </h3>
                                 <div className="space-y-6">
                                     <div className="grid grid-cols-2 gap-4">
                                         <div className="space-y-2">
-                                            <label className="text-xs font-bold text-gray-500">{t('dashboard.menuEditor.addItem.portion')}</label>
+                                            <label className="text-sm font-bold text-gray-500">{t('dashboard.menuEditor.addItem.portion')}</label>
                                             <input
                                                 name="portionSize"
                                                 value={formData.portionSize ?? ''}
@@ -577,10 +577,10 @@ export const AddItemPage = () => {
                                                 placeholder="1"
                                                 type="number"
                                             />
-                                            {errors.portionSize && <p className="text-red-500 text-[10px] mt-1">{errors.portionSize}</p>}
+                                            {errors.portionSize && <p className="text-red-500 text-xs mt-1">{errors.portionSize}</p>}
                                         </div>
                                         <div className="space-y-2">
-                                            <label className="text-xs font-bold text-gray-500">{t('dashboard.menuEditor.addItem.serves')}</label>
+                                            <label className="text-sm font-bold text-gray-500">{t('dashboard.menuEditor.addItem.serves')}</label>
                                             <input
                                                 name="serves"
                                                 value={formData.serves ?? ''}
@@ -589,12 +589,12 @@ export const AddItemPage = () => {
                                                 placeholder="1"
                                                 type="number"
                                             />
-                                            {errors.serves && <p className="text-red-500 text-[10px] mt-1">{errors.serves}</p>}
+                                            {errors.serves && <p className="text-red-500 text-xs mt-1">{errors.serves}</p>}
                                         </div>
                                     </div>
                                     <div className="grid grid-cols-2 gap-4">
                                         <div className="space-y-2">
-                                            <label className="text-xs font-bold text-gray-500">{t('dashboard.menuEditor.addItem.weight')}</label>
+                                            <label className="text-sm font-bold text-gray-500">{t('dashboard.menuEditor.addItem.weight')}</label>
                                             <input
                                                 name="weight"
                                                 value={formData.weight ?? ''}
@@ -605,7 +605,7 @@ export const AddItemPage = () => {
                                             />
                                         </div>
                                         <div className="space-y-2">
-                                            <label className="text-xs font-bold text-gray-500">{t('dashboard.menuEditor.addItem.maxQty')}</label>
+                                            <label className="text-sm font-bold text-gray-500">{t('dashboard.menuEditor.addItem.maxQty')}</label>
                                             <input
                                                 name="maxQuantity"
                                                 value={formData.maxQuantity ?? ''}
@@ -614,12 +614,12 @@ export const AddItemPage = () => {
                                                 placeholder="10"
                                                 type="number"
                                             />
-                                            {errors.maxQuantity && <p className="text-red-500 text-[10px] mt-1">{errors.maxQuantity}</p>}
+                                            {errors.maxQuantity && <p className="text-red-500 text-xs mt-1">{errors.maxQuantity}</p>}
                                         </div>
                                     </div>
                                 </div>
                                 <div className="space-y-2">
-                                    <label className="text-sm font-bold text-navy text-slate-900 dark:text-white">{t('dashboard.menuEditor.addItem.consistency')}</label>
+                                    <label className="text-base font-bold text-navy text-slate-900 dark:text-white">{t('dashboard.menuEditor.addItem.consistency')}</label>
                                     <ReactSelect
                                         isMulti
                                         options={itemConsistencyOptions}
@@ -666,7 +666,7 @@ export const AddItemPage = () => {
                                     {errors.itemType && <p className="text-red-500 text-xs mt-1">{errors.itemType}</p>}
                                 </div>
                                 <div className="space-y-2">
-                                    <label className="text-sm font-bold text-slate-900 dark:text-white">{t('dashboard.menuEditor.addItem.frosting')}</label>
+                                    <label className="text-base font-bold text-slate-900 dark:text-white">{t('dashboard.menuEditor.addItem.frosting')}</label>
                                     <select
                                         name="isFrosting"
                                         value={formData.isFrosting ?? ''}
@@ -681,9 +681,10 @@ export const AddItemPage = () => {
                                     {errors.isFrosting && <p className="text-red-500 text-xs mt-1">{errors.isFrosting}</p>}
                                 </div>
                                 <div className="space-y-3 w-full">
-                                    <label className="text-sm font-bold text-slate-900 dark:text-white">{t('dashboard.menuEditor.addItem.spiceLevel')}</label>
+                                    <label className="text-base font-bold text-slate-900 dark:text-white">{t('dashboard.menuEditor.addItem.spiceLevel')}</label>
                                     <div className="flex bg-white dark:bg-slate-900 p-1.5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm w-full gap-1">
                                         {[
+                                            { value: -1, label: t('dashboard.menuEditor.addItem.spiceLevels.sweet') },
                                             { value: 1, label: t('dashboard.menuEditor.addItem.spiceLevels.mild') },
                                             { value: 2, label: t('dashboard.menuEditor.addItem.spiceLevels.medium') },
                                             { value: 3, label: t('dashboard.menuEditor.addItem.spiceLevels.hot') }
@@ -698,18 +699,28 @@ export const AddItemPage = () => {
                                                 title={opt.label}
                                             >
                                                 <div className="flex items-center">
-                                                    {[...Array(opt.value)].map((_, i) => (
-                                                        <Flame
-                                                            key={i}
-                                                            className={`w-4 h-4 ${formData.spiceLevel === opt.value
-                                                                ? 'fill-red-600 text-red-600'
+                                                    {opt.value === -1 ? (
+                                                        <Candy
+                                                            className={`w-4 h-4 ${formData.spiceLevel === -1
+                                                                ? 'fill-pink-500 text-pink-500'
                                                                 : 'text-gray-300 group-hover/spice:text-gray-500'
                                                                 }`}
                                                             strokeWidth={2.5}
                                                         />
-                                                    ))}
+                                                    ) : (
+                                                        [...Array(opt.value)].map((_, i) => (
+                                                            <Flame
+                                                                key={i}
+                                                                className={`w-4 h-4 ${formData.spiceLevel === opt.value
+                                                                    ? 'fill-red-600 text-red-600'
+                                                                    : 'text-gray-300 group-hover/spice:text-gray-500'
+                                                                    }`}
+                                                                strokeWidth={2.5}
+                                                            />
+                                                        ))
+                                                    )}
                                                 </div>
-                                                <span className="text-[10px] uppercase tracking-tighter font-extrabold">{opt.label}</span>
+                                                <span className="text-xs uppercase tracking-tighter font-extrabold">{opt.label}</span>
                                             </button>
                                         ))}
                                     </div>

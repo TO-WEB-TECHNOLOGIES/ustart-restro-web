@@ -665,6 +665,7 @@
     },
     "menuEditor": {
       "title": "Menu Editor",
+      "editItemIn": "Manage and edit items in {{category}}",
       "tabs": {
         "edit": "Menu editor",
         "stock": "Manage inventory",
@@ -834,6 +835,7 @@
       },
       "addItem": {
         "title": "Add New Item",
+        "subtitle": "Add a new dish to your {{category}} collection",
         "categorySuffix": "Category",
         "discard": "Discard",
         "save": "Save Item",
@@ -906,6 +908,7 @@
           "sesame": "Sesame"
         },
         "spiceLevels": {
+          "sweet": "Sweet",
           "mild": "Mild",
           "medium": "Medium",
           "hot": "Hot"

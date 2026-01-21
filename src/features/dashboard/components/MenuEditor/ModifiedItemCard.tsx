@@ -1,6 +1,6 @@
 import { motion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
-import { ArrowLeft, AlertCircle, Tag, Calendar, Plus, Flame, Info } from 'lucide-react';
+import { ArrowLeft, AlertCircle, Tag, Calendar, Plus, Flame, Info, Sparkles, Candy, Coffee } from 'lucide-react';
 import type { MenuItem } from '../../../../types/menuTypes';
 import { useRestaurantStore } from '../../store/useRestaurantStore';
 
@@ -194,6 +194,11 @@ export const ModifiedItemCard = ({
                                 <InfoLine label={t('dashboard.menuEditor.itemName')} value={current.name} />
                                 <InfoLine label={t('dashboard.menuEditor.itemDescription')} value={current.description} />
                                 <InfoLine label={t('dashboard.menuEditor.originalPrice')} value={current.itemPrice} suffix="₹" />
+                                <InfoLine
+                                    label={t('dashboard.menuEditor.discountLabel')}
+                                    value={current.discountAmount}
+                                    suffix={current.discountIsAbsolute ? '₹' : '%'}
+                                />
                                 <InfoLine label={t('dashboard.menuEditor.taxAmount')} value={current.taxAmount} suffix="%" />
                                 <InfoLine label={t('dashboard.menuEditor.packaging')} value={current.packagingCharges} suffix="₹" />
 
@@ -219,14 +224,20 @@ export const ModifiedItemCard = ({
 
                                 {/* Detailed Specs */}
                                 <InfoLine label={t('dashboard.menuEditor.filter.dietaryPreference')} value={current.foodType} icon={Info} />
-                                <InfoLine label="Service Type" value={current.serviceType} />
-                                <InfoLine label="Consistency" value={current.itemType?.join(', ')} />
-                                <InfoLine label="Frosting" value={current.isFrosting} />
-                                <InfoLine label="Serves" value={current.serves} suffix=" ppl" />
-                                <InfoLine label="Portion Size" value={current.portionSize} suffix=" pcs" />
-                                <InfoLine label="Weight" value={current.weight} />
-                                <InfoLine label="Max Qty" value={current.maxQuantity} />
-                                <InfoLine label="Spice Level" value={current.spiceLevel} icon={Flame} />
+                                <InfoLine label={t('dashboard.menuEditor.customisable')} value={current.isCustomisable ? t('common.yes') : t('common.no')} />
+                                <InfoLine label={t('dashboard.menuEditor.addItem.serviceType')} value={current.serviceType} icon={ArrowLeft} />
+                                <InfoLine label={t('dashboard.menuEditor.addItem.consistency')} value={current.itemType?.join(', ')} />
+                                <InfoLine label={t('dashboard.menuEditor.addItem.frosting')} value={current.isFrosting === 'No' ? t('dashboard.menuEditor.addItem.frostingOptions.no') : current.isFrosting === 'Fresh' ? t('dashboard.menuEditor.addItem.frostingOptions.fresh') : t('dashboard.menuEditor.addItem.frostingOptions.preFrosted')} icon={Coffee} />
+                                <InfoLine label={t('dashboard.menuEditor.addItem.serves')} value={current.serves} suffix=" ppl" />
+                                <InfoLine label={t('dashboard.menuEditor.addItem.portion')} value={current.portionSize} suffix=" pcs" />
+                                <InfoLine label={t('dashboard.menuEditor.addItem.weight')} value={current.weight} />
+                                <InfoLine label={t('dashboard.menuEditor.addItem.maxQty')} value={current.maxQuantity} />
+                                <InfoLine
+                                    label={t('dashboard.menuEditor.addItem.spiceLevel')}
+                                    value={current.spiceLevel === -1 ? t('dashboard.menuEditor.addItem.spiceLevels.sweet') : current.spiceLevel === 1 ? t('dashboard.menuEditor.addItem.spiceLevels.mild') : current.spiceLevel === 2 ? t('dashboard.menuEditor.addItem.spiceLevels.medium') : t('dashboard.menuEditor.addItem.spiceLevels.hot')}
+                                    icon={current.spiceLevel === -1 ? Candy : Flame}
+                                />
+                                <InfoLine label={t('dashboard.menuEditor.addItem.aiGeneratedLabel')} value={current.isAiGeneratedImage ? t('common.yes') : t('common.no')} icon={Sparkles} />
 
                                 {/* Tags & Allergens */}
                                 <InfoLine
@@ -292,16 +303,26 @@ export const ModifiedItemCard = ({
                                 <ChangeLine label={t('dashboard.menuEditor.itemDescription')} oldVal={original.description} newVal={current.description} />
 
                                 {/* Detailed Spec Changes */}
-                                <ChangeLine label="Service Type" oldVal={original.serviceType} newVal={current.serviceType} />
-                                <ChangeLine label="Consistency" oldVal={original.itemType?.join(', ')} newVal={current.itemType?.join(', ')} />
-                                <ChangeLine label="Frosting" oldVal={original.isFrosting} newVal={current.isFrosting} />
-                                <ChangeLine label="Serves" oldVal={original.serves} newVal={current.serves} suffix=" ppl" />
-                                <ChangeLine label="Portion Size" oldVal={original.portionSize} newVal={current.portionSize} suffix=" pcs" />
-                                <ChangeLine label="Weight" oldVal={original.weight} newVal={current.weight} />
-                                <ChangeLine label="Max Qty" oldVal={original.maxQuantity} newVal={current.maxQuantity} />
-                                <ChangeLine label="Spice Level" oldVal={original.spiceLevel} newVal={current.spiceLevel} />
-                                <ChangeLine label="Tags" oldVal={original.tags?.join(', ')} newVal={current.tags?.join(', ')} />
-                                <ChangeLine label="Allergens" oldVal={original.allergens?.join(', ')} newVal={current.allergens?.join(', ')} />
+                                <ChangeLine label={t('dashboard.menuEditor.addItem.serviceType')} oldVal={original.serviceType} newVal={current.serviceType} />
+                                <ChangeLine label={t('dashboard.menuEditor.addItem.consistency')} oldVal={original.itemType?.join(', ')} newVal={current.itemType?.join(', ')} />
+                                <ChangeLine
+                                    label={t('dashboard.menuEditor.addItem.frosting')}
+                                    oldVal={original.isFrosting === 'No' ? t('dashboard.menuEditor.addItem.frostingOptions.no') : original.isFrosting === 'Fresh' ? t('dashboard.menuEditor.addItem.frostingOptions.fresh') : t('dashboard.menuEditor.addItem.frostingOptions.preFrosted')}
+                                    newVal={current.isFrosting === 'No' ? t('dashboard.menuEditor.addItem.frostingOptions.no') : current.isFrosting === 'Fresh' ? t('dashboard.menuEditor.addItem.frostingOptions.fresh') : t('dashboard.menuEditor.addItem.frostingOptions.preFrosted')}
+                                />
+                                <ChangeLine label={t('dashboard.menuEditor.addItem.serves')} oldVal={original.serves} newVal={current.serves} suffix=" ppl" />
+                                <ChangeLine label={t('dashboard.menuEditor.addItem.portion')} oldVal={original.portionSize} newVal={current.portionSize} suffix=" pcs" />
+                                <ChangeLine label={t('dashboard.menuEditor.addItem.weight')} oldVal={original.weight} newVal={current.weight} />
+                                <ChangeLine label={t('dashboard.menuEditor.addItem.maxQty')} oldVal={original.maxQuantity} newVal={current.maxQuantity} />
+                                <ChangeLine
+                                    label={t('dashboard.menuEditor.addItem.spiceLevel')}
+                                    oldVal={original.spiceLevel === -1 ? t('dashboard.menuEditor.addItem.spiceLevels.sweet') : original.spiceLevel === 1 ? t('dashboard.menuEditor.addItem.spiceLevels.mild') : original.spiceLevel === 2 ? t('dashboard.menuEditor.addItem.spiceLevels.medium') : t('dashboard.menuEditor.addItem.spiceLevels.hot')}
+                                    newVal={current.spiceLevel === -1 ? t('dashboard.menuEditor.addItem.spiceLevels.sweet') : current.spiceLevel === 1 ? t('dashboard.menuEditor.addItem.spiceLevels.mild') : current.spiceLevel === 2 ? t('dashboard.menuEditor.addItem.spiceLevels.medium') : t('dashboard.menuEditor.addItem.spiceLevels.hot')}
+                                />
+                                <ChangeLine label={t('dashboard.menuEditor.customisable')} oldVal={original.isCustomisable ? t('common.yes') : t('common.no')} newVal={current.isCustomisable ? t('common.yes') : t('common.no')} />
+                                <ChangeLine label={t('dashboard.menuEditor.addItem.aiGeneratedLabel')} oldVal={original.isAiGeneratedImage ? t('common.yes') : t('common.no')} newVal={current.isAiGeneratedImage ? t('common.yes') : t('common.no')} />
+                                <ChangeLine label={t('dashboard.menuEditor.addItem.tags')} oldVal={original.tags?.filter(t => t !== 'none_of_these').join(', ')} newVal={current.tags?.filter(t => t !== 'none_of_these').join(', ')} />
+                                <ChangeLine label={t('dashboard.menuEditor.addItem.allergyInfo')} oldVal={original.allergens?.filter(a => a !== 'none_of_these').join(', ')} newVal={current.allergens?.filter(a => a !== 'none_of_these').join(', ')} />
 
                                 {/* Nutrition Changes */}
                                 <ChangeLine label="Calories" oldVal={original.nutritionalInfo?.calories} newVal={current.nutritionalInfo?.calories} />

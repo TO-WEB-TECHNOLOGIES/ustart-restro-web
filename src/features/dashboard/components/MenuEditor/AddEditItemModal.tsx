@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Upload, CheckCircle, Flame, Calendar, Clock, AlertCircle, Sparkles } from 'lucide-react';
+import { X, Upload, CheckCircle, Flame, Calendar, Clock, AlertCircle, Sparkles, Tag, Candy } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { ZodError } from 'zod';
 import ReactSelect from 'react-select';
@@ -22,9 +22,12 @@ const DEFAULT_ITEM: Partial<MenuItem> = {
     name: '',
     description: '',
     itemPrice: undefined,
+    discountAmount: 0,
+    discountIsAbsolute: true,
     packagingCharges: undefined,
     taxAmount: 5,
     foodType: 'veg',
+    isCustomisable: false,
     serviceType: 'Both',
     itemType: [],
     isFrosting: undefined,
@@ -80,7 +83,6 @@ export const AddEditItemModal: React.FC<AddEditItemModalProps> = ({
         { value: 'Frozen', label: t('dashboard.menuEditor.addItem.consistencies.frozen') }
     ];
 
-
     const validateSchedule = (date: string, time: string) => {
         if (addToStockImmediately) {
             setScheduleError(null);
@@ -135,6 +137,7 @@ export const AddEditItemModal: React.FC<AddEditItemModalProps> = ({
         const finalData = {
             ...formData,
             categoryId: selectedCategoryId,
+            hasDiscount: (formData.discountAmount || 0) > 0,
             allergens: (formData.allergens && formData.allergens.length > 0) ? formData.allergens : (['none_of_these'] as Allergen[]),
             tags: (formData.tags && formData.tags.length > 0) ? formData.tags : (['none_of_these'] as MenuTag[]),
         };
@@ -260,7 +263,7 @@ export const AddEditItemModal: React.FC<AddEditItemModalProps> = ({
                         <div className="px-8 py-6 border-b border-gray-100 dark:border-slate-800 flex justify-between items-start bg-white dark:bg-slate-900 sticky top-0 z-10">
                             <div>
                                 <h2 className="text-xl font-black text-slate-900 dark:text-white">
-                                    {item ? t('dashboard.menuEditor.editItem') || t('common.edit') : t('dashboard.menuEditor.addItem.title')}
+                                    {item ? t('common.edit') : t('dashboard.menuEditor.addItem.title')}
                                 </h2>
                                 <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
                                     {item ? t('dashboard.menuEditor.editItemIn', { category: categoryName }) : t('dashboard.menuEditor.addItem.subtitle', { category: categoryName })}
@@ -294,7 +297,7 @@ export const AddEditItemModal: React.FC<AddEditItemModalProps> = ({
                             <div className="space-y-2">
                                 <div className="flex justify-between items-center">
                                     <label className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider">{t('dashboard.menuEditor.itemDescription')}</label>
-                                    <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 tracking-widest uppercase">
+                                    <span className="text-xs font-bold text-slate-400 dark:text-slate-500 tracking-widest uppercase">
                                         {formData.description?.length || 0}/100
                                     </span>
                                 </div>
@@ -374,7 +377,7 @@ export const AddEditItemModal: React.FC<AddEditItemModalProps> = ({
                                             <Sparkles className="w-4 h-4 text-[var(--color-primary-blue)]" />
                                             <span className="text-sm font-bold text-slate-900 dark:text-white">{t('dashboard.menuEditor.addItem.aiGeneratedLabel')}</span>
                                         </div>
-                                        <span className="text-[10px] text-slate-400 uppercase tracking-tight font-medium">{t('dashboard.menuEditor.addItem.details')}</span>
+                                        <span className="text-xs text-slate-400 uppercase tracking-tight font-medium">{t('dashboard.menuEditor.addItem.details')}</span>
                                     </div>
                                     <label className="relative inline-flex items-center cursor-pointer">
                                         <input
@@ -390,7 +393,6 @@ export const AddEditItemModal: React.FC<AddEditItemModalProps> = ({
                             </div>
 
                             {/* Service Type */}
-                            {/* Service Type */}
                             <div className="space-y-4">
                                 <label className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider">{t('dashboard.menuEditor.addItem.serviceType')}</label>
                                 <div className="flex bg-gray-50 dark:bg-slate-800 p-1 rounded-xl border border-gray-200 dark:border-slate-700">
@@ -402,7 +404,7 @@ export const AddEditItemModal: React.FC<AddEditItemModalProps> = ({
                                         <button
                                             key={opt.value}
                                             onClick={() => updateField('serviceType', opt.value)}
-                                            className={`flex-1 py-2 rounded-lg text-xs font-bold transition-all ${formData.serviceType === opt.value ? 'bg-[var(--color-primary-blue)] text-white shadow-sm' : 'text-slate-500 hover:text-slate-900 dark:hover:text-white'}`}
+                                            className={`flex-1 py-2.5 rounded-lg text-sm font-bold transition-all ${formData.serviceType === opt.value ? 'bg-[var(--color-primary-blue)] text-white shadow-sm' : 'text-slate-500 hover:text-slate-900 dark:hover:text-white'}`}
                                         >
                                             {opt.label}
                                         </button>
@@ -413,7 +415,7 @@ export const AddEditItemModal: React.FC<AddEditItemModalProps> = ({
 
                             {/* Food Type */}
                             <div className="space-y-4">
-                                <label className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider">{t('dashboard.menuEditor.addItem.foodType')}</label>
+                                <label className="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-wider">{t('dashboard.menuEditor.addItem.foodType')}</label>
                                 <div className="grid grid-cols-3 gap-3">
                                     {[
                                         { id: 'veg', label: t('dashboard.menuEditor.addItem.foodTypes.veg'), color: 'green' },
@@ -431,17 +433,36 @@ export const AddEditItemModal: React.FC<AddEditItemModalProps> = ({
                                             <div className="size-3 border border-current flex items-center justify-center rounded-[1px] p-[1.5px]">
                                                 <div className="size-full rounded-full bg-current"></div>
                                             </div>
-                                            <span className="text-[10px] font-bold uppercase">{type.label}</span>
+                                            <span className="text-xs font-bold uppercase">{type.label}</span>
                                         </button>
                                     ))}
                                 </div>
                                 {errors.foodType && <p className="text-red-500 text-xs mt-1 flex items-center gap-1"><AlertCircle className="w-3 h-3" /> {errors.foodType}</p>}
                             </div>
 
+                            <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-slate-800 rounded-xl border border-gray-100 dark:border-slate-700">
+                                <div className="flex flex-col">
+                                    <div className="flex items-center gap-2">
+                                        <Tag className="w-4 h-4 text-[var(--color-primary-blue)]" />
+                                        <span className="text-base font-bold text-slate-900 dark:text-white">{t('dashboard.menuEditor.customisable')}</span>
+                                    </div>
+                                    <span className="text-xs text-slate-400 uppercase tracking-tight font-medium">{t('dashboard.menuEditor.addItem.details')}</span>
+                                </div>
+                                <label className="relative inline-flex items-center cursor-pointer">
+                                    <input
+                                        type="checkbox"
+                                        checked={formData.isCustomisable}
+                                        onChange={(e) => updateField('isCustomisable', e.target.checked)}
+                                        className="sr-only peer"
+                                    />
+                                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-[var(--color-primary-blue)]"></div>
+                                </label>
+                            </div>
+
                             {/* Pricing Section */}
                             <div className="bg-gray-50 dark:bg-slate-800/50 p-6 rounded-2xl space-y-6 border border-gray-100 dark:border-slate-800">
                                 <div className="space-y-2">
-                                    <label className="text-xs font-black text-[var(--color-primary-blue)] uppercase tracking-[0.1em]">{t('dashboard.menuEditor.addItem.basePrice')}</label>
+                                    <label className="text-sm font-black text-[var(--color-primary-blue)] uppercase tracking-[0.2em]">{t('dashboard.menuEditor.addItem.basePrice')}</label>
                                     <div className="relative">
                                         <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[var(--color-primary-blue)] font-black text-lg">₹</span>
                                         <input
@@ -454,9 +475,10 @@ export const AddEditItemModal: React.FC<AddEditItemModalProps> = ({
                                     </div>
                                     {errors.itemPrice && <p className="text-red-500 text-xs mt-1 flex items-center gap-1"><AlertCircle className="w-3 h-3" /> {errors.itemPrice}</p>}
                                 </div>
+
                                 <div className="grid grid-cols-2 gap-4">
                                     <div className="space-y-2">
-                                        <label className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider">{t('dashboard.menuEditor.addItem.packaging')}</label>
+                                        <label className="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-wider">{t('dashboard.menuEditor.addItem.packaging')}</label>
                                         <div className="relative">
                                             <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 font-semibold text-sm">₹</span>
                                             <input
@@ -470,7 +492,7 @@ export const AddEditItemModal: React.FC<AddEditItemModalProps> = ({
                                         {errors.packagingCharges && <p className="text-red-500 text-xs mt-1 flex items-center gap-1"><AlertCircle className="w-3 h-3" /> {errors.packagingCharges}</p>}
                                     </div>
                                     <div className="space-y-2">
-                                        <label className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider">{t('dashboard.menuEditor.addItem.taxes')}</label>
+                                        <label className="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-wider">{t('dashboard.menuEditor.addItem.taxes')}</label>
                                         <div className="relative">
                                             <input
                                                 value={formData.taxAmount ?? ''}
@@ -484,12 +506,47 @@ export const AddEditItemModal: React.FC<AddEditItemModalProps> = ({
                                         {errors.taxAmount && <p className="text-red-500 text-xs mt-1 flex items-center gap-1"><AlertCircle className="w-3 h-3" /> {errors.taxAmount}</p>}
                                     </div>
                                 </div>
+
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div className="space-y-2">
+                                        <label className="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-wider">{t('dashboard.menuEditor.discountLabel')}</label>
+                                        <div className="relative">
+                                            <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 font-semibold text-sm">
+                                                {formData.discountIsAbsolute ? '₹' : '%'}
+                                            </span>
+                                            <input
+                                                value={formData.discountAmount ?? 0}
+                                                onChange={(e) => updateField('discountAmount', Number(e.target.value))}
+                                                className="w-full pl-8 pr-4 py-3 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white outline-none transition-all text-sm"
+                                                placeholder="0.00"
+                                                type="number"
+                                            />
+                                        </div>
+                                    </div>
+                                    <div className="space-y-2">
+                                        <label className="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-wider">{t('dashboard.menuEditor.discountType')}</label>
+                                        <div className="flex bg-white dark:bg-slate-900 p-1 rounded-xl border border-gray-200 dark:border-slate-700 h-[46px]">
+                                            <button
+                                                onClick={() => updateField('discountIsAbsolute', true)}
+                                                className={`flex-1 rounded-lg text-xs font-bold transition-all ${formData.discountIsAbsolute ? 'bg-[var(--color-primary-blue)] text-white shadow-sm' : 'text-slate-500'}`}
+                                            >
+                                                Absolute (₹)
+                                            </button>
+                                            <button
+                                                onClick={() => updateField('discountIsAbsolute', false)}
+                                                className={`flex-1 rounded-lg text-xs font-bold transition-all ${!formData.discountIsAbsolute ? 'bg-[var(--color-primary-blue)] text-white shadow-sm' : 'text-slate-500'}`}
+                                            >
+                                                Percentage (%)
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
 
                             {/* Item Specs */}
                             <div className="space-y-6">
                                 <div className="space-y-2">
-                                    <label className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider">{t('dashboard.menuEditor.addItem.consistency')}</label>
+                                    <label className="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-wider">{t('dashboard.menuEditor.addItem.consistency')}</label>
                                     <ReactSelect
                                         isMulti
                                         options={itemConsistencyOptions}
@@ -536,13 +593,13 @@ export const AddEditItemModal: React.FC<AddEditItemModalProps> = ({
                                     {errors.itemType && <p className="text-red-500 text-xs mt-1 flex items-center gap-1"><AlertCircle className="w-3 h-3" /> {errors.itemType}</p>}
                                 </div>
                                 <div className="space-y-4">
-                                    <label className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider">{t('dashboard.menuEditor.addItem.frosting')}</label>
+                                    <label className="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-wider">{t('dashboard.menuEditor.addItem.frosting')}</label>
                                     <div className="flex bg-gray-50 dark:bg-slate-800 p-1 rounded-xl border border-gray-200 dark:border-slate-700">
                                         {(['Fresh', 'Pre-Frosted', 'No'] as const).map((opt) => (
                                             <button
                                                 key={opt}
                                                 onClick={() => updateField('isFrosting', opt)}
-                                                className={`flex-1 py-2 rounded-lg text-xs font-bold transition-all ${formData.isFrosting === opt ? 'bg-[var(--color-primary-blue)] text-white shadow-sm' : 'text-slate-500 hover:text-slate-900 dark:hover:text-white'}`}
+                                                className={`flex-1 py-2.5 rounded-lg text-sm font-black transition-all ${formData.isFrosting === opt ? 'bg-[var(--color-primary-blue)] text-white shadow-sm' : 'text-slate-500 hover:text-slate-900 dark:hover:text-white'}`}
                                             >
                                                 {opt === 'No' ? t('dashboard.menuEditor.addItem.frostingOptions.no') : opt === 'Fresh' ? t('dashboard.menuEditor.addItem.frostingOptions.fresh') : t('dashboard.menuEditor.addItem.frostingOptions.preFrosted')}
                                             </button>
@@ -554,7 +611,7 @@ export const AddEditItemModal: React.FC<AddEditItemModalProps> = ({
 
                             {/* Availability */}
                             <div className="space-y-4">
-                                <label className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider">{t('dashboard.menuEditor.addItem.availability')}</label>
+                                <label className="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-wider">{t('dashboard.menuEditor.addItem.availability')}</label>
                                 <div className={`p-4 bg-gray-50 dark:bg-slate-800 rounded-2xl border ${errors.availability ? 'border-red-500' : 'border-gray-100 dark:border-slate-700'} space-y-4`}>
                                     <div className="flex items-center gap-3">
                                         <input
@@ -568,7 +625,7 @@ export const AddEditItemModal: React.FC<AddEditItemModalProps> = ({
                                     </div>
                                     <div className={`grid grid-cols-2 gap-4 transition-all ${formData.availability?.allDay ? 'opacity-30 pointer-events-none grayscale' : 'opacity-100'}`}>
                                         <div className="space-y-1">
-                                            <label className="text-[10px] font-bold text-gray-400 uppercase">{t('dashboard.menuEditor.addItem.from')}</label>
+                                            <label className="text-xs font-bold text-gray-400 uppercase">{t('dashboard.menuEditor.addItem.from')}</label>
                                             <div className="relative">
                                                 <Clock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                                                 <input
@@ -580,7 +637,7 @@ export const AddEditItemModal: React.FC<AddEditItemModalProps> = ({
                                             </div>
                                         </div>
                                         <div className="space-y-1">
-                                            <label className="text-[10px] font-bold text-gray-400 uppercase">{t('dashboard.menuEditor.addItem.to')}</label>
+                                            <label className="text-xs font-bold text-gray-400 uppercase">{t('dashboard.menuEditor.addItem.to')}</label>
                                             <div className="relative">
                                                 <Clock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                                                 <input
@@ -600,7 +657,7 @@ export const AddEditItemModal: React.FC<AddEditItemModalProps> = ({
                             <div className="space-y-6">
                                 <div className="grid grid-cols-2 gap-4">
                                     <div className="space-y-2">
-                                        <label className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider">{t('dashboard.menuEditor.addItem.serves')}</label>
+                                        <label className="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-wider">{t('dashboard.menuEditor.addItem.serves')}</label>
                                         <div className="relative">
                                             <input
                                                 value={formData.serves ?? ''}
@@ -609,12 +666,12 @@ export const AddEditItemModal: React.FC<AddEditItemModalProps> = ({
                                                 placeholder="1"
                                                 type="number"
                                             />
-                                            <span className="absolute right-4 top-1/2 -translate-y-1/2 text-[10px] text-gray-400 font-bold uppercase pointer-events-none">{t('common.units.people')}</span>
+                                            <span className="absolute right-4 top-1/2 -translate-y-1/2 text-xs text-gray-400 font-bold uppercase pointer-events-none">{t('common.units.people')}</span>
                                         </div>
                                         {errors.serves && <p className="text-red-500 text-xs mt-1 flex items-center gap-1"><AlertCircle className="w-3 h-3" /> {errors.serves}</p>}
                                     </div>
                                     <div className="space-y-2">
-                                        <label className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider">{t('dashboard.menuEditor.addItem.portion')}</label>
+                                        <label className="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-wider">{t('dashboard.menuEditor.addItem.portion')}</label>
                                         <div className="relative">
                                             <input
                                                 value={formData.portionSize ?? ''}
@@ -623,14 +680,14 @@ export const AddEditItemModal: React.FC<AddEditItemModalProps> = ({
                                                 placeholder="4"
                                                 type="number"
                                             />
-                                            <span className="absolute right-4 top-1/2 -translate-y-1/2 text-[10px] text-gray-400 font-bold uppercase pointer-events-none">{t('common.units.pieces')}</span>
+                                            <span className="absolute right-4 top-1/2 -translate-y-1/2 text-xs text-gray-400 font-bold uppercase pointer-events-none">{t('common.units.pieces')}</span>
                                         </div>
                                         {errors.portionSize && <p className="text-red-500 text-xs mt-1 flex items-center gap-1"><AlertCircle className="w-3 h-3" /> {errors.portionSize}</p>}
                                     </div>
                                 </div>
                                 <div className="grid grid-cols-2 gap-4">
                                     <div className="space-y-2">
-                                        <label className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider">{t('dashboard.menuEditor.addItem.weight')}</label>
+                                        <label className="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-wider">{t('dashboard.menuEditor.addItem.weight')}</label>
                                         <div className="relative">
                                             <input
                                                 value={formData.weight || ''}
@@ -639,12 +696,12 @@ export const AddEditItemModal: React.FC<AddEditItemModalProps> = ({
                                                 placeholder="e.g. 500g"
                                                 type="text"
                                             />
-                                            <span className="absolute right-4 top-1/2 -translate-y-1/2 text-[10px] text-gray-400 font-bold uppercase pointer-events-none">{t('common.units.unit')}</span>
+                                            <span className="absolute right-4 top-1/2 -translate-y-1/2 text-xs text-gray-400 font-bold uppercase pointer-events-none">{t('common.units.unit')}</span>
                                         </div>
                                         {errors.weight && <p className="text-red-500 text-xs mt-1 flex items-center gap-1"><AlertCircle className="w-3 h-3" /> {errors.weight}</p>}
                                     </div>
                                     <div className="space-y-2">
-                                        <label className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider">{t('dashboard.menuEditor.addItem.maxQty')}</label>
+                                        <label className="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-wider">{t('dashboard.menuEditor.addItem.maxQty')}</label>
                                         <div className="relative">
                                             <input
                                                 value={formData.maxQuantity ?? ''}
@@ -653,7 +710,7 @@ export const AddEditItemModal: React.FC<AddEditItemModalProps> = ({
                                                 placeholder="10"
                                                 type="number"
                                             />
-                                            <span className="absolute right-4 top-1/2 -translate-y-1/2 text-[10px] text-gray-400 font-bold uppercase pointer-events-none">{t('common.units.order')}</span>
+                                            <span className="absolute right-4 top-1/2 -translate-y-1/2 text-xs text-gray-400 font-bold uppercase pointer-events-none">{t('common.units.order')}</span>
                                         </div>
                                         {errors.maxQuantity && <p className="text-red-500 text-xs mt-1 flex items-center gap-1"><AlertCircle className="w-3 h-3" /> {errors.maxQuantity}</p>}
                                     </div>
@@ -662,7 +719,7 @@ export const AddEditItemModal: React.FC<AddEditItemModalProps> = ({
 
                             {/* Tags */}
                             <div className="space-y-4">
-                                <label className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider">{t('dashboard.menuEditor.addItem.tags')}</label>
+                                <label className="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-wider">{t('dashboard.menuEditor.addItem.tags')}</label>
                                 <div className="flex flex-wrap gap-2">
                                     {[
                                         { id: 'gluten_free', label: t('dashboard.menuEditor.addItem.menuTags.gluten_free') },
@@ -675,7 +732,7 @@ export const AddEditItemModal: React.FC<AddEditItemModalProps> = ({
                                         <button
                                             key={tag.id}
                                             onClick={() => toggleArrayItem('tags', tag.id)}
-                                            className={`px-4 py-2 rounded-full border text-[10px] font-black uppercase tracking-wider transition-all ${formData.tags?.includes(tag.id as any)
+                                            className={`px-4 py-2 rounded-full border text-xs font-black uppercase tracking-wider transition-all ${formData.tags?.includes(tag.id as any)
                                                 ? 'border-[var(--color-primary-blue)] bg-[var(--color-primary-blue)] text-white shadow-lg shadow-blue-500/20'
                                                 : 'border-gray-200 dark:border-slate-700 text-slate-400 dark:text-slate-500 hover:border-[var(--color-primary-blue)] hover:text-[var(--color-primary-blue)]'
                                                 }`}
@@ -688,7 +745,7 @@ export const AddEditItemModal: React.FC<AddEditItemModalProps> = ({
 
                             {/* Allergy Warnings */}
                             <div className="space-y-4">
-                                <label className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider">{t('dashboard.menuEditor.addItem.allergyInfo')}</label>
+                                <label className="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-wider">{t('dashboard.menuEditor.addItem.allergyInfo')}</label>
                                 <div className="flex flex-wrap gap-2">
                                     {[
                                         { id: 'milk', label: t('dashboard.menuEditor.addItem.allergens.milk') },
@@ -702,7 +759,7 @@ export const AddEditItemModal: React.FC<AddEditItemModalProps> = ({
                                         <button
                                             key={allergen.id}
                                             onClick={() => toggleArrayItem('allergens', allergen.id)}
-                                            className={`px-3 py-1.5 rounded-xl border text-[10px] font-bold uppercase transition-all ${formData.allergens?.includes(allergen.id as any)
+                                            className={`px-3 py-1.5 rounded-xl border text-xs font-bold uppercase transition-all ${formData.allergens?.includes(allergen.id as any)
                                                 ? 'border-red-500 bg-red-500 text-white shadow-lg shadow-red-500/20'
                                                 : 'border-gray-200 dark:border-slate-700 text-slate-400 dark:text-slate-500 hover:border-red-500 hover:text-red-500'
                                                 }`}
@@ -714,9 +771,10 @@ export const AddEditItemModal: React.FC<AddEditItemModalProps> = ({
                             </div>
 
                             <div className="space-y-3 w-full">
-                                <label className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider">{t('dashboard.menuEditor.addItem.spiceLevel')}</label>
+                                <label className="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-wider">{t('dashboard.menuEditor.addItem.spiceLevel')}</label>
                                 <div className="flex bg-gray-50 dark:bg-slate-800 p-1.5 rounded-2xl border border-gray-100 dark:border-slate-700 w-full gap-1">
                                     {[
+                                        { value: -1, label: t('dashboard.menuEditor.addItem.spiceLevels.sweet') },
                                         { value: 1, label: t('dashboard.menuEditor.addItem.spiceLevels.mild') },
                                         { value: 2, label: t('dashboard.menuEditor.addItem.spiceLevels.medium') },
                                         { value: 3, label: t('dashboard.menuEditor.addItem.spiceLevels.hot') }
@@ -732,18 +790,28 @@ export const AddEditItemModal: React.FC<AddEditItemModalProps> = ({
                                             title={opt.label}
                                         >
                                             <div className="flex items-center">
-                                                {[...Array(opt.value)].map((_, i) => (
-                                                    <Flame
-                                                        key={i}
-                                                        className={`w-4 h-4 ${formData.spiceLevel === opt.value
-                                                            ? 'fill-red-600 text-red-600'
+                                                {opt.value === -1 ? (
+                                                    <Candy
+                                                        className={`w-4 h-4 ${formData.spiceLevel === -1
+                                                            ? 'fill-pink-500 text-pink-500'
                                                             : 'text-gray-300 group-hover/spice:text-gray-500'
                                                             }`}
                                                         strokeWidth={2.5}
                                                     />
-                                                ))}
+                                                ) : (
+                                                    [...Array(opt.value)].map((_, i) => (
+                                                        <Flame
+                                                            key={i}
+                                                            className={`w-4 h-4 ${formData.spiceLevel === opt.value
+                                                                ? 'fill-red-600 text-red-600'
+                                                                : 'text-gray-300 group-hover/spice:text-gray-500'
+                                                                }`}
+                                                            strokeWidth={2.5}
+                                                        />
+                                                    ))
+                                                )}
                                             </div>
-                                            <span className="text-[10px] uppercase tracking-tighter font-extrabold">{opt.label}</span>
+                                            <span className="text-xs uppercase tracking-tighter font-extrabold">{opt.label}</span>
                                         </button>
                                     ))}
                                 </div>
@@ -752,7 +820,7 @@ export const AddEditItemModal: React.FC<AddEditItemModalProps> = ({
 
                             {/* Nutritional Info */}
                             <div className="space-y-4">
-                                <label className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider">{t('dashboard.menuEditor.addItem.nutrition.title')}</label>
+                                <label className="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-wider">{t('dashboard.menuEditor.addItem.nutrition.title')}</label>
                                 <div className="grid grid-cols-2 gap-4 bg-gray-50 dark:bg-slate-800/50 p-6 rounded-2xl border border-gray-100 dark:border-slate-700">
                                     {[
                                         { key: 'calories', label: t('dashboard.menuEditor.addItem.nutrition.calories'), placeholder: '320' },
@@ -761,7 +829,7 @@ export const AddEditItemModal: React.FC<AddEditItemModalProps> = ({
                                         { key: 'fats', label: t('dashboard.menuEditor.addItem.nutrition.fats'), placeholder: '8g' }
                                     ].map(nut => (
                                         <div key={nut.key} className="space-y-1.5">
-                                            <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">{nut.label}</label>
+                                            <label className="text-xs font-bold text-gray-400 uppercase tracking-widest">{nut.label}</label>
                                             <input
                                                 value={formData.nutritionalInfo?.[nut.key as keyof typeof formData.nutritionalInfo] || ''}
                                                 onChange={(e) => updateNestedField('nutritionalInfo', nut.key, e.target.value)}
@@ -805,7 +873,7 @@ export const AddEditItemModal: React.FC<AddEditItemModalProps> = ({
                                             className="grid grid-cols-2 gap-4 p-4 bg-white dark:bg-slate-900 rounded-2xl border-2 border-dashed border-[var(--color-primary-blue)]/20"
                                         >
                                             <div className="space-y-1.5">
-                                                <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">{t('dashboard.menuEditor.addItem.confirmModal.date')}</label>
+                                                <label className="text-xs font-bold text-slate-400 uppercase tracking-widest">{t('dashboard.menuEditor.addItem.confirmModal.date')}</label>
                                                 <div className="relative">
                                                     <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--color-primary-blue)]" />
                                                     <input
@@ -817,7 +885,7 @@ export const AddEditItemModal: React.FC<AddEditItemModalProps> = ({
                                                 </div>
                                             </div>
                                             <div className="space-y-1.5">
-                                                <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">{t('dashboard.menuEditor.addItem.confirmModal.time')}</label>
+                                                <label className="text-xs font-bold text-slate-400 uppercase tracking-widest">{t('dashboard.menuEditor.addItem.confirmModal.time')}</label>
                                                 <div className="relative">
                                                     <Clock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--color-primary-blue)]" />
                                                     <input
