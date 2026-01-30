@@ -1,3 +1,5 @@
+import { api } from '@/api/axios';
+
 // Simulating API latency
 const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
@@ -5,11 +7,15 @@ const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 export const mockAuthService = {
     sendOtp: async (mobile: string): Promise<{ message: string }> => {
-        await delay(1000); // Simulate network delay
-        console.log(`OTP for ${mobile}: 123456`); // For debugging
-        return {
-            message: 'OTP sent successfully',
-        };
+        try {
+            const response = await api.post('/api/v1/auth/send-otp', {
+                mobileNumber: mobile
+            });
+            return response.data;
+        } catch (error: any) {
+            console.error('Send OTP Error:', error);
+            throw error;
+        }
     },
 
     verifyOtp: async (mobile: string, otp: string): Promise<{ token: string }> => {

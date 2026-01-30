@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 // TODO: Replace with environment variable later
-const BASE_URL = 'https://api.example.com';
+const BASE_URL = 'https://uat.ustart.in';
 
 export const api = axios.create({
     baseURL: BASE_URL,
