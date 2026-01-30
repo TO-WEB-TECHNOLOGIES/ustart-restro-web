@@ -10,6 +10,10 @@ export const mockAuthService = {
         try {
             const response = await api.post('/api/v1/auth/send-otp', {
                 mobileNumber: mobile
+            }, {
+                headers: {
+                    'Referer': 'https://partner.ustart.in/'
+                }
             });
             return response.data;
         } catch (error: any) {
@@ -18,41 +22,38 @@ export const mockAuthService = {
         }
     },
 
+    /**
+     * Sample Payload Response:
+     * {
+     *   "accessToken": "eyJhbG...",
+     *   "refreshToken": "eyJhbG...",
+     *   "user": {
+     *     "name": "John Doe",
+     *     "mobileNumber": "9818555121",
+     *     "onboardingStatus": "ACTIVE",
+     *     "restaurant": null
+     *   }
+     * }
+     */
     verifyOtp: async (mobile: string, otp: string): Promise<{ token: string }> => {
-        await delay(1000);
-        if (otp === '123456') {
+        try {
+            const response = await api.post('/api/v1/auth/verify-otp', {
+                mobileNumber: mobile,
+                otp
+            }, {
+                headers: {
+                    'Referer': 'https://partner.ustart.in/'
+                }
+            });
 
-            const isNewUser = mobile.endsWith('2');
-            const isUpdatePending = mobile.endsWith('1');
-            const isApprovalPending = mobile.endsWith('0');
-
-            // Determine status
-            let status = 'ACTIVE';
-            if (isNewUser) status = 'PENDING';
-            else if (isUpdatePending) status = 'UPDATE_APPROVAL_PENDING';
-            else if (isApprovalPending) status = 'APPROVAL_PENDING';
-
-            const payload = {
-                user: {
-                    id: 'user-123',
-                    name: isNewUser ? null : 'Guest',
-                    mobile
-                },
-                isOnboardingComplete: !isNewUser, // Assuming established users are "complete" in sense of steps, but maybe dependent on status
-                status,
-                exp: Math.floor(Date.now() / 1000) + (24 * 60 * 60) // 24 hours in seconds
-            };
-
-            // Simple mock JWT generation (Header.Payload.Signature)
-            const header = btoa(JSON.stringify({ alg: "HS256", typ: "JWT" }));
-            const encodedPayload = btoa(JSON.stringify(payload));
-            const signature = btoa("mock-signature");
-
+            // The API returns accessToken, mapping it to token for internal use
             return {
-                token: `${header}.${encodedPayload}.${signature}`
+                token: response.data.accessToken
             };
+        } catch (error: any) {
+            console.error('Verify OTP Error:', error);
+            throw error;
         }
-        throw new Error('Invalid OTP');
     },
 
     sendEmailOtp: async (email: string): Promise<{ message: string }> => {

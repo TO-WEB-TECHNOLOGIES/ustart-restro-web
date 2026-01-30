@@ -87,8 +87,8 @@ export const LoginForm = () => {
 
     const onVerifyOtp = async () => {
         setOtpError(null);
-        if (otp.length !== 6) {
-            setOtpError(t('auth.otp.lengthError') || "Please enter a 6-digit OTP.");
+        if (otp.length !== 4) {
+            setOtpError(t('auth.otp.lengthError') || "Please enter a 4-digit OTP.");
             return;
         }
 
@@ -182,7 +182,7 @@ export const LoginForm = () => {
                                     setOtp(val);
                                     if (otpError) setOtpError(null);
                                 }}
-                                length={6}
+                                length={4}
                             />
                             {otpError && <p className="text-red-500 text-xs">{otpError}</p>}
                             <div className="flex justify-end items-center text-xs">

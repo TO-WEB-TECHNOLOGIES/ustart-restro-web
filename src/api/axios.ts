@@ -29,15 +29,20 @@ api.interceptors.response.use(
         const message = error.response?.data?.message || 'Something went wrong';
 
         if (error.response?.status === 401) {
-            // Unauthenticated - Clear local storage and redirect
-            localStorage.removeItem('token');
-            localStorage.removeItem('user');
-            localStorage.removeItem('isOnboardingComplete');
-            localStorage.removeItem('status');
+            // Check if this is NOT an auth-related request
+            const isAuthRequest = error.config?.url?.includes('/api/v1/auth/');
 
-            // Should verify if window redirection is the best approach
-            // or if we can use router navigation (but this is outside React context)
-            window.location.href = '/';
+            if (!isAuthRequest) {
+                // Unauthenticated - Clear local storage and redirect
+                localStorage.removeItem('token');
+                localStorage.removeItem('user');
+                localStorage.removeItem('isOnboardingComplete');
+                localStorage.removeItem('status');
+
+                // Should verify if window redirection is the best approach
+                // or if we can use router navigation (but this is outside React context)
+                window.location.href = '/';
+            }
         }
 
         console.error('API Error:', message);
