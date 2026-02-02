@@ -13,22 +13,24 @@ import { useAuth } from '@/context/AuthContext';
 import { mockAuthService } from '@/features/auth/api/mockAuth';
 import { CheckCircle2, Lock, MessageSquare, Loader2 } from 'lucide-react';
 import { OtpInput } from '@/components/ui/otp-input';
+import { toast } from 'sonner';
 
 export const PersonalInfo = () => {
     const { t } = useTranslation();
     const navigate = useNavigate();
-    const { user, token } = useAuth();
+    const { user } = useAuth();
     const {
         personalInfo,
         setPersonalInfo,
         setCurrentStep,
-        isEmailVerified,
-        setIsEmailVerified,
         isEditing,
         setRestaurantInfo,
         setAboutRestaurant,
         setDocuments
     } = useOnboardingStore();
+
+    // Verification State (Managed locally instead of store)
+    const [isEmailVerified, setIsEmailVerified] = useState(false);
 
     // OTP State
     const [showOtpInput, setShowOtpInput] = useState(false);
@@ -65,6 +67,7 @@ export const PersonalInfo = () => {
 
     const isSameAsMobile = watch('isSameAsMobile');
     const mobileValue = watch('mobile');
+    const emailValue = watch('email');
 
     // Fetch Data on Edit
     useEffect(() => {
@@ -82,7 +85,12 @@ export const PersonalInfo = () => {
 
                     // Update Form
                     reset(data.personalInfo);
-                    setIsEmailVerified(true); // Assuming fetched data implies verified email
+
+                    // Check verification for the fetched email
+                    if (data.personalInfo?.email) {
+                        const status = await mockAuthService.checkEmailVerification(data.personalInfo.email);
+                        setIsEmailVerified(status.isVerified);
+                    }
 
                 } catch (error) {
                     console.error("Failed to fetch onboarding data", error);
@@ -92,7 +100,28 @@ export const PersonalInfo = () => {
             }
         };
         fetchData();
-    }, [isEditing, setPersonalInfo, setRestaurantInfo, setAboutRestaurant, setDocuments, reset, setIsEmailVerified]);
+    }, [isEditing, setPersonalInfo, setRestaurantInfo, setAboutRestaurant, setDocuments, reset]);
+
+    // Proactively check email verification status when email changes
+    useEffect(() => {
+        const checkVerification = async () => {
+            if (emailValue && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailValue)) {
+                try {
+                    const status = await mockAuthService.checkEmailVerification(emailValue);
+                    if (status.isVerified !== isEmailVerified) {
+                        setIsEmailVerified(status.isVerified);
+                    }
+                } catch (error) {
+                    console.warn("Silent verification check failed", error);
+                }
+            } else {
+                setIsEmailVerified(false);
+            }
+        };
+
+        const timer = setTimeout(checkVerification, 500); // Debounce
+        return () => clearTimeout(timer);
+    }, [emailValue, isEmailVerified]);
 
     // Pre-fill from Auth User (only if NOT editing and empty)
     useEffect(() => {
@@ -111,20 +140,26 @@ export const PersonalInfo = () => {
     const onSendOtp = async (data: PersonalInfoValues) => {
         setPersonalInfo(data); // Save local state first
 
-        if (isEmailVerified) {
-            setCurrentStep(2);
-            navigate('/grow-with-ustart/restaurant-info');
-            return;
-        }
-
         setIsLoading(true);
         try {
+            // Final check if email is already verified via API
+            const status = await mockAuthService.checkEmailVerification(data.email);
+
+            if (status.isVerified) {
+                setIsEmailVerified(true);
+                setCurrentStep(2);
+                navigate('/grow-with-ustart/restaurant-info');
+                return;
+            }
+
+            // If not verified, proceed to send OTP
             await mockAuthService.sendEmailOtp(data.email);
             setShowOtpInput(true);
             setResendTimer(120); // Start 120s timer
-        } catch (error) {
+        } catch (error: any) {
             console.error(error);
-            // Handle error (toast etc)
+            const message = error.response?.data?.message || 'Failed to send OTP. Please try again.';
+            toast.error(message);
         } finally {
             setIsLoading(false);
         }
@@ -132,22 +167,23 @@ export const PersonalInfo = () => {
 
     // Step 2: Verify OTP
     const onVerifyOtp = async () => {
-        if (otp.length !== 6) return;
+        if (otp.length !== 4) return;
         setIsLoading(true);
         setOtpError('');
 
         try {
             const email = getValues('email');
-            // Mock Bearer token usage
-            await mockAuthService.verifyEmailOtp(email, otp, `Bearer ${token || 'mock-token'}`);
+            await mockAuthService.verifyEmailOtp(email, otp);
 
             // Success
             setIsEmailVerified(true);
             setCurrentStep(2);
             navigate('/grow-with-ustart/restaurant-info');
-        } catch (error) {
+        } catch (error: any) {
             console.error(error);
-            setOtpError('Invalid OTP. Please try again.');
+            const message = error.response?.data?.message || 'Invalid OTP. Please try again.';
+            setOtpError(message);
+            toast.error(message);
         } finally {
             setIsLoading(false);
         }
@@ -278,7 +314,7 @@ export const PersonalInfo = () => {
                                     <OtpInput
                                         value={otp}
                                         onChange={setOtp}
-                                        length={6}
+                                        length={4}
                                     />
                                 </div>
 
@@ -286,7 +322,7 @@ export const PersonalInfo = () => {
 
                                 <Button
                                     onClick={onVerifyOtp}
-                                    disabled={otp.length !== 6 || isLoading}
+                                    disabled={otp.length !== 4 || isLoading}
                                     className="w-full h-12 bg-secondary-orange hover:bg-secondary-orange/90 text-background-white font-bold rounded-xl"
                                 >
                                     {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : t('onboarding.personal.emailValidation.verifyButton')}

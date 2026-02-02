@@ -8,6 +8,8 @@ import './styles/App.css';
 import { AuthProvider } from './context/AuthContext';
 import { ThemeProvider } from './context/ThemeContext';
 
+import { Toaster } from 'sonner';
+
 function App() {
   // useEffect(() => {
   //   const handleContextMenu = (e: MouseEvent) => {
@@ -26,6 +28,7 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
         <ThemeProvider defaultTheme="system" storageKey="vite-ui-theme">
+          <Toaster position="top-right" richColors />
           <RouterProvider router={router} />
         </ThemeProvider>
       </AuthProvider>

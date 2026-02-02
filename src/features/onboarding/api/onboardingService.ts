@@ -2,7 +2,7 @@ import type { OnboardingData } from '../../../types/onboardingTypes';
 import { MOCK_ONBOARDING_DATA, delay } from './data/mockOnboardingData';
 
 export const onboardingService = {
-    submitOnboarding: async (data: OnboardingData): Promise<{ token: string }> => {
+    submitOnboarding: async (data: OnboardingData): Promise<{ token: string; refreshToken: string }> => {
         await delay(2000); // Simulate network delay
         console.log("Submitting Onboarding Data to Backend:", data);
 
@@ -22,12 +22,14 @@ export const onboardingService = {
         const encodedPayload = btoa(JSON.stringify(payload));
         const signature = btoa("mock-signature");
 
+        const token = `${header}.${encodedPayload}.${signature}`;
         return {
-            token: `${header}.${encodedPayload}.${signature}`
+            token,
+            refreshToken: `mock-refresh-${token}`
         };
     },
 
-    updateOnboarding: async (data: OnboardingData): Promise<{ token: string }> => {
+    updateOnboarding: async (data: OnboardingData): Promise<{ token: string; refreshToken: string }> => {
         await delay(2000); // Simulate network delay
         console.log("Updating Onboarding Data (PUT Request):", data);
 
@@ -47,8 +49,10 @@ export const onboardingService = {
         const encodedPayload = btoa(JSON.stringify(payload));
         const signature = btoa("mock-signature");
 
+        const token = `${header}.${encodedPayload}.${signature}`;
         return {
-            token: `${header}.${encodedPayload}.${signature}`
+            token,
+            refreshToken: `mock-refresh-${token}`
         };
     },
 

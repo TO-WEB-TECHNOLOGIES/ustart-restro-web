@@ -14,6 +14,7 @@ import { Label } from '@/components/ui/label';
 // Master Data API
 import { masterDataService } from '../api/masterData';
 import { onboardingService } from '../api/onboardingService';
+import { toast } from 'sonner';
 import { Info, BookOpen, Image as ImageIcon, X, Paperclip, CloudUpload, CheckCircle2, User, Store, MapPin } from 'lucide-react';
 import { useRef } from 'react';
 import type { Cuisine, OnboardingData, RestaurantInfo, AboutRestaurant as OnboardingAboutRestaurant, OnboardingDocuments } from '@/types/onboardingTypes';
@@ -118,7 +119,7 @@ export const AboutRestaurant = () => {
             }
 
             // Update Auth State (persists to localStorage)
-            login(response.token);
+            login(response.token, response.refreshToken);
 
             console.log("Documents Submitted & Status Updated:", data);
 
@@ -129,8 +130,10 @@ export const AboutRestaurant = () => {
             // Note: persist middleware will automatically save the reset state
 
             navigate('/grow-with-ustart/verification');
-        } catch (error) {
+        } catch (error: any) {
             console.error("Submission failed", error);
+            const message = error.response?.data?.message || 'Failed to submit onboarding data. Please try again.';
+            toast.error(message);
         } finally {
             setIsSubmitting(false);
         }

@@ -12,8 +12,8 @@ import { mobileSchema, type MobileFormValues } from '@/features/auth/schemas';
 import { mockAuthService } from '@/features/auth/api/mockAuth';
 import { useAuth } from '@/context/AuthContext';
 import { useNavigate } from 'react-router-dom';
-
 import { decodeToken } from '@/utils/jwt';
+import { toast } from 'sonner';
 
 export const LoginForm = () => {
     const { t } = useTranslation();
@@ -58,8 +58,10 @@ export const LoginForm = () => {
             setMobileNumber(data.mobile);
             setStep('otp');
             startResendTimer();
-        } catch (error) {
+        } catch (error: any) {
             console.error(error);
+            const message = error.response?.data?.message || 'Failed to send OTP. Please try again.';
+            toast.error(message);
         } finally {
             setLoading(false);
         }
@@ -71,8 +73,10 @@ export const LoginForm = () => {
         try {
             await mockAuthService.sendOtp(mobileNumber);
             startResendTimer();
-        } catch (error) {
+        } catch (error: any) {
             console.error(error);
+            const message = error.response?.data?.message || 'Failed to resend OTP.';
+            toast.error(message);
         } finally {
             setLoading(false);
         }
@@ -97,7 +101,7 @@ export const LoginForm = () => {
             const response = await mockAuthService.verifyOtp(mobileNumber, otp);
 
             // Login using context
-            login(response.token);
+            login(response.token, response.refreshToken);
 
             // Decode token to check status for redirect
             const decoded = decodeToken(response.token);
@@ -112,8 +116,10 @@ export const LoginForm = () => {
                 console.log("I am cming here")
                 navigate('/grow-with-ustart');
             }
-        } catch (error) {
-            setOtpError(t('auth.otp.invalidError') || "Invalid OTP");
+        } catch (error: any) {
+            const message = error.response?.data?.message || t('auth.otp.invalidError') || "Invalid OTP";
+            setOtpError(message);
+            toast.error(message);
             console.error(error);
         } finally {
             setLoading(false);

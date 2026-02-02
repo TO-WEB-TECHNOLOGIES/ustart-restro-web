@@ -11,11 +11,12 @@ interface User {
 interface AuthContextType {
     user: User | null;
     token: string | null;
+    refreshToken: string | null;
     isAuthenticated: boolean;
     isInitialized: boolean;
     isOnboardingComplete: boolean;
     status: string | null;
-    login: (token: string) => void;
+    login: (token: string, refreshToken: string) => void;
     logout: () => void;
     updateStatus: (status: string) => void;
 }
@@ -25,12 +26,13 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const [user, setUser] = useState<User | null>(null);
     const [token, setToken] = useState<string | null>(localStorage.getItem('token'));
+    const [refreshToken, setRefreshToken] = useState<string | null>(localStorage.getItem('refreshToken'));
     const [isOnboardingComplete, setIsOnboardingComplete] = useState<boolean>(false);
     const [status, setStatus] = useState<string | null>(null);
     const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
     const [isInitialized, setIsInitialized] = useState<boolean>(false);
 
-    const initializeAuth = (authToken: string) => {
+    const initializeAuth = (authToken: string, refreshTok?: string) => {
         const decoded = decodeToken(authToken);
         if (decoded) {
             // Check for expiration
@@ -42,6 +44,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             }
 
             setToken(authToken);
+            if (refreshTok) {
+                setRefreshToken(refreshTok);
+            }
             setUser(decoded.user);
             setIsOnboardingComplete(decoded.isOnboardingComplete);
             setStatus(decoded.status);
@@ -59,8 +64,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     // Initial load from localStorage
     useEffect(() => {
         const storedToken = localStorage.getItem('token');
+        const storedRefreshToken = localStorage.getItem('refreshToken');
         if (storedToken) {
-            initializeAuth(storedToken);
+            initializeAuth(storedToken, storedRefreshToken || undefined);
         } else {
             setIsInitialized(true);
         }
@@ -87,18 +93,21 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         }
     }, [token]);
 
-    const login = (newToken: string) => {
+    const login = (newToken: string, newRefreshToken: string) => {
         localStorage.setItem('token', newToken);
-        initializeAuth(newToken);
+        localStorage.setItem('refreshToken', newRefreshToken);
+        initializeAuth(newToken, newRefreshToken);
     };
 
     const logout = () => {
         setToken(null);
+        setRefreshToken(null);
         setUser(null);
         setIsOnboardingComplete(false);
         setStatus(null);
         setIsAuthenticated(false);
         localStorage.removeItem('token');
+        localStorage.removeItem('refreshToken');
 
         // Remove API header
         delete api.defaults.headers.common['Authorization'];
@@ -108,6 +117,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         <AuthContext.Provider value={{
             user,
             token,
+            refreshToken,
             isAuthenticated,
             isInitialized,
             isOnboardingComplete,

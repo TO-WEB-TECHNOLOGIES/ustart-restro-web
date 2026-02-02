@@ -1,12 +1,12 @@
 import { api } from '@/api/axios';
 
-// Simulating API latency
-const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
-
-// AuthResponse removed as verifyOtp now returns only { token: string }
-
 export const mockAuthService = {
     sendOtp: async (mobile: string): Promise<{ message: string }> => {
+        // Special Case: Sample Active Number
+        if (mobile === '9818654444') {
+            return { message: 'OTP sent successfully (Mock)' };
+        }
+
         try {
             const response = await api.post('/api/v1/auth/send-otp', {
                 mobileNumber: mobile
@@ -35,7 +35,31 @@ export const mockAuthService = {
      *   }
      * }
      */
-    verifyOtp: async (mobile: string, otp: string): Promise<{ token: string }> => {
+    verifyOtp: async (mobile: string, otp: string): Promise<{ token: string; refreshToken: string }> => {
+        // Special Case: Sample Active Number
+        if (mobile === '9818654444' && otp === '1234') {
+            const payload = {
+                user: {
+                    id: 'mock-active-user-123',
+                    name: 'Sample Active Partner',
+                    mobile: '9818654444'
+                },
+                isOnboardingComplete: true,
+                status: 'ACTIVE',
+                exp: Math.floor(Date.now() / 1000) + (24 * 60 * 60)
+            };
+
+            const header = btoa(JSON.stringify({ alg: "HS256", typ: "JWT" }));
+            const encodedPayload = btoa(JSON.stringify(payload));
+            const signature = btoa("mock-signature");
+            const token = `${header}.${encodedPayload}.${signature}`;
+
+            return {
+                token,
+                refreshToken: `mock-refresh-${token}`
+            };
+        }
+
         try {
             const response = await api.post('/api/v1/auth/verify-otp', {
                 mobileNumber: mobile,
@@ -46,9 +70,10 @@ export const mockAuthService = {
                 }
             });
 
-            // The API returns accessToken, mapping it to token for internal use
+            // Return both tokens
             return {
-                token: response.data.accessToken
+                token: response.data.accessToken,
+                refreshToken: response.data.refreshToken
             };
         } catch (error: any) {
             console.error('Verify OTP Error:', error);
@@ -57,22 +82,47 @@ export const mockAuthService = {
     },
 
     sendEmailOtp: async (email: string): Promise<{ message: string }> => {
-        await delay(1000);
-        console.log(`Email OTP for ${email}: 123456`);
-        return { message: 'OTP sent to email successfully' };
+        try {
+            const refreshToken = localStorage.getItem('refreshToken');
+            const response = await api.post('/api/v1/auth/send-email-otp', {
+                email
+            }, {
+                headers: {
+                    'Authorization': `Bearer ${refreshToken}`
+                }
+            });
+            return response.data;
+        } catch (error: any) {
+            console.error('Send Email OTP Error:', error);
+            throw error;
+        }
     },
 
-    verifyEmailOtp: async (email: string, otp: string, token: string): Promise<{ success: boolean }> => {
-        await delay(1000);
-        console.log(`Verifying OTP for ${email}`);
-        // Verify simulated Bearer token
-        if (!token.startsWith('Bearer ')) {
-            throw new Error('Unauthorized');
+    verifyEmailOtp: async (email: string, otp: string): Promise<{ status: string; message: string }> => {
+        try {
+            const refreshToken = localStorage.getItem('refreshToken');
+            const response = await api.post('/api/v1/auth/verify-email-otp', {
+                email,
+                otp
+            }, {
+                headers: {
+                    'Authorization': `Bearer ${refreshToken}`
+                }
+            });
+            return response.data;
+        } catch (error: any) {
+            console.error('Verify Email OTP Error:', error);
+            throw error;
         }
+    },
 
-        if (otp === '123456') {
-            return { success: true };
+    checkEmailVerification: async (email: string): Promise<{ email: string; isVerified: boolean; status: string }> => {
+        try {
+            const response = await api.get(`/api/v1/auth/is-email-verified?email=${encodeURIComponent(email)}`);
+            return response.data;
+        } catch (error: any) {
+            console.error('Check Email Verification Error:', error);
+            throw error;
         }
-        throw new Error('Invalid Email OTP');
     }
 };
