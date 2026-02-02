@@ -1,7 +1,7 @@
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState, useMemo, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
-import ReactSelect from 'react-select'; // Renamed to avoid conflicts if any
+import ReactSelect, { components } from 'react-select';
 import { useTranslation } from 'react-i18next';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -10,14 +10,51 @@ import { aboutRestaurantSchema, type AboutRestaurantValues, bankDetailsSchema, t
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { useInfiniteQuery } from '@tanstack/react-query';
+import { useInView } from 'react-intersection-observer';
 
 // Master Data API
 import { masterDataService } from '../api/masterData';
 import { onboardingService } from '../api/onboardingService';
 import { toast } from 'sonner';
-import { Info, BookOpen, Image as ImageIcon, X, Paperclip, CloudUpload, CheckCircle2, User, Store, MapPin } from 'lucide-react';
-import { useRef } from 'react';
-import type { Cuisine, OnboardingData, RestaurantInfo, AboutRestaurant as OnboardingAboutRestaurant, OnboardingDocuments } from '@/types/onboardingTypes';
+import { Info, BookOpen, Image as ImageIcon, X, Paperclip, CloudUpload, CheckCircle2, User, Store, MapPin, Loader2 } from 'lucide-react';
+import type { OnboardingData, RestaurantInfo, AboutRestaurant as OnboardingAboutRestaurant, OnboardingDocuments } from '@/types/onboardingTypes';
+
+// Custom MenuList with IntersectionObserver for bulletproof infinite scroll
+// Defined outside to prevent re-mounting and scroll-to-top issues
+const MenuList = (props: any) => {
+    const { hasNextPage, isFetchingNextPage, fetchNextPage, t } = props.selectProps;
+    const { ref, inView } = useInView({
+        threshold: 0,
+        rootMargin: '100px', // Fetch slightly before user reaches the absolute bottom
+    });
+
+    useEffect(() => {
+        if (inView && hasNextPage && !isFetchingNextPage) {
+            fetchNextPage();
+        }
+    }, [inView, hasNextPage, isFetchingNextPage, fetchNextPage]);
+
+    return (
+        <components.MenuList {...props}>
+            {props.children}
+            {hasNextPage && (
+                <div ref={ref} className="p-4 text-center border-t border-slate-50">
+                    {isFetchingNextPage ? (
+                        <div className="flex items-center justify-center gap-2 text-secondary-orange text-sm font-medium">
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                            {t('Loading more...')}
+                        </div>
+                    ) : (
+                        <div className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">
+                            {t('Scroll for more')}
+                        </div>
+                    )}
+                </div>
+            )}
+        </components.MenuList>
+    );
+};
 
 export const AboutRestaurant = () => {
     const { t } = useTranslation();
@@ -34,12 +71,42 @@ export const AboutRestaurant = () => {
         reset,
         isEditing
     } = useOnboardingStore();
-    const [view, setView] = useState<'details' | 'documents'>('details'); // Manage internal view state
+    const [view, setView] = useState<'details' | 'documents'>('details');
     const [isSubmitting, setIsSubmitting] = useState(false);
 
-    // --- VIEW 1: RESTAURANT DETAILS (Food, Cuisines, Menu) ---
-    const [cuisines, setCuisines] = useState<Cuisine[]>([]);
-    const [isLoadingCuisines, setIsLoadingCuisines] = useState(false);
+    // --- Infinite Scroll & Search logic using ReactSelect ---
+    const [searchQuery, setSearchQuery] = useState('');
+    const [debouncedSearch, setDebouncedSearch] = useState('');
+
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            setDebouncedSearch(searchQuery);
+        }, 500);
+        return () => clearTimeout(timer);
+    }, [searchQuery]);
+
+    const {
+        data: cuisineData,
+        fetchNextPage,
+        hasNextPage,
+        isFetchingNextPage,
+        isLoading: isLoadingCuisines,
+    } = useInfiniteQuery({
+        queryKey: ['cuisines', debouncedSearch],
+        queryFn: ({ pageParam = 0 }) => masterDataService.getCuisines({ search: debouncedSearch, page: pageParam as number, size: 10 }),
+        getNextPageParam: (lastPage) => lastPage.last ? undefined : (lastPage.number + 1),
+        initialPageParam: 0,
+    });
+
+    const cuisineOptions = useMemo(() => {
+        const allCuisines = cuisineData?.pages.flatMap(page => page.content) || [];
+        return allCuisines.map(c => ({
+            value: c.cuisineId,
+            label: c.cuisineName
+        }));
+    }, [cuisineData]);
+
+
 
     const {
         control,
@@ -75,25 +142,9 @@ export const AboutRestaurant = () => {
         }
     };
 
-    useEffect(() => {
-        const fetchCuisines = async () => {
-            setIsLoadingCuisines(true);
-            try {
-                const data = await masterDataService.getCuisines();
-                setCuisines(data);
-            } catch (error) {
-                console.error("Failed to fetch cuisines", error);
-            } finally {
-                setIsLoadingCuisines(false);
-            }
-        };
-        fetchCuisines();
-    }, []);
-
     const onSubmitDetails = (data: AboutRestaurantValues) => {
         setAboutRestaurant(data);
-        console.log("About Restaurant Submitted:", data);
-        setView('documents'); // Move to next internal view
+        setView('documents');
         window.scrollTo(0, 0);
     };
 
@@ -101,8 +152,6 @@ export const AboutRestaurant = () => {
         setIsSubmitting(true);
         try {
             setDocuments(data);
-
-            // Prepare full payload
             const fullPayload: OnboardingData = {
                 personalInfo,
                 restaurantInfo: restaurantInfo as RestaurantInfo,
@@ -110,7 +159,6 @@ export const AboutRestaurant = () => {
                 documents: data as OnboardingDocuments
             };
 
-            // Call API
             let response;
             if (isEditing) {
                 response = await onboardingService.updateOnboarding(fullPayload);
@@ -118,17 +166,9 @@ export const AboutRestaurant = () => {
                 response = await onboardingService.submitOnboarding(fullPayload);
             }
 
-            // Update Auth State (persists to localStorage)
             login(response.token, response.refreshToken);
-
-            console.log("Documents Submitted & Status Updated:", data);
-
-            // Finalize this step, move to Step 4 (Verification)
-            console.log("Submission successful. Resetting store state for clean slate.");
-            reset(); // Clears all data and sets step to 1
-            setCurrentStep(4); // Move to Verification
-            // Note: persist middleware will automatically save the reset state
-
+            reset();
+            setCurrentStep(4);
             navigate('/grow-with-ustart/verification');
         } catch (error: any) {
             console.error("Submission failed", error);
@@ -139,7 +179,6 @@ export const AboutRestaurant = () => {
         }
     };
 
-    // Helper for Food Type Button
     const FoodTypeButton = ({
         label,
         colorClass,
@@ -159,7 +198,6 @@ export const AboutRestaurant = () => {
         </button>
     );
 
-    // File Upload Refs
     const menuInputRef = useRef<HTMLInputElement>(null);
     const dishInputRef = useRef<HTMLInputElement>(null);
 
@@ -169,8 +207,6 @@ export const AboutRestaurant = () => {
     const handleMenuFiles = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files && e.target.files.length > 0) {
             const newFiles = Array.from(e.target.files);
-            // Append or replace? Let's append for multi, or replace. User usually expects adding.
-            // But for simplicity let's replace or combine.
             const currentFiles = (watch('menuImages') as File[]) || [];
             setValue('menuImages', [...currentFiles, ...newFiles], { shouldValidate: true });
         }
@@ -187,14 +223,6 @@ export const AboutRestaurant = () => {
         const updated = currentFiles.filter((_, i) => i !== index);
         setValue('menuImages', updated, { shouldValidate: true });
     };
-
-    const cuisineOptions = useMemo(() =>
-        cuisines.map(c => ({
-            value: c.cuisineId,
-            label: c.cuisineName
-        })),
-        [cuisines]
-    );
 
     return (
         <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500 h-full flex flex-col justify-between">
@@ -243,68 +271,84 @@ export const AboutRestaurant = () => {
                             {errors.foodTypes?.root && <p className="text-red-500 text-xs">{errors.foodTypes.root.message}</p>}
                         </div>
 
-                        {/* Cuisine Type */}
+                        {/* Cuisine Type - ReactSelect with Infinite Scroll & Search */}
                         <div className="space-y-2">
                             <Label className="font-semibold text-slate-700">{t('onboarding.restaurant.about.cuisineLabel')}</Label>
 
-                            <div className="relative">
-                                <Controller
-                                    control={control}
-                                    name="cuisines"
-                                    render={({ field }) => {
-                                        // Map current selected IDs back to option objects
-                                        const selectedOptions = cuisineOptions.filter(opt => field.value?.includes(opt.value));
+                            <Controller
+                                control={control}
+                                name="cuisines"
+                                render={({ field }) => {
+                                    const selectedValues = useMemo(() => {
+                                        const ids = field.value || [];
+                                        return ids.map((id: number) => {
+                                            const opt = cuisineOptions.find(o => o.value === id);
+                                            return opt || { value: id, label: `Selected (ID: ${id})` };
+                                        });
+                                    }, [cuisineOptions, field.value]);
 
-                                        return (
-                                            <ReactSelect
-                                                isMulti
-                                                isLoading={isLoadingCuisines}
-                                                options={cuisineOptions}
-                                                value={selectedOptions}
-                                                onChange={(newValue: any) => {
-                                                    // Map selected options back to IDs
-                                                    field.onChange(newValue.map((v: any) => v.value));
-                                                }}
-
-                                                placeholder={t('onboarding.restaurant.about.cuisinePlaceholder')}
-                                                className="react-select-container"
-                                                classNamePrefix="react-select"
-                                                styles={{
-                                                    control: (base, state) => ({
-                                                        ...base,
-                                                        borderRadius: '0.75rem', // rounded-xl
-                                                        borderColor: state.isFocused ? '#f97316' : '#e2e8f0', // secondary-orange or slate-200
-                                                        boxShadow: state.isFocused ? '0 0 0 1px #f97316' : 'none',
-                                                        '&:hover': {
-                                                            borderColor: '#f97316'
-                                                        },
-                                                        padding: '2px',
-                                                        minHeight: '48px'
-                                                    }),
-                                                    multiValue: (base) => ({
-                                                        ...base,
-                                                        backgroundColor: '#f1f5f9', // slate-100
-                                                        borderRadius: '0.5rem',
-                                                    }),
-                                                    multiValueLabel: (base) => ({
-                                                        ...base,
-                                                        color: '#334155', // slate-700
-                                                        fontWeight: 500,
-                                                    }),
-                                                    multiValueRemove: (base) => ({
-                                                        ...base,
-                                                        color: '#64748b', // slate-500
-                                                        ':hover': {
-                                                            backgroundColor: '#e2e8f0', // slate-200
-                                                            color: '#ef4444', // red-500
-                                                        },
-                                                    })
-                                                }}
-                                            />
-                                        );
-                                    }}
-                                />
-                            </div>
+                                    return (
+                                        <ReactSelect
+                                            isMulti
+                                            isLoading={isLoadingCuisines}
+                                            options={cuisineOptions}
+                                            value={selectedValues}
+                                            components={{ MenuList }}
+                                            // Pass states to MenuList via selectProps
+                                            {...{
+                                                hasNextPage,
+                                                isFetchingNextPage,
+                                                fetchNextPage,
+                                                t
+                                            } as any}
+                                            inputValue={searchQuery}
+                                            onInputChange={(newValue, { action }) => {
+                                                if (action === "input-change") setSearchQuery(newValue);
+                                            }}
+                                            onChange={(newValue: any) => {
+                                                field.onChange(newValue ? newValue.map((v: any) => v.value) : []);
+                                                setSearchQuery(''); // Clear search after selection
+                                            }}
+                                            closeMenuOnSelect={false}
+                                            placeholder={t('onboarding.restaurant.about.cuisinePlaceholder')}
+                                            className="react-select-container"
+                                            classNamePrefix="react-select"
+                                            filterOption={() => true}
+                                            styles={{
+                                                control: (base, state) => ({
+                                                    ...base,
+                                                    borderRadius: '0.75rem',
+                                                    borderColor: state.isFocused ? '#f97316' : '#e2e8f0',
+                                                    boxShadow: state.isFocused ? '0 0 0 1px #f97316' : 'none',
+                                                    '&:hover': {
+                                                        borderColor: '#f97316'
+                                                    },
+                                                    padding: '2px',
+                                                    minHeight: '48px'
+                                                }),
+                                                multiValue: (base) => ({
+                                                    ...base,
+                                                    backgroundColor: '#f1f5f9',
+                                                    borderRadius: '0.5rem',
+                                                }),
+                                                multiValueLabel: (base) => ({
+                                                    ...base,
+                                                    color: '#334155',
+                                                    fontWeight: 500,
+                                                }),
+                                                multiValueRemove: (base) => ({
+                                                    ...base,
+                                                    color: '#64748b',
+                                                    ':hover': {
+                                                        backgroundColor: '#e2e8f0',
+                                                        color: '#ef4444',
+                                                    },
+                                                })
+                                            }}
+                                        />
+                                    );
+                                }}
+                            />
                             {errors.cuisines && <p className="text-red-500 text-xs mt-1">{errors.cuisines.message}</p>}
                         </div>
 
@@ -322,7 +366,7 @@ export const AboutRestaurant = () => {
                                         multiple
                                         className="hidden"
                                         ref={menuInputRef}
-                                        accept="image/*" // Accepting images
+                                        accept="image/*"
                                         onChange={handleMenuFiles}
                                     />
                                     <div className="w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center mb-3 text-secondary-orange">
@@ -335,7 +379,6 @@ export const AboutRestaurant = () => {
                                         {t('onboarding.restaurant.about.menuUploadSubtext')}
                                     </p>
                                 </div>
-                                {/* Selected Menu Files */}
                                 {menuImages && Array.isArray(menuImages) && menuImages.length > 0 && (
                                     <div className="flex flex-wrap gap-2 mt-2">
                                         {menuImages.map((file: File, idx: number) => (
@@ -454,7 +497,6 @@ export const AboutRestaurant = () => {
                             </div>
 
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                {/* Account Number */}
                                 <div className="space-y-2">
                                     <Label htmlFor="accountNumber" className="font-semibold text-slate-700">{t('onboarding.restaurant.documents.accountNumberLabel')}</Label>
                                     <Input
@@ -466,7 +508,6 @@ export const AboutRestaurant = () => {
                                     {errorsDocs.accountNumber && <p className="text-red-500 text-xs">{errorsDocs.accountNumber.message}</p>}
                                 </div>
 
-                                {/* IFSC Code */}
                                 <div className="space-y-2">
                                     <Label htmlFor="ifscCode" className="font-semibold text-slate-700">{t('onboarding.restaurant.documents.ifscLabel')}</Label>
                                     <div className="relative">
@@ -480,7 +521,6 @@ export const AboutRestaurant = () => {
                                     {errorsDocs.ifscCode && <p className="text-red-500 text-xs">{errorsDocs.ifscCode.message}</p>}
                                 </div>
 
-                                {/* Holder Name */}
                                 <div className="space-y-2 md:col-span-2">
                                     <Label htmlFor="accountHolderName" className="font-semibold text-slate-700">{t('onboarding.restaurant.documents.holderNameLabel')}</Label>
                                     <div className="relative">
@@ -495,7 +535,6 @@ export const AboutRestaurant = () => {
                                     {errorsDocs.accountHolderName && <p className="text-red-500 text-xs">{errorsDocs.accountHolderName.message}</p>}
                                 </div>
 
-                                {/* Bank Name */}
                                 <div className="space-y-2">
                                     <Label htmlFor="bankName" className="font-semibold text-slate-700">{t('onboarding.restaurant.documents.bankNameLabel')}</Label>
                                     <div className="relative">
@@ -510,7 +549,6 @@ export const AboutRestaurant = () => {
                                     {errorsDocs.bankName && <p className="text-red-500 text-xs">{errorsDocs.bankName.message}</p>}
                                 </div>
 
-                                {/* Branch Name */}
                                 <div className="space-y-2">
                                     <Label htmlFor="branchName" className="font-semibold text-slate-700">{t('onboarding.restaurant.documents.branchNameLabel')}</Label>
                                     <div className="relative">
