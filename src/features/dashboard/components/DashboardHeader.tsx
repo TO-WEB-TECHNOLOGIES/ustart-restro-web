@@ -1,9 +1,10 @@
 import { Button } from '@/components/ui/button';
 import { Bell, Plus, Menu } from 'lucide-react';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { AddressSelector } from './AddressSelector';
 import { ThemeSelector } from '@/components/ui/theme-selector';
+import { useState, useRef, useEffect } from 'react';
 
 import { OutletStatus } from './OutletStatus';
 
@@ -14,8 +15,11 @@ interface DashboardHeaderProps {
 
 export const DashboardHeader = ({ user, onMenuClick }: DashboardHeaderProps) => {
     const location = useLocation();
+    const navigate = useNavigate();
     const { t } = useTranslation();
     const isDashboardHome = location.pathname === '/dashboard';
+    const [showNotifications, setShowNotifications] = useState(false);
+    const notificationRef = useRef<HTMLDivElement>(null);
 
     // Dynamic Title Logic with I18n
     const getPageTitle = (pathname: string) => {
@@ -35,6 +39,17 @@ export const DashboardHeader = ({ user, onMenuClick }: DashboardHeaderProps) => 
         if (hour < 18) return t('common.greeting.afternoon');
         return t('common.greeting.evening');
     };
+
+    // Close notifications when clicking outside
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (notificationRef.current && !notificationRef.current.contains(event.target as Node)) {
+                setShowNotifications(false);
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
 
     return (
         <header className="h-20 bg-white dark:bg-slate-900 border-b border-slate-100 dark:border-slate-800 sticky top-0 z-40 px-4 md:px-8 flex items-center justify-between transition-colors duration-300">
@@ -64,6 +79,7 @@ export const DashboardHeader = ({ user, onMenuClick }: DashboardHeaderProps) => 
                             <Button
                                 variant="outline"
                                 className="border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 font-medium h-10 dark:hover:text-white"
+                                onClick={() => navigate('/dashboard/menu/edit')}
                             >
                                 {t('common.header.manageMenu')}
                             </Button>
@@ -84,10 +100,28 @@ export const DashboardHeader = ({ user, onMenuClick }: DashboardHeaderProps) => 
 
                 <ThemeSelector />
 
-                <button className="relative w-9 h-9 md:w-10 md:h-10 flex items-center justify-center rounded-full hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-400 transition-colors">
-                    <Bell className="w-5 h-5" />
-                    <span className="absolute top-2.5 right-2.5 w-2 h-2 bg-red-500 rounded-full border border-white dark:border-slate-900" />
-                </button>
+                <div className="relative" ref={notificationRef}>
+                    <button
+                        className="relative w-9 h-9 md:w-10 md:h-10 flex items-center justify-center rounded-full hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-400 transition-colors"
+                        onClick={() => setShowNotifications(!showNotifications)}
+                    >
+                        <Bell className="w-5 h-5" />
+                        <span className="absolute top-2.5 right-2.5 w-2 h-2 bg-red-500 rounded-full border border-white dark:border-slate-900" />
+                    </button>
+
+                    {showNotifications && (
+                        <div className="absolute right-0 mt-2 w-72 bg-white dark:bg-slate-800 rounded-xl shadow-xl border border-slate-100 dark:border-slate-700 py-4 px-4 z-50 animate-in fade-in zoom-in duration-200">
+                            <h3 className="text-sm font-bold text-slate-900 dark:text-white mb-2">{t('common.header.notifications', 'Notifications')}</h3>
+                            <div className="py-8 flex flex-col items-center justify-center text-center">
+                                <div className="w-12 h-12 bg-slate-50 dark:bg-slate-700/50 rounded-full flex items-center justify-center mb-3 text-slate-300 dark:text-slate-500">
+                                    <Bell className="w-6 h-6" />
+                                </div>
+                                <p className="text-sm text-slate-500 dark:text-slate-400 font-medium">No new notifications</p>
+                                <p className="text-xs text-slate-400 dark:text-slate-500 mt-1">We'll let you know when something happens.</p>
+                            </div>
+                        </div>
+                    )}
+                </div>
 
                 {/* Address Selector - Responsive Width handled inside component */}
                 <AddressSelector />
@@ -95,3 +129,4 @@ export const DashboardHeader = ({ user, onMenuClick }: DashboardHeaderProps) => 
         </header>
     );
 };
+
