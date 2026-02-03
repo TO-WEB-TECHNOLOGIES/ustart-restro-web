@@ -52,27 +52,30 @@ export const DashboardHeader = ({ user, onMenuClick }: DashboardHeaderProps) => 
     }, []);
 
     return (
-        <header className="h-20 bg-white dark:bg-slate-900 border-b border-slate-100 dark:border-slate-800 sticky top-0 z-40 px-4 md:px-8 flex items-center justify-between transition-colors duration-300">
-            <div className="flex items-center gap-3">
+        <header className="h-20 bg-white dark:bg-slate-900 border-b border-slate-100 dark:border-slate-800 sticky top-0 z-40 px-3 md:px-8 flex items-center justify-between transition-colors duration-300">
+            <div className="flex items-center gap-2 md:gap-3 min-w-0">
                 {/* Mobile Menu Trigger */}
                 <Button
                     variant="ghost"
                     size="icon"
-                    className="md:hidden text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800"
+                    className="md:hidden text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 shrink-0"
                     onClick={onMenuClick}
                 >
                     <Menu className="w-5 h-5" />
                 </Button>
 
-                <div>
-                    <h1 className="text-xl md:text-2xl font-extrabold text-slate-900 dark:text-white tracking-tight">{title}</h1>
-                    <p className="text-slate-500 dark:text-slate-400 text-sm mt-0.5 hidden md:block">
-                        {getGreeting()}, <span className="font-semibold text-slate-700 dark:text-slate-300">{user.name || 'Partner'}</span>. {t('common.header.happening')}
+                <div className="min-w-0 flex-1">
+                    <h1 className="text-lg md:text-2xl font-extrabold text-slate-900 dark:text-white tracking-tight truncate">
+                        {title}
+                    </h1>
+                    <p className="text-slate-500 dark:text-slate-400 text-[10px] md:text-sm mt-0.5 line-clamp-1">
+                        {getGreeting()}, <span className="font-semibold text-slate-700 dark:text-slate-300">{user.name || 'Partner'}</span>
+                        <span className="hidden md:inline">. {t('common.header.happening')}</span>
                     </p>
                 </div>
             </div>
 
-            <div className="flex items-center gap-2 md:gap-4">
+            <div className="flex items-center gap-1.5 md:gap-4 shrink-0 px-1">
                 <div className="hidden lg:flex gap-3">
                     {isDashboardHome ? (
                         <>

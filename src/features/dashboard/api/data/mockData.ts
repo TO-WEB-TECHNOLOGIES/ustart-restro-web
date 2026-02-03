@@ -4,7 +4,7 @@ export const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve
 
 export const MOCK_STATS: Record<string, StatMetric[]> = {
     'addr_123': [
-        { id: 'revenue', label: "Today's Revenue", value: '₹45,250.00', highlight: true },
+        { id: 'revenue', label: "Today's Revenue", value: '₹45,2500.00', highlight: true },
         { id: 'orders', label: 'Daily Orders', value: '145' },
         { id: 'ticket', label: 'Avg Ticket Size', value: '₹312.00' },
         { id: 'rating', label: 'Customer Rating', value: '4.8' }
