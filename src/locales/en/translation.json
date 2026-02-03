@@ -222,6 +222,14 @@
         "mapsLinkLabel": "Google Maps Link to Restaurant",
         "mapsLinkPlaceholder": "e.g. https://maps.app.goo.gl/...",
         "optional": "(Optional)",
+        "addressLabels": {
+          "line1": "Shop No./ Floor/ Building",
+          "line2": "2nd Line Address",
+          "landmark": "Landmark (Optional)",
+          "locality": "Locality/ City",
+          "state": "State",
+          "pincode": "Pincode"
+        },
         "continue": "Continue",
         "changeCinStatus": "Change CIN selection",
         "goBack": "Go back to previous step",
@@ -243,8 +251,12 @@
         "dishLabel": "Image of 1 Dish",
         "dishUploadText": "Click to upload dish photo",
         "dishUploadSubtext": "High Resolution Only",
+        "brandLogoLabel": "Add Brand Logo",
+        "brandLogoUploadText": "Click to upload brand logo",
+        "brandLogoUploadSubtext": "High Resolution (SVG/PNG)",
         "imageSpecTitle": "Image Specifications:",
         "imageSpecText": "Image should be high-resolution, well-lit, and showcase a single dish clearly. Max file size: 5MB. Ensure the background is not cluttered.",
+        "brandLogoSpecText": "Logo should be in SVG or high-resolution PNG format with a transparent background if possible. Max file size: 5MB. Ensure the brand is clearly visible.",
         "imageSelected": "Image Selected",
         "changeImage": "Change"
       },

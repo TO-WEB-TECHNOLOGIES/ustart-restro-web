@@ -44,11 +44,11 @@ export const MOCK_ONBOARDING_DATA: OnboardingData = {
             isEggAvailable: false,
         },
         cuisines: [1, 2], // North Indian and Chinese
-        menuImages: [],
-        dishImage: undefined
+        menuImages: ["menu_1.jpg", "menu_2.jpg"],
+        dishImage: "signature_dish.jpg"
     },
     documents: {
-        fssaiDocument: undefined,
+        fssaiDocument: "fssai_cert.pdf",
         accountNumber: "987654321098",
         ifscCode: "HDFC0001234",
         accountHolderName: "Rajesh Kumar",

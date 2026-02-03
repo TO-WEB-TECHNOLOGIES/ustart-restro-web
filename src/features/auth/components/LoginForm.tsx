@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useTranslation, Trans } from 'react-i18next';
@@ -24,6 +24,7 @@ export const LoginForm = () => {
     const [mobileNumber, setMobileNumber] = useState('');
     const [otp, setOtp] = useState('');
     const [loading, setLoading] = useState(false);
+    const verifyButtonRef = useRef<HTMLButtonElement>(null);
 
     // Timer state
     const [timer, setTimer] = useState(0);
@@ -88,6 +89,13 @@ export const LoginForm = () => {
     };
 
     const [otpError, setOtpError] = useState<string | null>(null);
+
+    // Auto-focus verify button when OTP is complete
+    useEffect(() => {
+        if (otp.length === 4) {
+            verifyButtonRef.current?.focus();
+        }
+    }, [otp]);
 
     const onVerifyOtp = async () => {
         setOtpError(null);
@@ -207,7 +215,12 @@ export const LoginForm = () => {
                                 )}
                             </div>
                         </div>
-                        <Button onClick={onVerifyOtp} className="w-full bg-secondary-orange hover:bg-secondary-orange/90 text-background-white font-bold h-12 rounded-4xl" disabled={loading}>
+                        <Button
+                            ref={verifyButtonRef}
+                            onClick={onVerifyOtp}
+                            className="w-full bg-secondary-orange hover:bg-secondary-orange/90 text-background-white font-bold h-12 rounded-4xl"
+                            disabled={loading}
+                        >
                             {loading ? t('auth.otp.verifying') : t('auth.otp.verifyButton')}
                         </Button>
                     </div>

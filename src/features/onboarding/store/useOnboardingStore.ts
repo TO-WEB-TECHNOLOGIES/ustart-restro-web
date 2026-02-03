@@ -24,8 +24,8 @@ export interface AboutRestaurantState {
         isEggAvailable: boolean;
     };
     cuisines: number[];
-    menuImages?: File[];
-    dishImage?: File;
+    menuImages?: (File | string)[];
+    dishImage?: File | string;
 }
 
 export interface OnboardingState {
@@ -113,9 +113,21 @@ export const useOnboardingStore = create<OnboardingState>()(
         }),
         {
             name: 'onboarding-storage',
-            partialize: (state) => ({
-                ...state,
-            }),
+            partialize: (state) => {
+                const { aboutRestaurant, documents, ...rest } = state;
+                return {
+                    ...rest,
+                    aboutRestaurant: {
+                        ...aboutRestaurant,
+                        menuImages: [],
+                        dishImage: undefined,
+                    },
+                    documents: {
+                        ...documents,
+                        fssaiDocument: undefined,
+                    },
+                };
+            },
         }
     )
 );

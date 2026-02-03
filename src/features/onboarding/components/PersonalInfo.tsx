@@ -67,7 +67,6 @@ export const PersonalInfo = () => {
 
     const isSameAsMobile = watch('isSameAsMobile');
     const mobileValue = watch('mobile');
-    const emailValue = watch('email');
 
     // Fetch Data on Edit
     useEffect(() => {
@@ -80,8 +79,8 @@ export const PersonalInfo = () => {
                     // Update Store
                     if (data.personalInfo) setPersonalInfo(data.personalInfo);
                     if (data.restaurantInfo) setRestaurantInfo(data.restaurantInfo);
-                    if (data.aboutRestaurant) setAboutRestaurant(data.aboutRestaurant);
-                    if (data.documents) setDocuments(data.documents);
+                    if (data.aboutRestaurant) setAboutRestaurant(data.aboutRestaurant as any);
+                    if (data.documents) setDocuments(data.documents as any);
 
                     // Update Form
                     reset(data.personalInfo);
@@ -102,26 +101,23 @@ export const PersonalInfo = () => {
         fetchData();
     }, [isEditing, setPersonalInfo, setRestaurantInfo, setAboutRestaurant, setDocuments, reset]);
 
-    // Proactively check email verification status when email changes
+    // Initial Verification Check on first-time render
     useEffect(() => {
-        const checkVerification = async () => {
-            if (emailValue && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailValue)) {
+        const checkInitialVerification = async () => {
+            if (!isEditing && personalInfo.email && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(personalInfo.email)) {
                 try {
-                    const status = await mockAuthService.checkEmailVerification(emailValue);
-                    if (status.isVerified !== isEmailVerified) {
-                        setIsEmailVerified(status.isVerified);
+                    const status = await mockAuthService.checkEmailVerification(personalInfo.email);
+                    if (status.isVerified) {
+                        setIsEmailVerified(true);
                     }
                 } catch (error) {
-                    console.warn("Silent verification check failed", error);
+                    console.warn("Initial verification check failed", error);
                 }
-            } else {
-                setIsEmailVerified(false);
             }
         };
-
-        const timer = setTimeout(checkVerification, 500); // Debounce
-        return () => clearTimeout(timer);
-    }, [emailValue, isEmailVerified]);
+        checkInitialVerification();
+        // eslint-disable-next-line react-hooks-exhaustive-deps
+    }, []); // Only on mount
 
     // Pre-fill from Auth User (only if NOT editing and empty)
     useEffect(() => {
@@ -272,7 +268,17 @@ export const PersonalInfo = () => {
                                         <div className="absolute left-10 top-3 bottom-3 w-[1px] bg-slate-200"></div>
                                         <Input
                                             id="whatsapp"
-                                            {...register('whatsapp')}
+                                            {...(() => {
+                                                const { onChange, ...rest } = register('whatsapp');
+                                                return {
+                                                    ...rest,
+                                                    onChange: (e: React.ChangeEvent<HTMLInputElement>) => {
+                                                        const value = e.target.value.replace(/\D/g, '').slice(0, 10);
+                                                        e.target.value = value;
+                                                        onChange(e);
+                                                    }
+                                                };
+                                            })()}
                                             className="pl-14 h-12 bg-background-white border-slate-200"
                                             placeholder={t('onboarding.personal.whatsappPlaceholder')}
                                             readOnly={isSameAsMobile}

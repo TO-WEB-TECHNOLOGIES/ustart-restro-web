@@ -34,12 +34,12 @@ export interface AboutRestaurant {
         isEggAvailable: boolean;
     };
     cuisines: number[];
-    menuImages: any[];
-    dishImage?: any;
+    menuImages: string[];
+    dishImage?: string;
 }
 
 export interface OnboardingDocuments {
-    fssaiDocument?: any;
+    fssaiDocument?: string;
     accountNumber: string;
     ifscCode: string;
     accountHolderName: string;

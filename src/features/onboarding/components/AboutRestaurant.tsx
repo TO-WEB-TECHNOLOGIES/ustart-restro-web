@@ -113,11 +113,11 @@ export const AboutRestaurant = () => {
         handleSubmit,
         watch,
         setValue,
-        formState: { errors, isValid }
+        formState: { errors }
     } = useForm<AboutRestaurantValues>({
         resolver: zodResolver(aboutRestaurantSchema),
-        defaultValues: aboutRestaurant,
-        mode: 'onChange'
+        defaultValues: aboutRestaurant as any,
+        mode: 'onSubmit'
     });
 
     // --- VIEW 2: DOCUMENTS (FSSAI, Bank) ---
@@ -126,12 +126,13 @@ export const AboutRestaurant = () => {
         handleSubmit: handleSubmitDocs,
         watch: watchDocs,
         setValue: setValueDocs,
-        formState: { errors: errorsDocs, isValid: isValidDocs }
+        formState: { errors: errorsDocs }
     } = useForm<BankDetailsValues>({
         resolver: zodResolver(bankDetailsSchema),
         defaultValues: documents as any,
         mode: 'onChange'
     });
+
 
     const fssaiInputRef = useRef<HTMLInputElement>(null);
     const fssaiDocument = watchDocs('fssaiDocument');
@@ -152,11 +153,23 @@ export const AboutRestaurant = () => {
         setIsSubmitting(true);
         try {
             setDocuments(data);
+
+            // Helper to get filename or preserve string (if it's already a filename from prev session)
+            const getFileName = (file: any) => file instanceof File ? file.name : (typeof file === 'string' ? file : '');
+
             const fullPayload: OnboardingData = {
                 personalInfo,
                 restaurantInfo: restaurantInfo as RestaurantInfo,
-                aboutRestaurant: aboutRestaurant as unknown as OnboardingAboutRestaurant,
-                documents: data as OnboardingDocuments
+                aboutRestaurant: {
+                    ...aboutRestaurant,
+                    menuImages: aboutRestaurant.menuImages?.map(getFileName) || [],
+                    dishImage: getFileName(aboutRestaurant.dishImage),
+                    cuisines: aboutRestaurant.cuisines || []
+                } as unknown as OnboardingAboutRestaurant,
+                documents: {
+                    ...data,
+                    fssaiDocument: getFileName(data.fssaiDocument)
+                } as OnboardingDocuments
             };
 
             let response;
@@ -224,6 +237,45 @@ export const AboutRestaurant = () => {
         setValue('menuImages', updated, { shouldValidate: true });
     };
 
+    const getDisplayName = (file: any) => {
+        if (!file) return '';
+        if (file instanceof File) return file.name;
+        if (typeof file === 'string') {
+            // Extract filename from URL or path
+            return file.split('/').pop() || file;
+        }
+        return 'Unknown File';
+    };
+
+    const FileDisplay = ({ file, onRemove }: { file: any, onRemove?: () => void }) => {
+        const isUrl = typeof file === 'string' && (file.startsWith('http') || file.startsWith('/'));
+        const name = getDisplayName(file);
+
+        return (
+            <div className="flex items-center gap-2 bg-slate-100 px-3 py-1.5 rounded-lg text-xs text-slate-700 max-w-full group">
+                <Paperclip className="w-3 h-3 flex-shrink-0" />
+                {isUrl ? (
+                    <a
+                        href={file}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="truncate max-w-[120px] text-blue-600 hover:underline font-medium"
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        {name}
+                    </a>
+                ) : (
+                    <span className="truncate max-w-[120px]">{name}</span>
+                )}
+                {onRemove && (
+                    <button type="button" onClick={(e) => { e.stopPropagation(); onRemove(); }} className="text-slate-400 hover:text-red-500 transition-colors">
+                        <X className="w-3 h-3" />
+                    </button>
+                )}
+            </div>
+        );
+    };
+
     return (
         <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500 h-full flex flex-col justify-between">
             <div>
@@ -238,6 +290,7 @@ export const AboutRestaurant = () => {
             <div className="py-8 flex-grow overflow-y-auto px-1">
                 {view === 'details' ? (
                     <form id="about-restaurant-form" onSubmit={handleSubmit(onSubmitDetails)} className="space-y-8">
+
 
                         {/* Food Type */}
                         <div className="space-y-2">
@@ -381,14 +434,12 @@ export const AboutRestaurant = () => {
                                 </div>
                                 {menuImages && Array.isArray(menuImages) && menuImages.length > 0 && (
                                     <div className="flex flex-wrap gap-2 mt-2">
-                                        {menuImages.map((file: File, idx: number) => (
-                                            <div key={idx} className="flex items-center gap-2 bg-slate-100 px-3 py-1.5 rounded-lg text-xs text-slate-700 max-w-full">
-                                                <Paperclip className="w-3 h-3 flex-shrink-0" />
-                                                <span className="truncate max-w-[120px]">{file.name}</span>
-                                                <button type="button" onClick={() => removeMenuFile(idx)} className="text-slate-400 hover:text-red-500">
-                                                    <X className="w-3 h-3" />
-                                                </button>
-                                            </div>
+                                        {menuImages.map((file: any, idx: number) => (
+                                            <FileDisplay
+                                                key={idx}
+                                                file={file}
+                                                onRemove={() => removeMenuFile(idx)}
+                                            />
                                         ))}
                                     </div>
                                 )}
@@ -397,7 +448,11 @@ export const AboutRestaurant = () => {
 
                             {/* Dish Image */}
                             <div className="space-y-2">
-                                <Label className="font-semibold text-slate-700">{t('onboarding.restaurant.about.dishLabel')}</Label>
+                                <Label className="font-semibold text-slate-700">
+                                    {restaurantInfo?.hasCin
+                                        ? t('onboarding.restaurant.about.brandLogoLabel')
+                                        : t('onboarding.restaurant.about.dishLabel')}
+                                </Label>
                                 <div
                                     onClick={() => dishInputRef.current?.click()}
                                     className={`border-2 border-dashed rounded-2xl p-8 flex flex-col items-center justify-center text-center hover:bg-slate-50 transition-colors cursor-pointer min-h-[160px] ${errors.dishImage ? 'border-red-300 bg-red-50' : 'border-slate-200'}`}
@@ -415,16 +470,26 @@ export const AboutRestaurant = () => {
                                     {dishImage ? (
                                         <div className='flex flex-col items-center'>
                                             <p className="text-sm font-medium text-green-600 mb-1">{t('onboarding.restaurant.about.imageSelected')}</p>
-                                            <span className="text-xs text-slate-500 truncate max-w-[150px]">{dishImage.name}</span>
-                                            <button type="button" onClick={(e) => { e.stopPropagation(); setValue('dishImage', undefined as any); }} className="text-xs text-red-500 mt-2 hover:underline">{t('onboarding.restaurant.about.changeImage')}</button>
+                                            <FileDisplay file={dishImage} />
+                                            <button
+                                                type="button"
+                                                onClick={(e) => { e.stopPropagation(); setValue('dishImage', undefined as any); }}
+                                                className="text-xs text-red-500 mt-2 hover:underline font-medium"
+                                            >
+                                                {t('onboarding.restaurant.about.changeImage')}
+                                            </button>
                                         </div>
                                     ) : (
                                         <>
                                             <p className="text-sm font-medium text-secondary-orange">
-                                                {t('onboarding.restaurant.about.dishUploadText')}
+                                                {restaurantInfo?.hasCin
+                                                    ? t('onboarding.restaurant.about.brandLogoUploadText')
+                                                    : t('onboarding.restaurant.about.dishUploadText')}
                                             </p>
                                             <p className="text-xs text-slate-400 mt-1">
-                                                {t('onboarding.restaurant.about.dishUploadSubtext')}
+                                                {restaurantInfo?.hasCin
+                                                    ? t('onboarding.restaurant.about.brandLogoUploadSubtext')
+                                                    : t('onboarding.restaurant.about.dishUploadSubtext')}
                                             </p>
                                         </>
                                     )}
@@ -439,7 +504,9 @@ export const AboutRestaurant = () => {
                             <div>
                                 <p className="text-sm font-bold text-blue-700 mb-1">{t('onboarding.restaurant.about.imageSpecTitle')}</p>
                                 <p className="text-xs text-blue-600 leading-relaxed">
-                                    {t('onboarding.restaurant.about.imageSpecText')}
+                                    {restaurantInfo?.hasCin
+                                        ? t('onboarding.restaurant.about.brandLogoSpecText')
+                                        : t('onboarding.restaurant.about.imageSpecText')}
                                 </p>
                             </div>
                         </div>
@@ -473,8 +540,14 @@ export const AboutRestaurant = () => {
                                         <p className="text-sm font-medium text-green-600 mb-1 flex items-center gap-1">
                                             <CheckCircle2 className="w-4 h-4" /> {t('onboarding.restaurant.documents.received')}
                                         </p>
-                                        <span className="text-xs text-slate-500 truncate max-w-[200px]">{fssaiDocument.name}</span>
-                                        <button type="button" onClick={(e) => { e.stopPropagation(); setValueDocs('fssaiDocument', undefined as any); }} className="text-xs text-red-500 mt-2 hover:underline">{t('onboarding.restaurant.documents.changeFile')}</button>
+                                        <FileDisplay file={fssaiDocument} />
+                                        <button
+                                            type="button"
+                                            onClick={(e) => { e.stopPropagation(); setValueDocs('fssaiDocument', undefined as any); }}
+                                            className="text-xs text-red-500 mt-2 hover:underline font-medium"
+                                        >
+                                            {t('onboarding.restaurant.documents.changeFile')}
+                                        </button>
                                     </div>
                                 ) : (
                                     <>
@@ -573,7 +646,6 @@ export const AboutRestaurant = () => {
                     <Button
                         type="submit"
                         form="about-restaurant-form"
-                        disabled={!isValid}
                         className="w-full h-12 bg-secondary-orange hover:bg-secondary-orange/90 text-background-white font-bold text-lg rounded-xl shadow-lg shadow-secondary-orange/20 transition-all"
                     >
                         {t('Continue')} →
@@ -595,7 +667,7 @@ export const AboutRestaurant = () => {
                     <Button
                         type="submit"
                         form="documents-form"
-                        disabled={!isValidDocs || isSubmitting}
+                        disabled={isSubmitting}
                         className="w-full h-12 bg-secondary-orange hover:bg-secondary-orange/90 text-background-white font-bold text-lg rounded-xl shadow-lg shadow-secondary-orange/20 transition-all gap-2"
                     >
                         {isSubmitting ? (

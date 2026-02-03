@@ -1,17 +1,18 @@
 import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useForm } from 'react-hook-form';
+import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useOnboardingStore } from '../store/useOnboardingStore';
 import { restaurantInfoSchema, type RestaurantInfoValues } from '../schemas';
+import ReactSelect from 'react-select';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
 import { Check, X, MapPin, Map } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Modal } from '@/components/ui/modal';
 import { MapPicker } from '@/components/ui/map-picker';
+import { INDIAN_STATES } from '../constants';
 
 
 
@@ -30,18 +31,35 @@ export const RestaurantInfo = () => {
         register,
         handleSubmit,
         watch,
-
+        control,
         setValue,
-        formState: { errors: rawErrors, isValid }
+        formState: { errors: rawErrors }
     } = useForm<RestaurantInfoValues>({
         // @ts-ignore - Resolver handles the union discrimination
         resolver: zodResolver(restaurantInfoSchema),
         defaultValues: {
             ...restaurantInfo,
-            hasCin: hasCin // Ensure hasCin matches local state
+            hasCin: hasCin, // Ensure hasCin matches local state
+            registeredAddress: {
+                line1: restaurantInfo.registeredAddress?.split('|')[0] || '',
+                line2: restaurantInfo.registeredAddress?.split('|')[1] || '',
+                landmark: restaurantInfo.registeredAddress?.split('|')[2] || '',
+                locality: restaurantInfo.registeredAddress?.split('|')[3] || '',
+                state: restaurantInfo.registeredAddress?.split('|')[4] || '',
+                pincode: restaurantInfo.registeredAddress?.split('|')[5] || '',
+            },
+            restaurantAddress: {
+                line1: restaurantInfo.restaurantAddress?.split('|')[0] || '',
+                line2: restaurantInfo.restaurantAddress?.split('|')[1] || '',
+                landmark: restaurantInfo.restaurantAddress?.split('|')[2] || '',
+                locality: restaurantInfo.restaurantAddress?.split('|')[3] || '',
+                state: restaurantInfo.restaurantAddress?.split('|')[4] || '',
+                pincode: restaurantInfo.restaurantAddress?.split('|')[5] || '',
+            }
         } as any,
-        mode: 'onChange'
+        mode: 'onSubmit'
     });
+
 
     const errors = rawErrors as any;
     const locationValue = watch('location');
@@ -53,9 +71,36 @@ export const RestaurantInfo = () => {
         }
     }, [hasCin, setValue]);
 
-    const onSubmit = (data: RestaurantInfoValues) => {
-        setRestaurantInfo(data);
-        console.log('Restaurant Info Submitted:', data);
+    const onSubmit = (data: any) => {
+        const transformedData = { ...data };
+
+        if (data.hasCin) {
+            // Transform registeredAddress to string
+            if (data.registeredAddress && typeof data.registeredAddress === 'object') {
+                const ra = data.registeredAddress;
+                transformedData.registeredAddress = `${ra.line1}|${ra.line2}|${ra.landmark || ''}|${ra.locality}|${ra.state}|${ra.pincode}`;
+            }
+            // Clear fields that belong to hasCin: false
+            transformedData.restaurantName = '';
+            transformedData.restaurantAddress = '';
+            transformedData.location = '';
+            transformedData.googleMapsLink = '';
+        } else {
+            // Transform restaurantAddress to string
+            if (data.restaurantAddress && typeof data.restaurantAddress === 'object') {
+                const ra = data.restaurantAddress;
+                transformedData.restaurantAddress = `${ra.line1}|${ra.line2}|${ra.landmark || ''}|${ra.locality}|${ra.state}|${ra.pincode}`;
+            }
+            // Clear fields that belong to hasCin: true
+            transformedData.companyName = '';
+            transformedData.brandName = '';
+            transformedData.hasMultipleBranches = false;
+            transformedData.cinNumber = '';
+            transformedData.registeredAddress = '';
+        }
+
+        setRestaurantInfo(transformedData);
+        console.log('Restaurant Info Submitted:', transformedData);
         // Move to next step (Documents - ID 3)
         setCurrentStep(3);
         navigate('/grow-with-ustart/documents');
@@ -245,15 +290,105 @@ export const RestaurantInfo = () => {
                             </div>
 
                             {/* Registered Address */}
-                            <div className="space-y-2">
-                                <Label htmlFor="registeredAddress" className="font-semibold text-slate-700">{t('onboarding.restaurant.form.addressLabel')}</Label>
-                                <Textarea
-                                    id="registeredAddress"
-                                    {...register('registeredAddress')}
-                                    className="min-h-[100px] bg-background-white border-slate-200 resize-none p-4"
-                                    placeholder={t('onboarding.restaurant.form.addressPlaceholder')}
-                                />
-                                {errors.registeredAddress && <p className="text-red-500 text-xs">{errors.registeredAddress?.message}</p>}
+                            <div className="space-y-4">
+                                <Label className="font-semibold text-slate-700">
+                                    {t('onboarding.restaurant.form.addressLabel')}
+                                </Label>
+
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div className="space-y-1">
+                                        <Input
+                                            {...register('registeredAddress.line1' as any)}
+                                            placeholder={`${t('onboarding.restaurant.form.addressLabels.line1')} *`}
+                                            className={`h-10 bg-background-white border-slate-200 rounded-lg ${errors.registeredAddress?.line1 ? 'border-red-500' : ''}`}
+                                        />
+                                        {errors.registeredAddress?.line1 && <p className="text-red-500 text-[10px] ml-1">{errors.registeredAddress.line1.message}</p>}
+                                    </div>
+                                    <div className="space-y-1">
+                                        <Input
+                                            {...register('registeredAddress.line2' as any)}
+                                            placeholder={`${t('onboarding.restaurant.form.addressLabels.line2')} *`}
+                                            className={`h-10 bg-background-white border-slate-200 rounded-lg ${errors.registeredAddress?.line2 ? 'border-red-500' : ''}`}
+                                        />
+                                        {errors.registeredAddress?.line2 && <p className="text-red-500 text-[10px] ml-1">{errors.registeredAddress.line2.message}</p>}
+                                    </div>
+                                    <div className="space-y-1">
+                                        <Input
+                                            {...register('registeredAddress.landmark' as any)}
+                                            placeholder={t('onboarding.restaurant.form.addressLabels.landmark')}
+                                            className="h-10 bg-background-white border-slate-200 rounded-lg"
+                                        />
+                                    </div>
+                                    <div className="space-y-1">
+                                        <Input
+                                            {...register('registeredAddress.locality' as any)}
+                                            placeholder={`${t('onboarding.restaurant.form.addressLabels.locality')} *`}
+                                            className={`h-10 bg-background-white border-slate-200 rounded-lg ${errors.registeredAddress?.locality ? 'border-red-500' : ''}`}
+                                        />
+                                        {errors.registeredAddress?.locality && <p className="text-red-500 text-[10px] ml-1">{errors.registeredAddress.locality.message}</p>}
+                                    </div>
+                                    <div className="space-y-1">
+                                        <Controller
+                                            name={'registeredAddress.state' as any}
+                                            control={control}
+                                            render={({ field }) => (
+                                                <ReactSelect
+                                                    options={INDIAN_STATES.map(state => ({ value: state, label: state }))}
+                                                    value={field.value ? { value: field.value, label: field.value } : null}
+                                                    onChange={(opt: any) => field.onChange(opt?.value || '')}
+                                                    placeholder={`${t('onboarding.restaurant.form.addressLabels.state')} *`}
+                                                    isSearchable={true}
+                                                    menuPortalTarget={document.body}
+                                                    className="react-select-container"
+                                                    classNamePrefix="react-select"
+                                                    styles={{
+                                                        control: (base, state) => ({
+                                                            ...base,
+                                                            borderRadius: '0.5rem',
+                                                            borderColor: errors.registeredAddress?.state ? '#ef4444' : state.isFocused ? '#f97316' : '#e2e8f0',
+                                                            boxShadow: state.isFocused ? '0 0 0 1px #f97316' : 'none',
+                                                            '&:hover': {
+                                                                borderColor: errors.registeredAddress?.state ? '#ef4444' : '#f97316'
+                                                            },
+                                                            minHeight: '40px',
+                                                            fontSize: '0.75rem'
+                                                        }),
+                                                        option: (base, state) => ({
+                                                            ...base,
+                                                            backgroundColor: state.isSelected ? '#f97316' : state.isFocused ? '#fff7ed' : 'white',
+                                                            color: state.isSelected ? 'white' : '#334155',
+                                                            fontSize: '0.75rem',
+                                                            '&:hover': {
+                                                                backgroundColor: state.isSelected ? '#f97316' : '#fff7ed',
+                                                            }
+                                                        }),
+                                                        menuPortal: (base) => ({ ...base, zIndex: 9999 }),
+                                                        valueContainer: (base) => ({
+                                                            ...base,
+                                                            padding: '0 8px'
+                                                        }),
+                                                        input: (base) => ({
+                                                            ...base,
+                                                            margin: '0',
+                                                            padding: '0'
+                                                        })
+                                                    }}
+                                                />
+                                            )}
+                                        />
+                                        {errors.registeredAddress?.state && <p className="text-red-500 text-[10px] ml-1">{errors.registeredAddress.state.message}</p>}
+                                    </div>
+                                    <div className="space-y-1">
+                                        <Input
+                                            {...register('registeredAddress.pincode' as any)}
+                                            placeholder={`${t('onboarding.restaurant.form.addressLabels.pincode')} *`}
+                                            maxLength={6}
+                                            className={`h-10 bg-background-white border-slate-200 rounded-lg ${errors.registeredAddress?.pincode ? 'border-red-500' : ''}`}
+                                        />
+                                        {errors.registeredAddress?.pincode && <p className="text-red-500 text-[10px] ml-1">{errors.registeredAddress.pincode.message}</p>}
+                                    </div>
+                                </div>
+                                {errors.registeredAddress && <p className="text-red-500 text-xs mt-1">{errors.registeredAddress?.message}</p>}
                             </div>
                         </>
                     ) : (
@@ -301,15 +436,105 @@ export const RestaurantInfo = () => {
                             </div>
 
                             {/* Restaurant Address */}
-                            <div className="space-y-2">
-                                <Label htmlFor="restaurantAddress" className="font-semibold text-slate-700">{t('onboarding.restaurant.form.restaurantAddressLabel')}</Label>
-                                <Textarea
-                                    id="restaurantAddress"
-                                    {...register('restaurantAddress')}
-                                    className="min-h-[100px] bg-background-white border-slate-200 resize-none p-4"
-                                    placeholder={t('onboarding.restaurant.form.restaurantAddressPlaceholder')}
-                                />
-                                {errors.restaurantAddress && <p className="text-red-500 text-xs">{errors.restaurantAddress?.message}</p>}
+                            <div className="space-y-4">
+                                <Label className="font-semibold text-slate-700">
+                                    {t('onboarding.restaurant.form.restaurantAddressLabel')}
+                                </Label>
+
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div className="space-y-1">
+                                        <Input
+                                            {...register('restaurantAddress.line1' as any)}
+                                            placeholder={`${t('onboarding.restaurant.form.addressLabels.line1')} *`}
+                                            className={`h-10 bg-background-white border-slate-200 rounded-lg ${errors.restaurantAddress?.line1 ? 'border-red-500' : ''}`}
+                                        />
+                                        {errors.restaurantAddress?.line1 && <p className="text-red-500 text-[10px] ml-1">{errors.restaurantAddress.line1.message}</p>}
+                                    </div>
+                                    <div className="space-y-1">
+                                        <Input
+                                            {...register('restaurantAddress.line2' as any)}
+                                            placeholder={`${t('onboarding.restaurant.form.addressLabels.line2')} *`}
+                                            className={`h-10 bg-background-white border-slate-200 rounded-lg ${errors.restaurantAddress?.line2 ? 'border-red-500' : ''}`}
+                                        />
+                                        {errors.restaurantAddress?.line2 && <p className="text-red-500 text-[10px] ml-1">{errors.restaurantAddress.line2.message}</p>}
+                                    </div>
+                                    <div className="space-y-1">
+                                        <Input
+                                            {...register('restaurantAddress.landmark' as any)}
+                                            placeholder={t('onboarding.restaurant.form.addressLabels.landmark')}
+                                            className="h-10 bg-background-white border-slate-200 rounded-lg"
+                                        />
+                                    </div>
+                                    <div className="space-y-1">
+                                        <Input
+                                            {...register('restaurantAddress.locality' as any)}
+                                            placeholder={`${t('onboarding.restaurant.form.addressLabels.locality')} *`}
+                                            className={`h-10 bg-background-white border-slate-200 rounded-lg ${errors.restaurantAddress?.locality ? 'border-red-500' : ''}`}
+                                        />
+                                        {errors.restaurantAddress?.locality && <p className="text-red-500 text-[10px] ml-1">{errors.restaurantAddress.locality.message}</p>}
+                                    </div>
+                                    <div className="space-y-1">
+                                        <Controller
+                                            name={'restaurantAddress.state' as any}
+                                            control={control}
+                                            render={({ field }) => (
+                                                <ReactSelect
+                                                    options={INDIAN_STATES.map(state => ({ value: state, label: state }))}
+                                                    value={field.value ? { value: field.value, label: field.value } : null}
+                                                    onChange={(opt: any) => field.onChange(opt?.value || '')}
+                                                    placeholder={`${t('onboarding.restaurant.form.addressLabels.state')} *`}
+                                                    isSearchable={true}
+                                                    menuPortalTarget={document.body}
+                                                    className="react-select-container"
+                                                    classNamePrefix="react-select"
+                                                    styles={{
+                                                        control: (base, state) => ({
+                                                            ...base,
+                                                            borderRadius: '0.5rem',
+                                                            borderColor: errors.restaurantAddress?.state ? '#ef4444' : state.isFocused ? '#f97316' : '#e2e8f0',
+                                                            boxShadow: state.isFocused ? '0 0 0 1px #f97316' : 'none',
+                                                            '&:hover': {
+                                                                borderColor: errors.restaurantAddress?.state ? '#ef4444' : '#f97316'
+                                                            },
+                                                            minHeight: '40px',
+                                                            fontSize: '0.75rem'
+                                                        }),
+                                                        option: (base, state) => ({
+                                                            ...base,
+                                                            backgroundColor: state.isSelected ? '#f97316' : state.isFocused ? '#fff7ed' : 'white',
+                                                            color: state.isSelected ? 'white' : '#334155',
+                                                            fontSize: '0.75rem',
+                                                            '&:hover': {
+                                                                backgroundColor: state.isSelected ? '#f97316' : '#fff7ed',
+                                                            }
+                                                        }),
+                                                        menuPortal: (base) => ({ ...base, zIndex: 9999 }),
+                                                        valueContainer: (base) => ({
+                                                            ...base,
+                                                            padding: '0 8px'
+                                                        }),
+                                                        input: (base) => ({
+                                                            ...base,
+                                                            margin: '0',
+                                                            padding: '0'
+                                                        })
+                                                    }}
+                                                />
+                                            )}
+                                        />
+                                        {errors.restaurantAddress?.state && <p className="text-red-500 text-[10px] ml-1">{errors.restaurantAddress.state.message}</p>}
+                                    </div>
+                                    <div className="space-y-1">
+                                        <Input
+                                            {...register('restaurantAddress.pincode' as any)}
+                                            placeholder={`${t('onboarding.restaurant.form.addressLabels.pincode')} *`}
+                                            maxLength={6}
+                                            className={`h-10 bg-background-white border-slate-200 rounded-lg ${errors.restaurantAddress?.pincode ? 'border-red-500' : ''}`}
+                                        />
+                                        {errors.restaurantAddress?.pincode && <p className="text-red-500 text-[10px] ml-1">{errors.restaurantAddress.pincode.message}</p>}
+                                    </div>
+                                </div>
+                                {errors.restaurantAddress && <p className="text-red-500 text-xs mt-1">{errors.restaurantAddress?.message}</p>}
                             </div>
 
                             {/* Google Location */}
@@ -387,7 +612,6 @@ export const RestaurantInfo = () => {
                 <Button
                     type="submit"
                     form="restaurant-info-form"
-                    disabled={!isValid}
                     className="w-full h-12 bg-secondary-orange hover:bg-secondary-orange/90 text-background-white font-bold text-lg rounded-xl shadow-lg shadow-secondary-orange/20 transition-all hover:scale-[1.01]"
                 >
                     {t('onboarding.restaurant.form.continue')} →
