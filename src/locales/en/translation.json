@@ -160,6 +160,8 @@
       "subtitle": "We need a few details to set up your partner account securely.",
       "fullNameLabel": "Owner Full Name",
       "fullNamePlaceholder": "e.g. John Doe",
+      "designationLabel": "Designation",
+      "designationPlaceholder": "Select designation",
       "pocMobileLabel": "POC Mobile",
       "verified": "VERIFIED",
       "emailLabel": "Email Address",

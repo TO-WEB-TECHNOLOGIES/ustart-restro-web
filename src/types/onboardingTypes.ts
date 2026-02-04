@@ -6,6 +6,7 @@ export interface Cuisine {
 
 export interface PersonalInfo {
     fullName: string;
+    designation: string;
     email: string;
     mobile: string;
     whatsapp: string;

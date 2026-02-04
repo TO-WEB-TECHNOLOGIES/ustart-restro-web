@@ -14,6 +14,8 @@ import { mockAuthService } from '@/features/auth/api/mockAuth';
 import { CheckCircle2, Lock, MessageSquare, Loader2 } from 'lucide-react';
 import { OtpInput } from '@/components/ui/otp-input';
 import { toast } from 'sonner';
+import { DESIGNATIONS } from '@/utils/constants';
+import { Briefcase } from 'lucide-react';
 
 export const PersonalInfo = () => {
     const { t } = useTranslation();
@@ -216,6 +218,33 @@ export const PersonalInfo = () => {
                                     />
                                 </div>
                                 {errors.fullName && <p className="text-red-500 text-xs">{errors.fullName.message}</p>}
+                            </div>
+
+                            {/* Designation */}
+                            <div className="space-y-2">
+                                <Label htmlFor="designation" className="font-semibold text-slate-700">{t('onboarding.personal.designationLabel')}</Label>
+                                <div className="relative">
+                                    <Briefcase className="absolute left-3 top-3 h-5 w-5 text-gray-400 z-10" />
+                                    <select
+                                        id="designation"
+                                        {...register('designation')}
+                                        className="w-full pl-10 h-12 bg-background-white border border-slate-200 rounded-md focus:outline-none focus:ring-2 focus:ring-secondary-orange/20 appearance-none text-slate-700"
+                                        disabled={showOtpInput}
+                                    >
+                                        <option value="" disabled>{t('onboarding.personal.designationPlaceholder')}</option>
+                                        {DESIGNATIONS.map((designation) => (
+                                            <option key={designation} value={designation}>
+                                                {designation}
+                                            </option>
+                                        ))}
+                                    </select>
+                                    <div className="absolute right-3 top-4 pointer-events-none">
+                                        <svg className="h-4 w-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+                                        </svg>
+                                    </div>
+                                </div>
+                                {errors.designation && <p className="text-red-500 text-xs">{errors.designation.message}</p>}
                             </div>
 
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

@@ -51,6 +51,7 @@ const initialState = {
     isEditing: false,
     personalInfo: {
         fullName: '',
+        designation: '',
         email: '',
         mobile: '',
         whatsapp: '',

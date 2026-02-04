@@ -160,6 +160,8 @@
       "subtitle": "हमें आपके पार्टनर खाते को सुरक्षित रूप से सेट करने के लिए कुछ विवरणों की आवश्यकता है।",
       "fullNameLabel": "मालिक का पूरा नाम",
       "fullNamePlaceholder": "उदा. जॉन डो",
+      "designationLabel": "पद",
+      "designationPlaceholder": "पद चुनें",
       "pocMobileLabel": "POC मोबाइल",
       "verified": "सत्यापित",
       "emailLabel": "ईमेल पता",

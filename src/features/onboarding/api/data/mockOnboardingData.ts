@@ -18,6 +18,7 @@ export const MOCK_CUISINES: Cuisine[] = [
 export const MOCK_ONBOARDING_DATA: OnboardingData = {
     personalInfo: {
         fullName: "Rajesh Kumar",
+        designation: "Owner / मालिक",
         email: "rajesh.kumar@example.com",
         mobile: "9876543210",
         whatsapp: "9876543210",

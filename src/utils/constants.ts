@@ -36,3 +36,16 @@ export const INDIAN_STATES = [
     "Lakshadweep",
     "Puducherry"
 ];
+
+export const DESIGNATIONS = [
+    "Owner / मालिक",
+    "Top Management / शीर्ष प्रबंधन",
+    "Restaurant Manager / रेस्टोरेंट प्रबंधक",
+    "Operations / संचालन",
+    "Kitchen Incharge / किचन इंचार्ज",
+    "Online Orders / ऑनलाइन ऑर्डर",
+    "Accounts / खाते",
+    "Purchase / खरीद",
+    "Floor Incharge / फ्लोर इंचार्ज",
+    "Main Contact / मुख्य संपर्क"
+]

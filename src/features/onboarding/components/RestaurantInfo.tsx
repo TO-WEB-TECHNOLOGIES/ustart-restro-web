@@ -12,7 +12,7 @@ import { Check, X, MapPin, Map } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Modal } from '@/components/ui/modal';
 import { MapPicker } from '@/components/ui/map-picker';
-import { INDIAN_STATES } from '../constants';
+import { INDIAN_STATES } from '../../../utils/constants';
 
 
 

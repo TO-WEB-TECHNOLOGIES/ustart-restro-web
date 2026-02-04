@@ -6,6 +6,7 @@ export const personalInfoSchema = z.object({
     mobile: z.string().min(10, 'Mobile number must be at least 10 digits'),
     whatsapp: z.string().regex(/^[0-9]{10}$/, 'WhatsApp number must be exactly 10 digits'),
     isSameAsMobile: z.boolean(),
+    designation: z.string().min(1, 'Designation is required'),
 });
 
 export type PersonalInfoValues = z.infer<typeof personalInfoSchema>;
