@@ -1,4 +1,3 @@
-import axios from 'axios';
 import { api } from '@/api/axios';
 import type { OnboardingData } from '../../../types/onboardingTypes';
 
@@ -28,11 +27,17 @@ export const onboardingService = {
      * Uses a direct axios call to avoid common API interceptors (like Auth headers).
      */
     uploadFile: async (url: string, file: File): Promise<void> => {
-        await axios.put(url, file, {
+        const response = await fetch(url, {
+            method: 'PUT',
+            body: file,
             headers: {
                 'Content-Type': file.type
             }
         });
+
+        if (!response.ok) {
+            throw new Error(`Upload failed: ${response.statusText}`);
+        }
     },
 
     /**
