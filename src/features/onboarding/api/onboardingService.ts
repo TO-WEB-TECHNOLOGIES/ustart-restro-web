@@ -1,66 +1,55 @@
+import axios from 'axios';
+import { api } from '@/api/axios';
 import type { OnboardingData } from '../../../types/onboardingTypes';
-import { MOCK_ONBOARDING_DATA, delay } from './data/mockOnboardingData';
+
+export interface InitiateOnboardingResponse {
+    fssaiDocument: string;
+    dishImage: string;
+    menuImages: string[];
+}
+
+export interface CompleteOnboardingResponse {
+    accessToken: string;
+    refreshToken: string;
+}
 
 export const onboardingService = {
-    submitOnboarding: async (data: OnboardingData): Promise<{ token: string; refreshToken: string }> => {
-        await delay(2000); // Simulate network delay
-        console.log("Submitting Onboarding Data to Backend:", data);
-
-        // Mock Payload with updated status
-        const payload = {
-            user: {
-                id: 'user-123',
-                name: data.personalInfo?.fullName || 'Partner',
-                mobile: data.personalInfo?.mobile || '9999999999'
-            },
-            isOnboardingComplete: true,
-            status: 'APPROVAL_PENDING',
-            exp: Math.floor(Date.now() / 1000) + (24 * 60 * 60) // 24 hours in seconds
-        };
-
-        const header = btoa(JSON.stringify({ alg: "HS256", typ: "JWT" }));
-        const encodedPayload = btoa(JSON.stringify(payload));
-        const signature = btoa("mock-signature");
-
-        const token = `${header}.${encodedPayload}.${signature}`;
-        return {
-            token,
-            refreshToken: `mock-refresh-${token}`
-        };
+    /**
+     * Step 1: Initiate Onboarding
+     * Submits text data and receives presigned URLs for file uploads.
+     */
+    initiateOnboarding: async (data: OnboardingData): Promise<InitiateOnboardingResponse> => {
+        const response = await api.post<InitiateOnboardingResponse>('/api/v1/restaurant-onboarding', data);
+        return response.data;
     },
 
-    updateOnboarding: async (data: OnboardingData): Promise<{ token: string; refreshToken: string }> => {
-        await delay(2000); // Simulate network delay
-        console.log("Updating Onboarding Data (PUT Request):", data);
-
-        // Mock Payload with updated status
-        const payload = {
-            user: {
-                id: 'user-123',
-                name: data.personalInfo?.fullName || 'Partner',
-                mobile: data.personalInfo?.mobile || '9999999999'
-            },
-            isOnboardingComplete: true,
-            status: 'APPROVAL_PENDING',
-            exp: Math.floor(Date.now() / 1000) + (24 * 60 * 60) // 24 hours in seconds
-        };
-
-        const header = btoa(JSON.stringify({ alg: "HS256", typ: "JWT" }));
-        const encodedPayload = btoa(JSON.stringify(payload));
-        const signature = btoa("mock-signature");
-
-        const token = `${header}.${encodedPayload}.${signature}`;
-        return {
-            token,
-            refreshToken: `mock-refresh-${token}`
-        };
+    /**
+     * Step 2: Upload File to Presigned URL
+     * Uses a direct axios call to avoid common API interceptors (like Auth headers).
+     */
+    uploadFile: async (url: string, file: File): Promise<void> => {
+        await axios.put(url, file, {
+            headers: {
+                'Content-Type': file.type
+            }
+        });
     },
 
+    /**
+     * Step 3: Complete Onboarding
+     * Finalizes the process and retrieves the authentication tokens.
+     */
+    completeOnboarding: async (): Promise<CompleteOnboardingResponse> => {
+        const response = await api.post<CompleteOnboardingResponse>('/api/v1/restaurant-onboarding/onboard-complete');
+        return response.data;
+    },
+
+    /**
+     * Fetches existing onboarding data (if any) to resume a session.
+     */
     getOnboardingData: async (): Promise<OnboardingData> => {
-        await delay(1000); // Simulate network delay
-        console.log("Fetching Onboarding Data");
-
-        return MOCK_ONBOARDING_DATA;
+        // This endpoint might also be under /api/v1/restaurant-onboarding (GET)
+        const response = await api.get<OnboardingData>('/api/v1/restaurant-onboarding');
+        return response.data;
     }
 };
-

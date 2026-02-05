@@ -69,10 +69,10 @@ export const AboutRestaurant = () => {
         personalInfo,
         restaurantInfo,
         reset,
-        isEditing
     } = useOnboardingStore();
     const [view, setView] = useState<'details' | 'documents'>('details');
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [progressText, setProgressText] = useState('');
 
     // --- Infinite Scroll & Search logic using ReactSelect ---
     const [searchQuery, setSearchQuery] = useState('');
@@ -151,18 +151,23 @@ export const AboutRestaurant = () => {
 
     const onSubmitDocuments = async (data: BankDetailsValues) => {
         setIsSubmitting(true);
+        setProgressText(t('Submitting details...'));
         try {
             setDocuments(data);
 
             // Helper to get filename or preserve string (if it's already a filename from prev session)
             const getFileName = (file: any) => file instanceof File ? file.name : (typeof file === 'string' ? file : '');
 
+            // 1. Prepare Payload for Initiation (Step 1)
             const fullPayload: OnboardingData = {
                 personalInfo: {
                     ...personalInfo,
                     designation: personalInfo.designation?.split(' / ')[0] || personalInfo.designation
                 },
-                restaurantInfo: restaurantInfo as RestaurantInfo,
+                restaurantInfo: {
+                    ...restaurantInfo,
+                    gstNumber: restaurantInfo.gstNumber?.trim() || null
+                } as RestaurantInfo,
                 aboutRestaurant: {
                     ...aboutRestaurant,
                     menuImages: aboutRestaurant.menuImages?.map(getFileName) || [],
@@ -175,23 +180,53 @@ export const AboutRestaurant = () => {
                 } as OnboardingDocuments
             };
 
-            let response;
-            if (isEditing) {
-                response = await onboardingService.updateOnboarding(fullPayload);
-            } else {
-                response = await onboardingService.submitOnboarding(fullPayload);
+            // 2. Initiate Onboarding (Get Presigned URLs)
+            const presignedUrls = await onboardingService.initiateOnboarding(fullPayload);
+
+            // 3. Upload Files (Step 2)
+            setProgressText(t('Uploading documents...'));
+
+            const uploadPromises: Promise<void>[] = [];
+
+            // Helper to match file key and upload
+            const queueUpload = (url: string | undefined, file: File | string | undefined) => {
+                if (url && file instanceof File) {
+                    uploadPromises.push(onboardingService.uploadFile(url, file));
+                }
+            };
+
+            // FSSAI
+            queueUpload(presignedUrls.fssaiDocument, data.fssaiDocument);
+
+            // Dish/Brand Image
+            queueUpload(presignedUrls.dishImage, aboutRestaurant.dishImage);
+
+            // Menu Images - Backend returns an array of URLs matching the order of menuImages in payload
+            if (aboutRestaurant.menuImages && Array.isArray(aboutRestaurant.menuImages) && presignedUrls.menuImages) {
+                aboutRestaurant.menuImages.forEach((file, index) => {
+                    queueUpload(presignedUrls.menuImages[index], file);
+                });
             }
 
-            login(response.token, response.refreshToken);
+            await Promise.all(uploadPromises);
+
+            // 4. Complete Onboarding (Step 3)
+            setProgressText(t('Finalizing...'));
+            const response = await onboardingService.completeOnboarding();
+
+            // 5. Success
+            login(response.accessToken, response.refreshToken);
             reset();
             setCurrentStep(4);
             navigate('/grow-with-ustart/verification');
+
         } catch (error: any) {
             console.error("Submission failed", error);
             const message = error.response?.data?.message || 'Failed to submit onboarding data. Please try again.';
             toast.error(message);
         } finally {
             setIsSubmitting(false);
+            setProgressText('');
         }
     };
 
@@ -676,7 +711,7 @@ export const AboutRestaurant = () => {
                         {isSubmitting ? (
                             <>
                                 <div className="w-5 h-5 border-2 border-background-white/30 border-t-background-white rounded-full animate-spin" />
-                                {t('Processing...')}
+                                {progressText || t('Processing...')}
                             </>
                         ) : (
                             <>

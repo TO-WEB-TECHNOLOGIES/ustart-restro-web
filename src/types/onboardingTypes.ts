@@ -20,7 +20,7 @@ export interface RestaurantInfo {
     hasMultipleBranches: boolean;
     cinNumber: string;
     panNumber: string;
-    gstNumber?: string;
+    gstNumber: string | null;
     registeredAddress: string;
     restaurantName: string;
     restaurantAddress: string;
@@ -40,7 +40,7 @@ export interface AboutRestaurant {
 }
 
 export interface OnboardingDocuments {
-    fssaiDocument?: string;
+    fssaiDocument: string;
     accountNumber: string;
     ifscCode: string;
     accountHolderName: string;

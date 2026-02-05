@@ -1,20 +1,27 @@
 # Restaurant Onboarding API Documentation
 
-This document outlines the final payload structure sent by the client during the restaurant onboarding process and the expected behavior upon success.
+This document outlines the complete 2-step onboarding flow for the client, including payload structures and expected behaviors.
 
-## 1. API Endpoint
+## Overview
 
-- **POST** `[ONBOARDING_CREATION_ENDPOINT]` (Submit onboarding data to create a new restaurant entry)
+The onboarding process is divided into two main steps:
+
+1.  **Submission & File Upload Preparation**: The client submits the initial data. The server validates it, saves the text data temporarily (Redis), and returns Presigned URLs for file uploads.
+2.  **Completion & Token Generation**: Once the client successfully uploads the files to the presigned URLs, it calls the completion endpoint to finalize the onboarding, create entities, and receive authentication tokens.
 
 ---
 
-## 2. Expected Payload for Creation
+## Step 1: Submit Data & Get Presigned URLs
 
-Every creation request contains four main sections. The structure of `restaurantInfo` varies depending on the `hasCin` flag.
+**Endpoint**: `POST /api/v1/restaurant-onboarding`
 
-### Case A: With CIN (Corporate Identification Number)
+### Payload Structure
 
-Used for registered companies and brands.
+The payload structure varies slightly based on the `hasCin` flag (Brand vs. Indvidual Restaurant).
+
+#### Case A: With CIN (Corporate/Brand)
+
+Used for registered companies.
 
 ```json
 {
@@ -33,8 +40,8 @@ Used for registered companies and brands.
     "hasMultipleBranches": false,
     "cinNumber": "U12345MH2023PTC123456",
     "panNumber": "ABCDE1234F",
-    "gstNumber": "22AAAAA0000A1Z5", // Optional (see below)
-    "registeredAddress": "Shop 1|Floor 2|Landmark|Gurugram|Haryana|122001" // Pipe-separated string
+    "gstNumber": "22AAAAA0000A1Z5", // Optional
+    "registeredAddress": "Shop 1|Floor 2|Landmark|Gurugram|Haryana|122001" // Mandatory
   },
   "aboutRestaurant": {
     "foodTypes": {
@@ -44,10 +51,10 @@ Used for registered companies and brands.
     },
     "cuisines": [1, 5, 12], // Cuisine IDs
     "menuImages": ["menu1.jpg", "menu2.jpg"],
-    "dishImage": "brand_logo.jpg" // Renamed to Brand Logo in UI for CIN users
+    "dishImage": "brand_logo.jpg" // Brand Logo
   },
   "documents": {
-    "fssaiDocument": "fssai_cert.pdf",
+    "fssaiDocument": "fssai_cert.pdf", // Mandatory
     "accountNumber": "1234567890",
     "ifscCode": "HDFC0001234",
     "accountHolderName": "Great Foods Pvt Ltd",
@@ -57,7 +64,7 @@ Used for registered companies and brands.
 }
 ```
 
-### Case B: Without CIN
+#### Case B: Without CIN (Individual Restaurant)
 
 Used for independent restaurants.
 
@@ -68,57 +75,80 @@ Used for independent restaurants.
     "hasCin": false,
     "restaurantName": "Local Delights",
     "panNumber": "ABCDE1234F",
-    "gstNumber": "22AAAAA0000A1Z5", // Optional
-    "registeredAddress": "...",
-    "restaurantAddress": "Plot 10|Industrial Area||Gurugram|Haryana|122001", // Pipe-separated
+    "gstNumber": null, // Optional
+    "registeredAddress": "Home Address|...", // Mandatory
+    "restaurantAddress": "Shop 10|Market|City|State|110001", // Used for City extraction
     "location": "28.4595:77.0266", // Latitude:Longitude
     "googleMapsLink": "https://maps.app.goo.gl/xyz" // Optional
   },
   "aboutRestaurant": {
-    "foodTypes": { ... },
-    "cuisines": [ ... ],
-    "menuImages": [ ... ],
-    "dishImage": "special_dish.jpg"
+     ...
+     "dishImage": "primary_dish.jpg"
   },
   "documents": { ... }
 }
 ```
 
+### Response (Step 1)
+
+Success (`200 OK`) returns a list of Presigned URLs for the files declared in the payload.
+
+```json
+{
+  "fssaiDocument": "https://s3.amazonaws.com/bucket/onboarding/user-id/fssai_cert.pdf?signature=...",
+  "dishImage": "https://s3.amazonaws.com/bucket/onboarding/user-id/image.jpg?signature=...",
+  "menuImages": [
+    "https://s3.amazonaws.com/bucket/onboarding/user-id/menu1.jpg?signature=...",
+    "https://s3.amazonaws.com/bucket/onboarding/user-id/menu2.jpg?signature=..."
+  ]
+}
+```
+
+**Client Action**: Upload the respective files to these URLs using `PUT` requests.
+
 ---
 
-## 3. Parameter Definitions & Optionality
+## Step 2: Complete Onboarding & generating Tokens
 
-| Parameter                          | Type   | Required  | Description                                                      |
-| :--------------------------------- | :----- | :-------- | :--------------------------------------------------------------- | ----- | -------- | -------- | ----- | --------- |
-| `personalInfo`                     | Object | **YES**   | User/POC details.                                                |
-| `restaurantInfo.gstNumber`         | String | NO        | Validated against GST regex if provided. Mark as **Optional**.   |
-| `restaurantInfo.googleMapsLink`    | String | NO        | Full URL to the restaurant on Google Maps. Mark as **Optional**. |
-| `restaurantInfo.registeredAddress` | String | **YES**   | Format: `line1                                                   | line2 | landmark | locality | state | pincode`. |
-| `restaurantInfo.location`          | String | **YES\*** | Required for non-CIN. Format: `lat:lng`.                         |
-| `aboutRestaurant.dishImage`        | String | **YES**   | Acts as 'Brand Logo' for CIN users.                              |
-| `documents.fssaiDocument`          | String | NO        | Filename of the uploaded FSSAI cert.                             |
+**Endpoint**: `POST /api/v1/restaurant-onboarding/onboard-complete`
+
+**Triggers**: Called AFTER the client has finished uploading all files to the Presigned URLs.
+
+### Response (Step 2)
+
+Success (`200 OK`) indicates that the restaurant has been created and data persisted. The response contains JWT tokens for the user to proceed.
+
+```json
+{
+  "accessToken": "eyJhbGciOiJIUzI1NiJ9...",
+  "refreshToken": "eyJhbGciOiJIUzI1NiJ9..."
+}
+```
+
+### JWT Payload Structure
+
+The `accessToken` contains the following claims:
+
+```json
+{
+  "user": {
+    "id": "user-uuid",
+    "name": "User Name",
+    "mobile": "9876543210"
+  },
+  "restaurantName": "Brand Name",
+  "isOnboardingComplete": true,
+  "status": "APPROVAL_PENDING", // e.g. APPROVAL_PENDING
+  "role": "restro",
+  "exp": 1712345678
+}
+```
 
 ---
 
-## 4. Success Expectations
+## Notes
 
-After a successful `200 OK` response, the following happens:
-
-1. **Authentication**: The client receives a new JWT and Refresh Token.
-   - The **JWT Payload** is expected to contain the following structure:
-   ```json
-   {
-     "user": {
-       "id": "user-string-uuid",
-       "name": "Owner Name",
-       "mobile": "9876543210",
-       "designation": "Owner"
-     },
-     "isOnboardingComplete": true,
-     "status": "APPROVAL_PENDING",
-     "exp": 1700000000 // Expiration timestamp
-   }
-   ```
-2. **Navigation**: User is redirected to the `/grow-with-ustart/verification` (Under Verification) page based on the `isOnboardingComplete` and `status` flags.
-3. **Data Persistency**: The local `OnboardingStore` (Zustand) is cleared to prepare for future sessions.
-4. **Backend State**: The restaurant record is created in a 'Pending' state for administrative review.
+- **GSTN**: Optional. If provided, it must match the standard GST regex.
+- **Registered Address**: Mandatory for BOTH flows.
+- **FSSAI Document**: Mandatory for all restaurants (Brand or Individual).
+- **City Extraction**: In Non-CIN flow, the system extracts the City from the `restaurantAddress` (Logic: Checks 3rd last component of pipe-separated string).
