@@ -158,7 +158,10 @@ export const AboutRestaurant = () => {
             const getFileName = (file: any) => file instanceof File ? file.name : (typeof file === 'string' ? file : '');
 
             const fullPayload: OnboardingData = {
-                personalInfo,
+                personalInfo: {
+                    ...personalInfo,
+                    designation: personalInfo.designation?.split(' / ')[0] || personalInfo.designation
+                },
                 restaurantInfo: restaurantInfo as RestaurantInfo,
                 aboutRestaurant: {
                     ...aboutRestaurant,
