@@ -212,6 +212,7 @@
         "gstPlaceholder": "22AAAAA0000A1Z5",
         "gstHint": "If applicable",
         "addressLabel": "Registered Address",
+        "sameAsRegistered": "Same as Registered Address",
         "addressPlaceholder": "Enter full registered business address...",
         "restaurantNameLabel": "Restaurant Name",
         "restaurantNamePlaceholder": "e.g. The Golden Spoon",

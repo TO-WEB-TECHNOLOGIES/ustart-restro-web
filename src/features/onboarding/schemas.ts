@@ -41,12 +41,20 @@ const cinFalseSchema = baseRestaurantSchema.extend({
     restaurantName: z.string().min(3, 'Restaurant Name is required'),
     panNumber: z.string().regex(/^[A-Z]{5}[0-9]{4}[A-Z]{1}$/, 'Invalid PAN format'),
     gstNumber: z.string().optional().refine((val) => !val || /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/.test(val), 'Invalid GST format'),
-    restaurantAddress: z.object({
+    registeredAddress: z.object({
         line1: z.string().min(1, 'Shop No./ Floor/ Building is required'),
         line2: z.string().min(1, '2nd Line Address is required'),
         landmark: z.string().optional(),
         locality: z.string().min(1, 'Locality/ City is required'),
         state: z.string().min(1, 'State is required'),
+        pincode: z.string().regex(/^\d{6}$/, 'Pincode must be exactly 6 digits'),
+    }),
+    restaurantAddress: z.object({
+        line1: z.string().min(1, 'Shop No./ Floor/ Building is required'),
+        line2: z.string().min(1, '2nd Line Address is required'),
+        landmark: z.string().optional(),
+        locality: z.literal('Gurugram'),
+        state: z.literal('Haryana'),
         pincode: z.string().regex(/^\d{6}$/, 'Pincode must be exactly 6 digits'),
     }),
     location: z.string().min(1, 'Location is required'), // lat:long

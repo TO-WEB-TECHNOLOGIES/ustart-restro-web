@@ -211,6 +211,7 @@
         "gstPlaceholder": "22AAAAA0000A1Z5",
         "gstHint": "यदि लागू हो",
         "addressLabel": "पंजीकृत पता",
+        "sameAsRegistered": "पंजीकृत पते के समान",
         "addressPlaceholder": "पूरा पंजीकृत व्यावसायिक पता दर्ज करें...",
         "restaurantNameLabel": "रेस्टोरेंट का नाम",
         "restaurantNamePlaceholder": "उदा. द गोल्डन स्पून",

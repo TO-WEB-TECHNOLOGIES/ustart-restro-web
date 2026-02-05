@@ -32,8 +32,8 @@ const LocationMarker = ({ position, setPosition }: { position: { lat: number, ln
 export const MapPicker = ({ onSelectLocation, initialLocation }: MapPickerProps) => {
     const [position, setPosition] = useState<{ lat: number; lng: number } | null>(initialLocation || null);
 
-    // Default center (New Delhi) if no location
-    const defaultCenter = initialLocation || { lat: 28.6139, lng: 77.2090 };
+    // Default center (Gurugram) if no location
+    const defaultCenter = initialLocation || { lat: 28.4595, lng: 77.0266 };
 
     const handleConfirm = () => {
         if (position) {
