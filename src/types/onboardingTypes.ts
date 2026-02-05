@@ -20,7 +20,7 @@ export interface RestaurantInfo {
     hasMultipleBranches: boolean;
     cinNumber: string;
     panNumber: string;
-    gstNumber: string;
+    gstNumber?: string;
     registeredAddress: string;
     restaurantName: string;
     restaurantAddress: string;

@@ -24,7 +24,7 @@ const cinTrueSchema = baseRestaurantSchema.extend({
     hasMultipleBranches: z.boolean().default(false),
     cinNumber: z.string().regex(/^([LUu]{1})([0-9]{5})([A-Za-z]{2})([0-9]{4})([A-Za-z]{3})([0-9]{6})$/, 'Invalid CIN format'),
     panNumber: z.string().regex(/^[A-Z]{5}[0-9]{4}[A-Z]{1}$/, 'Invalid PAN format'),
-    gstNumber: z.string().regex(/^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/, 'Invalid GST format'),
+    gstNumber: z.string().optional().refine((val) => !val || /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/.test(val), 'Invalid GST format'),
     registeredAddress: z.object({
         line1: z.string().min(1, 'Shop No./ Floor/ Building is required'),
         line2: z.string().min(1, '2nd Line Address is required'),
