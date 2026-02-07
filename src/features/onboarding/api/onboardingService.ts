@@ -50,11 +50,10 @@ export const onboardingService = {
     },
 
     /**
-     * Fetches existing onboarding data (if any) to resume a session.
+     * Fetches the current onboarding and verification status.
      */
-    getOnboardingData: async (): Promise<OnboardingData> => {
-        // This endpoint might also be under /api/v1/restaurant-onboarding (GET)
-        const response = await api.get<OnboardingData>('/api/v1/restaurant-onboarding');
+    getOnboardingStatus: async (): Promise<any> => {
+        const response = await api.get('/api/v1/onboarding-status/status');
         return response.data;
     }
 };

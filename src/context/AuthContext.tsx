@@ -6,6 +6,7 @@ interface User {
     id: string;
     name: string;
     mobile: string;
+    role: string;
 }
 
 interface AuthContextType {
@@ -16,6 +17,7 @@ interface AuthContextType {
     isInitialized: boolean;
     isOnboardingComplete: boolean;
     status: string | null;
+    supportId?: string | null;
     login: (token: string, refreshToken: string) => void;
     logout: () => void;
     updateStatus: (status: string) => void;
@@ -29,6 +31,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const [refreshToken, setRefreshToken] = useState<string | null>(localStorage.getItem('refreshToken'));
     const [isOnboardingComplete, setIsOnboardingComplete] = useState<boolean>(false);
     const [status, setStatus] = useState<string | null>(null);
+    const [supportId, setSupportId] = useState<string | null>(null);
     const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
     const [isInitialized, setIsInitialized] = useState<boolean>(false);
 
@@ -50,6 +53,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             setUser(decoded.user);
             setIsOnboardingComplete(decoded.isOnboardingComplete);
             setStatus(decoded.status);
+            setSupportId(decoded.supportId);
             setIsAuthenticated(true);
 
             // Configure axios default header
@@ -105,6 +109,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         setUser(null);
         setIsOnboardingComplete(false);
         setStatus(null);
+        setSupportId(null);
         setIsAuthenticated(false);
         localStorage.removeItem('token');
         localStorage.removeItem('refreshToken');
@@ -122,6 +127,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             isInitialized,
             isOnboardingComplete,
             status,
+            supportId,
             login,
             logout,
             updateStatus: setStatus,

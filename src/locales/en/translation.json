@@ -291,6 +291,8 @@
       },
       "verification": {
         "title": "Restaurant Under Review",
+        "actionRequiredTitle": "Action Required",
+        "reasonTitle": "Reason for action",
         "subtitle": "Thanks for submitting your documents. We're currently verifying your business details to ensure everything is perfect.",
         "reviewTimeframe": "48-Hour Review Timeframe",
         "reviewTimeframeDesc": "Our compliance team reviews applications in the order they are received. This process typically takes up to 48 hours (excluding weekends). You will receive an email and SMS notification once the verification is complete.",

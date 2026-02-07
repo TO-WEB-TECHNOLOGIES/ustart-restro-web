@@ -1,28 +1,37 @@
 import { useEffect, useState, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Mail, Phone, Clock, ClipboardCheck, Pencil } from 'lucide-react';
+import { Mail, Phone, Clock, ClipboardCheck, Pencil, AlertCircle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { masterDataService } from '../api/masterData';
+import { onboardingService } from '../api/onboardingService';
 import { useOnboardingStore } from '../store/useOnboardingStore';
+import type { OnboardingStatusResponse } from '../../../types/onboardingTypes';
 
 export const Verification = () => {
     const { t } = useTranslation();
     const navigate = useNavigate();
     const { setIsEditing } = useOnboardingStore();
-    const [contactData, setContactData] = useState<{ email: string; phone: string; supportId: string; isEditLocked?: boolean } | null>(null);
+    const [statusData, setStatusData] = useState<OnboardingStatusResponse | null>(null);
 
     useEffect(() => {
-        masterDataService.getContactSupport().then(setContactData);
+        onboardingService.getOnboardingStatus()
+            .then(setStatusData)
+            .catch(err => console.error("Failed to fetch status", err));
     }, []);
 
     const supportInfo = useMemo(() => {
-        return contactData || {
-            email: 'partners@ustart.com',
+        if (statusData?.supportInfo) {
+            return {
+                ...statusData.supportInfo,
+                isEditLocked: statusData.isEditLocked
+            };
+        }
+        return {
+            email: 'partners@ustart.in',
             phone: '+91 7827234027',
             supportId: 'UST-8829-XJ',
             isEditLocked: false
         };
-    }, [contactData]);
+    }, [statusData]);
 
     const handleEditClick = () => {
         if (supportInfo.isEditLocked) {
@@ -39,11 +48,26 @@ export const Verification = () => {
             <div className="flex flex-col md:flex-row justify-between items-start gap-8 mb-12 relative">
                 <div className="max-w-2xl pt-4">
                     <h2 className="text-3xl md:text-5xl font-bold text-slate-900 mb-4">
-                        {t('onboarding.restaurant.verification.title')}
+                        {statusData?.status === 'ACTION_REQUIRED'
+                            ? t('onboarding.restaurant.verification.actionRequiredTitle', 'Action Required')
+                            : t('onboarding.restaurant.verification.title')}
                     </h2>
                     <p className="text-lg md:text-xl text-slate-500 leading-relaxed mb-6">
-                        {t('onboarding.restaurant.verification.subtitle')}
+                        {statusData?.message || t('onboarding.restaurant.verification.subtitle')}
                     </p>
+
+                    {/* Action Required Reason Box */}
+                    {statusData?.status === 'ACTION_REQUIRED' && statusData.reason && (
+                        <div className="mb-8 p-4 bg-red-50 border border-red-100 rounded-2xl flex gap-3 animate-in zoom-in-95 duration-300">
+                            <AlertCircle className="w-6 h-6 text-red-500 shrink-0 mt-0.5" />
+                            <div>
+                                <p className="font-bold text-red-900 leading-tight mb-1">
+                                    {t('onboarding.restaurant.verification.reasonTitle', 'Reason for action')}
+                                </p>
+                                <p className="text-red-700 text-sm italic">"{statusData.reason}"</p>
+                            </div>
+                        </div>
+                    )}
 
                     <div className="flex flex-col gap-2">
                         <button
@@ -69,13 +93,19 @@ export const Verification = () => {
                     <div className="absolute inset-0 bg-secondary-orange/5 blur-3xl rounded-full" />
                     <div className="relative">
                         <div className="w-32 h-32 bg-background-white rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] -rotate-3 flex items-center justify-center border border-slate-50">
-                            <div className="w-16 h-16 bg-gradient-to-br from-secondary-orange to-[#ff8c24] rounded-2xl flex items-center justify-center shadow-inner">
-                                <ClipboardCheck className="w-9 h-9 text-background-white" />
+                            <div className={`w-16 h-16 rounded-2xl flex items-center justify-center shadow-inner ${statusData?.status === 'ACTION_REQUIRED' ? 'bg-red-500' : 'bg-gradient-to-br from-secondary-orange to-[#ff8c24]'
+                                }`}>
+                                {statusData?.status === 'ACTION_REQUIRED' ? (
+                                    <AlertCircle className="w-9 h-9 text-background-white" />
+                                ) : (
+                                    <ClipboardCheck className="w-9 h-9 text-background-white" />
+                                )}
                             </div>
                         </div>
 
                         {/* Notification Badge */}
-                        <div className="absolute -top-3 -right-3 w-12 h-12 bg-primary-blue rounded-full border-[3px] border-background-white flex items-center justify-center shadow-lg z-10">
+                        <div className={`absolute -top-3 -right-3 w-12 h-12 rounded-full border-[3px] border-background-white flex items-center justify-center shadow-lg z-10 ${statusData?.status === 'ACTION_REQUIRED' ? 'bg-red-500' : 'bg-primary-blue'
+                            }`}>
                             <span className="text-background-white font-bold text-xl">!</span>
                         </div>
                     </div>

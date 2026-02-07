@@ -61,3 +61,17 @@ export interface ContactSupport {
     supportId: string;
     isEditLocked: boolean;
 }
+
+export interface OnboardingStatusResponse {
+    status: 'APPROVAL_PENDING' | 'ACTION_REQUIRED' | 'APPROVED' | 'REJECTED' | 'ACTIVE' | 'BLOCKED' | 'ON_HOLD';
+    isEditLocked: boolean;
+    message: string;
+    reason?: string;
+    supportInfo: {
+        email: string;
+        phone: string;
+        supportId: string;
+    };
+    submittedAt?: string;
+    updatedAt?: string;
+}

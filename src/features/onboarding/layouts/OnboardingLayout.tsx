@@ -38,7 +38,7 @@ export const OnboardingLayout = () => {
             return;
         }
 
-        if (status === 'APPROVAL_PENDING' && !isEditing && !location.pathname.includes('/verification')) {
+        if ((status === 'APPROVAL_PENDING' || status === 'ACTION_REQUIRED') && !isEditing && !location.pathname.includes('/verification')) {
             console.log("Redirecting to verification...");
             navigate('/grow-with-ustart/verification', { replace: true });
         }
