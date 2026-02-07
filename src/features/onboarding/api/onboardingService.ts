@@ -55,5 +55,13 @@ export const onboardingService = {
     getOnboardingStatus: async (): Promise<any> => {
         const response = await api.get('/api/v1/onboarding-status/status');
         return response.data;
+    },
+
+    /**
+     * Fetches all submitted onboarding data for pre-filling.
+     */
+    getOnboardingData: async (): Promise<OnboardingData> => {
+        const response = await api.get<OnboardingData>('/api/v1/restaurant-onboarding');
+        return response.data;
     }
 };
