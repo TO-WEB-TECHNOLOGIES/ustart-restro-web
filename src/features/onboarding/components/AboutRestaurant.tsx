@@ -69,6 +69,7 @@ export const AboutRestaurant = () => {
         personalInfo,
         restaurantInfo,
         reset,
+        isEditing,
     } = useOnboardingStore();
     const [view, setView] = useState<'details' | 'documents'>('details');
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -715,7 +716,9 @@ export const AboutRestaurant = () => {
                             </>
                         ) : (
                             <>
-                                {t('onboarding.restaurant.documents.verifyButton')}
+                                {isEditing
+                                    ? t('onboarding.restaurant.documents.updateButton')
+                                    : t('onboarding.restaurant.documents.verifyButton')}
                                 <CheckCircle2 className="w-5 h-5" />
                             </>
                         )}

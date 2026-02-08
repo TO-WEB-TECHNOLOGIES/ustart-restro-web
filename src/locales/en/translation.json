@@ -287,6 +287,7 @@
         "verificationTitle": "Bank Verification",
         "verificationText": "We will deposit a small amount (₹1) to verify your bank account details instantly. Please ensure the information provided is correct to avoid payment delays.",
         "verifyButton": "That's me, please verify",
+        "updateButton": "Update my Onboarding Details",
         "backToDetails": "Back to Restaurant Details"
       },
       "verification": {
