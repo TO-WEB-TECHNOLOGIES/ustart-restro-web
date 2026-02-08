@@ -78,19 +78,30 @@ export const PersonalInfo = () => {
                 try {
                     const data = await onboardingService.getOnboardingData();
 
-                    // Update Store
-                    if (data.personalInfo) setPersonalInfo(data.personalInfo);
-                    if (data.restaurantInfo) setRestaurantInfo(data.restaurantInfo);
-                    if (data.aboutRestaurant) setAboutRestaurant(data.aboutRestaurant as any);
-                    if (data.documents) setDocuments(data.documents as any);
+                    // Update Form & Store
+                    const pInfo = data.personalInfo;
+                    if (pInfo) {
+                        // Map designation back to bilingual format if it matches the English part
+                        const bilingualDesignation = DESIGNATIONS.find(d => d.startsWith(pInfo.designation)) || pInfo.designation;
+                        const mappedPersonalInfo = { ...pInfo, designation: bilingualDesignation };
 
-                    // Update Form
-                    reset(data.personalInfo);
+                        setPersonalInfo(mappedPersonalInfo);
+                        reset(mappedPersonalInfo);
 
-                    // Check verification for the fetched email
-                    if (data.personalInfo?.email) {
-                        const status = await mockAuthService.checkEmailVerification(data.personalInfo.email);
-                        setIsEmailVerified(status.isVerified);
+                        if (data.restaurantInfo) {
+                            const rInfo = { ...data.restaurantInfo };
+                            // Normalize null values from backend for form fields
+                            if (rInfo.gstNumber === null) rInfo.gstNumber = '';
+                            setRestaurantInfo(rInfo);
+                        }
+                        if (data.aboutRestaurant) setAboutRestaurant(data.aboutRestaurant as any);
+                        if (data.documents) setDocuments(data.documents as any);
+
+                        // Check verification for the fetched email
+                        if (pInfo.email) {
+                            const status = await mockAuthService.checkEmailVerification(pInfo.email);
+                            setIsEmailVerified(status.isVerified);
+                        }
                     }
 
                 } catch (error) {

@@ -294,7 +294,10 @@ export const RestaurantInfo = () => {
 
                             {/* GST */}
                             <div className="space-y-2">
-                                <Label htmlFor="gstNumber" className="font-semibold text-slate-700">{t('onboarding.restaurant.form.gstLabel')} <span className="text-slate-400 font-normal text-xs">{t('onboarding.restaurant.form.optional')}</span></Label>
+                                <Label htmlFor="gstNumber" className="font-semibold text-slate-700">
+                                    {t('onboarding.restaurant.form.gstLabel')}
+                                    {!watch('gstNumber') && <span className="text-slate-400 font-normal text-xs ml-1">{t('onboarding.restaurant.form.optional')}</span>}
+                                </Label>
                                 <Input
                                     id="gstNumber"
                                     {...register('gstNumber')}
@@ -438,7 +441,10 @@ export const RestaurantInfo = () => {
 
                             {/* GST Number */}
                             <div className="space-y-2">
-                                <Label htmlFor="gstNumber" className="font-semibold text-slate-700">{t('onboarding.restaurant.form.gstLabel')} <span className="text-slate-400 font-normal text-xs">{t('onboarding.restaurant.form.optional')}</span></Label>
+                                <Label htmlFor="gstNumber" className="font-semibold text-slate-700">
+                                    {t('onboarding.restaurant.form.gstLabel')}
+                                    {!watch('gstNumber') && <span className="text-slate-400 font-normal text-xs ml-1">{t('onboarding.restaurant.form.optional')}</span>}
+                                </Label>
                                 <Input
                                     id="gstNumber"
                                     {...register('gstNumber')}
@@ -728,7 +734,8 @@ export const RestaurantInfo = () => {
                             {/* Google Maps Link */}
                             <div className="space-y-2">
                                 <Label htmlFor="googleMapsLink" className="font-semibold text-slate-700">
-                                    {t('onboarding.restaurant.form.mapsLinkLabel')} <span className="text-slate-400 font-normal">{t('onboarding.restaurant.form.optional')}</span>
+                                    {t('onboarding.restaurant.form.mapsLinkLabel')}
+                                    {!watch('googleMapsLink') && <span className="text-slate-400 font-normal ml-1">({t('onboarding.restaurant.form.optional')})</span>}
                                 </Label>
                                 <Input
                                     id="googleMapsLink"

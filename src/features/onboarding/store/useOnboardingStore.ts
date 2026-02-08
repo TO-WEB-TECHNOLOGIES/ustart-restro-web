@@ -114,21 +114,23 @@ export const useOnboardingStore = create<OnboardingState>()(
         }),
         {
             name: 'onboarding-storage',
-            partialize: (state) => {
-                const { aboutRestaurant, documents, ...rest } = state;
-                return {
-                    ...rest,
-                    aboutRestaurant: {
-                        ...aboutRestaurant,
-                        menuImages: [],
-                        dishImage: undefined,
-                    },
-                    documents: {
-                        ...documents,
-                        fssaiDocument: undefined,
-                    },
-                };
-            },
+            partialize: (state) => ({
+                currentStep: state.currentStep,
+                isEditing: state.isEditing,
+                personalInfo: state.personalInfo,
+                restaurantInfo: state.restaurantInfo,
+                aboutRestaurant: {
+                    ...state.aboutRestaurant,
+                    // Persist only URLs (strings), drop File objects
+                    menuImages: (state.aboutRestaurant.menuImages || []).filter(img => typeof img === 'string'),
+                    dishImage: typeof state.aboutRestaurant.dishImage === 'string' ? state.aboutRestaurant.dishImage : undefined,
+                },
+                documents: {
+                    ...state.documents,
+                    // Persist only URLs (strings), drop File objects
+                    fssaiDocument: typeof state.documents.fssaiDocument === 'string' ? state.documents.fssaiDocument : undefined,
+                },
+            }),
         }
     )
 );
