@@ -50,7 +50,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             if (refreshTok) {
                 setRefreshToken(refreshTok);
             }
-            setUser(decoded.user);
+
+            const userData = decoded.user ? {
+                ...decoded.user,
+                name: decoded.user.name || 'Guest'
+            } : null;
+
+            setUser(userData);
             setIsOnboardingComplete(decoded.isOnboardingComplete);
             setStatus(decoded.status);
             setSupportId(decoded.supportId);

@@ -128,21 +128,6 @@ export const OnboardingLayout = () => {
                         );
                     })}
                 </div>
-
-                <div className="mt-auto bg-slate-800/50 p-4 rounded-xl">
-                    <div className="flex items-center gap-3">
-                        <div className="flex -space-x-2">
-                            {/* Mock avatars */}
-                            <div className="w-6 h-6 rounded-full bg-green-200"></div>
-                            <div className="w-6 h-6 rounded-full bg-blue-200"></div>
-                            <div className="w-6 h-6 rounded-full bg-secondary-orange text-[10px] flex items-center justify-center font-bold text-background-white">+5k</div>
-                        </div>
-                        <div>
-                            <p className="text-xs font-bold text-background-white">Trusted by 50,000+ Partners</p>
-                            <p className="text-[10px] text-slate-400">"USTART helped us grow our revenue by 40% in just 3 months."</p>
-                        </div>
-                    </div>
-                </div>
             </div>
 
             {/* Main Content */}
