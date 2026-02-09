@@ -9,12 +9,18 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Label } from '@/components/ui/label';
 import { OtpInput } from '@/components/ui/otp-input';
 import { mobileSchema, type MobileFormValues } from '@/features/auth/schemas';
-import { mockAuthService } from '@/features/auth/api/mockAuth';
+import { authService } from '@/features/auth/api/authService';
 import { useAuth } from '@/context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { decodeToken } from '@/utils/jwt';
 import { toast } from 'sonner';
 
+/**
+ * LoginForm Component
+ * Manages the 2-step authentication flow:
+ * 1. Mobile Number input & OTP request
+ * 2. OTP input & Verification
+ */
 export const LoginForm = () => {
     const { t } = useTranslation();
     const { login } = useAuth();
@@ -26,7 +32,7 @@ export const LoginForm = () => {
     const [loading, setLoading] = useState(false);
     const verifyButtonRef = useRef<HTMLButtonElement>(null);
 
-    // Timer state
+    // Timer state for Resend OTP (120 seconds)
     const [timer, setTimer] = useState(0);
     const [canResend, setCanResend] = useState(true);
 
@@ -34,7 +40,7 @@ export const LoginForm = () => {
         resolver: zodResolver(mobileSchema),
     });
 
-    // Timer effect
+    // Handle countdown for resending OTP
     useEffect(() => {
         let interval: ReturnType<typeof setInterval>;
         if (timer > 0) {
@@ -48,14 +54,17 @@ export const LoginForm = () => {
     }, [timer]);
 
     const startResendTimer = () => {
-        setTimer(120); // 2 minutes
+        setTimer(120);
         setCanResend(false);
     };
 
+    /**
+     * Handles Step 1: Sending OTP to the mobile number
+     */
     const onSendOtp = async (data: MobileFormValues) => {
         setLoading(true);
         try {
-            await mockAuthService.sendOtp(data.mobile);
+            await authService.sendOtp(data.mobile);
             setMobileNumber(data.mobile);
             setStep('otp');
             startResendTimer();
@@ -68,11 +77,14 @@ export const LoginForm = () => {
         }
     };
 
+    /**
+     * Handles resending OTP if the timer has expired
+     */
     const handleResendOtp = async () => {
         if (!canResend) return;
         setLoading(true);
         try {
-            await mockAuthService.sendOtp(mobileNumber);
+            await authService.sendOtp(mobileNumber);
             startResendTimer();
         } catch (error: any) {
             console.error(error);
@@ -90,13 +102,16 @@ export const LoginForm = () => {
 
     const [otpError, setOtpError] = useState<string | null>(null);
 
-    // Auto-focus verify button when OTP is complete
+    // Auto-focus verify button when OTP is complete (UX improvement)
     useEffect(() => {
         if (otp.length === 4) {
             verifyButtonRef.current?.focus();
         }
     }, [otp]);
 
+    /**
+     * Handles Step 2: Verifying the OTP and establishing a session
+     */
     const onVerifyOtp = async () => {
         setOtpError(null);
         if (otp.length !== 4) {
@@ -106,9 +121,9 @@ export const LoginForm = () => {
 
         setLoading(true);
         try {
-            const response = await mockAuthService.verifyOtp(mobileNumber, otp);
+            const response = await authService.verifyOtp(mobileNumber, otp);
 
-            // Login using context
+            // Establish session in AuthContext
             login(response.token, response.refreshToken);
 
             // Decode token to check status for redirect

@@ -18,6 +18,11 @@ import { INDIAN_STATES } from '../../../utils/constants';
 
 
 
+/**
+ * RestaurantInfo Component
+ * Handles Step 2 of the onboarding flow.
+ * Manages complex business registration logic (CIN vs Non-CIN) and address collection.
+ */
 export const RestaurantInfo = () => {
     const { t } = useTranslation();
     const navigate = useNavigate();
@@ -27,6 +32,7 @@ export const RestaurantInfo = () => {
     const [isMapModalOpen, setIsMapModalOpen] = useState(false);
 
     // Initialize form with stored data or defaults
+    // Note: Addresses are stored as pipe-delimited strings but managed as objects in the UI
     const {
         register,
         handleSubmit,
@@ -86,6 +92,10 @@ export const RestaurantInfo = () => {
         }
     }, [hasCin, isSameAsRegistered, registeredAddress, setValue]);
 
+    /**
+     * Submission Handler: Transforms object-based addresses into pipe-delimited 
+     * strings expected by the backend before saving to the store.
+     */
     const onSubmit = (data: any) => {
         const transformedData = { ...data };
 

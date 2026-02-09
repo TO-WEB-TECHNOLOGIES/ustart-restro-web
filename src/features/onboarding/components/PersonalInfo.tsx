@@ -10,13 +10,18 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useAuth } from '@/context/AuthContext';
-import { mockAuthService } from '@/features/auth/api/mockAuth';
+import { authService } from '@/features/auth/api/authService';
 import { CheckCircle2, Lock, MessageSquare, Loader2 } from 'lucide-react';
 import { OtpInput } from '@/components/ui/otp-input';
 import { toast } from 'sonner';
 import { DESIGNATIONS } from '@/utils/constants';
 import { Briefcase } from 'lucide-react';
 
+/**
+ * PersonalInfo Component
+ * Handles the first step of the restaurant onboarding process.
+ * Responsible for gathering owner details and managing email verification.
+ */
 export const PersonalInfo = () => {
     const { t } = useTranslation();
     const navigate = useNavigate();
@@ -43,7 +48,7 @@ export const PersonalInfo = () => {
     const [otpError, setOtpError] = useState('');
     const [resendTimer, setResendTimer] = useState(0);
 
-    // Resend Timer Logic
+    // Resend Timer Logic for Email OTP
     useEffect(() => {
         let interval: any;
         if (resendTimer > 0) {
@@ -71,7 +76,10 @@ export const PersonalInfo = () => {
     const isSameAsMobile = watch('isSameAsMobile');
     const mobileValue = watch('mobile');
 
-    // Fetch Data on Edit
+    /**
+     * Rehydration logic: Fetches existing onboarding data when in edit mode
+     * to ensure the user can resume from their last saved state.
+     */
     useEffect(() => {
         const fetchData = async () => {
             if (isEditing) {
@@ -101,7 +109,7 @@ export const PersonalInfo = () => {
 
                         // Check verification for the fetched email
                         if (pInfo.email) {
-                            const status = await mockAuthService.checkEmailVerification(pInfo.email);
+                            const status = await authService.checkEmailVerification(pInfo.email);
                             setIsEmailVerified(status.isVerified);
                         }
                     }
@@ -121,7 +129,7 @@ export const PersonalInfo = () => {
         const checkInitialVerification = async () => {
             if (!isEditing && personalInfo.email && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(personalInfo.email)) {
                 try {
-                    const status = await mockAuthService.checkEmailVerification(personalInfo.email);
+                    const status = await authService.checkEmailVerification(personalInfo.email);
                     if (status.isVerified) {
                         setIsEmailVerified(true);
                     }
@@ -154,7 +162,7 @@ export const PersonalInfo = () => {
         setIsLoading(true);
         try {
             // Final check if email is already verified via API
-            const status = await mockAuthService.checkEmailVerification(data.email);
+            const status = await authService.checkEmailVerification(data.email);
 
             if (status.isVerified) {
                 setIsEmailVerified(true);
@@ -164,7 +172,7 @@ export const PersonalInfo = () => {
             }
 
             // If not verified, proceed to send OTP
-            await mockAuthService.sendEmailOtp(data.email);
+            await authService.sendEmailOtp(data.email);
             setShowOtpInput(true);
             setResendTimer(120); // Start 120s timer
         } catch (error: any) {
@@ -184,7 +192,7 @@ export const PersonalInfo = () => {
 
         try {
             const email = getValues('email');
-            await mockAuthService.verifyEmailOtp(email, otp);
+            await authService.verifyEmailOtp(email, otp);
 
             // Success
             setIsEmailVerified(true);

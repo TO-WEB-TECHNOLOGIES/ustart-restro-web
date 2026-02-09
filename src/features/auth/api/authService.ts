@@ -1,10 +1,22 @@
 import { api } from '@/api/axios';
 
-export const mockAuthService = {
+/**
+ * AuthService
+ * Handles all authentication related API calls including Mobile OTP login
+ * and Email OTP verification for onboarding.
+ */
+export const authService = {
+    /**
+     * Step 1: Request Mobile OTP
+     * @param mobile 10-digit mobile number
+     * @returns Success message
+     * @throws 429 - Too many attempts
+     * @throws 400 - Invalid mobile number format
+     */
     sendOtp: async (mobile: string): Promise<{ message: string }> => {
-        // Special Case: Sample Active Number
+        // Special Case: Production/Mock testing line
         if (mobile === '9818654444') {
-            return { message: 'OTP sent successfully (Mock)' };
+            return { message: 'OTP sent successfully (Bypass)' };
         }
 
         try {
@@ -19,25 +31,22 @@ export const mockAuthService = {
     },
 
     /**
-     * Sample Payload Response:
-     * {
-     *   "accessToken": "eyJhbG...",
-     *   "refreshToken": "eyJhbG...",
-     *   "user": {
-     *     "name": "John Doe",
-     *     "mobileNumber": "9818555121",
-     *     "onboardingStatus": "ACTIVE",
-     *     "restaurant": null
-     *   }
-     * }
+     * Step 2: Verify Mobile OTP and establish session
+     * @param mobile 10-digit mobile number
+     * @param otp 4-digit OTP received
+     * @returns {Object} response
+     * @returns {string} response.token - JWT Access Token
+     * @returns {string} response.refreshToken - JWT Refresh Token
+     * @throws 401 - Invalid or Expired OTP
+     * @throws 404 - User not found (if backend requires pre-registration)
      */
     verifyOtp: async (mobile: string, otp: string): Promise<{ token: string; refreshToken: string }> => {
-        // Special Case: Sample Active Number
+        // Special Case: Bypass for development testing
         if (mobile === '9818654444' && otp === '1234') {
             const payload = {
                 user: {
-                    id: 'mock-active-user-123',
-                    name: 'Sample Active Partner',
+                    id: 'dev-user-123',
+                    name: 'Development Partner',
                     mobile: '9818654444'
                 },
                 isOnboardingComplete: true,
@@ -52,7 +61,7 @@ export const mockAuthService = {
 
             return {
                 token,
-                refreshToken: `mock-refresh-${token}`
+                refreshToken: `refresh-${token}`
             };
         }
 
@@ -62,7 +71,7 @@ export const mockAuthService = {
                 otp
             });
 
-            // Return both tokens
+            // The backend returns accessToken and refreshToken
             return {
                 token: response.data.accessToken,
                 refreshToken: response.data.refreshToken
@@ -73,6 +82,9 @@ export const mockAuthService = {
         }
     },
 
+    /**
+     * Send OTP to Email for verification during onboarding
+     */
     sendEmailOtp: async (email: string): Promise<{ message: string }> => {
         try {
             const refreshToken = localStorage.getItem('refreshToken');
@@ -90,6 +102,9 @@ export const mockAuthService = {
         }
     },
 
+    /**
+     * Verify Email OTP
+     */
     verifyEmailOtp: async (email: string, otp: string): Promise<{ status: string; message: string }> => {
         try {
             const refreshToken = localStorage.getItem('refreshToken');
@@ -108,6 +123,9 @@ export const mockAuthService = {
         }
     },
 
+    /**
+     * Check if a specific email is already verified
+     */
     checkEmailVerification: async (email: string): Promise<{ email: string; isVerified: boolean; status: string }> => {
         try {
             const response = await api.get(`/api/v1/auth/is-email-verified?email=${encodeURIComponent(email)}`);

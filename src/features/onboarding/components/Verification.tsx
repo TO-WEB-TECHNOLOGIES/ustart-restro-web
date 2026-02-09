@@ -6,6 +6,11 @@ import { onboardingService } from '../api/onboardingService';
 import { useOnboardingStore } from '../store/useOnboardingStore';
 import type { OnboardingStatusResponse } from '../../../types/onboardingTypes';
 
+/**
+ * Verification Component
+ * Final landing page for the onboarding flow. 
+ * Polls backend for approval status or rejection reasons (ACTION_REQUIRED).
+ */
 export const Verification = () => {
     const { t } = useTranslation();
     const navigate = useNavigate();

@@ -11,7 +11,7 @@ export const mobileSchema = z.object({
 export const otpSchema = z.object({
     otp: z
         .string()
-        .length(6, 'OTP must be 6 digits')
+        .length(4, 'OTP must be 4 digits')
         .regex(/^[0-9]+$/, 'OTP must contain only digits'),
 });
 
