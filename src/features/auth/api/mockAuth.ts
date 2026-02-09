@@ -10,10 +10,6 @@ export const mockAuthService = {
         try {
             const response = await api.post('/api/v1/auth/send-otp', {
                 mobileNumber: mobile
-            }, {
-                headers: {
-                    'Referer': 'https://partner.ustart.in/'
-                }
             });
             return response.data;
         } catch (error: any) {
@@ -64,10 +60,6 @@ export const mockAuthService = {
             const response = await api.post('/api/v1/auth/verify-otp', {
                 mobileNumber: mobile,
                 otp
-            }, {
-                headers: {
-                    'Referer': 'https://partner.ustart.in/'
-                }
             });
 
             // Return both tokens
