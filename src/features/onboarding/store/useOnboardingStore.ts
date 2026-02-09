@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import type { PersonalInfoValues, BankDetailsValues } from '../schemas';
+import type { OnboardingData } from '@/types/onboardingTypes';
 
 export interface RestaurantInfoState {
     hasCin?: boolean;
@@ -35,6 +36,7 @@ export interface OnboardingState {
     aboutRestaurant: AboutRestaurantState;
     documents: Partial<BankDetailsValues>;
     isEditing: boolean;
+    initialData: OnboardingData | null;
 
     // Actions
     setPersonalInfo: (data: PersonalInfoValues) => void;
@@ -42,6 +44,7 @@ export interface OnboardingState {
     setAboutRestaurant: (data: Partial<AboutRestaurantState>) => void;
     setDocuments: (data: Partial<BankDetailsValues>) => void;
     setIsEditing: (status: boolean) => void;
+    setInitialData: (data: OnboardingData | null) => void;
     setCurrentStep: (step: number) => void;
     reset: () => void;
 }
@@ -49,6 +52,7 @@ export interface OnboardingState {
 const initialState = {
     currentStep: 1,
     isEditing: false,
+    initialData: null,
     personalInfo: {
         fullName: '',
         designation: '',
@@ -109,6 +113,7 @@ export const useOnboardingStore = create<OnboardingState>()(
                 documents: { ...state.documents, ...data }
             })),
             setIsEditing: (status) => set({ isEditing: status }),
+            setInitialData: (data) => set({ initialData: data }),
             setCurrentStep: (step) => set({ currentStep: step }),
             reset: () => set(initialState),
         }),

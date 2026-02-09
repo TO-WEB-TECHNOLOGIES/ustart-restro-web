@@ -70,6 +70,7 @@ export const AboutRestaurant = () => {
         restaurantInfo,
         reset,
         isEditing,
+        initialData,
     } = useOnboardingStore();
     const [view, setView] = useState<'details' | 'documents'>('details');
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -159,7 +160,7 @@ export const AboutRestaurant = () => {
             // Helper to get filename or preserve string (if it's already a filename from prev session)
             const getFileName = (file: any) => file instanceof File ? file.name : (typeof file === 'string' ? file : '');
 
-            // 1. Prepare Payload for Initiation (Step 1)
+            // 1. Prepare Payload for Submission (Full version)
             const fullPayload: OnboardingData = {
                 personalInfo: {
                     ...personalInfo,
@@ -181,12 +182,51 @@ export const AboutRestaurant = () => {
                 } as OnboardingDocuments
             };
 
-            // 2. Submit Data (Get Presigned URLs)
+            // 2. Differencing logic for Partial Updates
+            const getChangedFields = (current: any, original: any) => {
+                if (!original) return current;
+                const changes: any = {};
+
+                Object.keys(current).forEach(key => {
+                    const val = current[key];
+                    const origVal = original[key];
+
+                    if (Array.isArray(val)) {
+                        // For arrays (cuisines, menuImages), compare stringified versions
+                        if (JSON.stringify(val) !== JSON.stringify(origVal)) {
+                            changes[key] = val;
+                        }
+                    } else if (val && typeof val === 'object') {
+                        // Deep compare for objects (foodTypes)
+                        const nestedChanges = getChangedFields(val, origVal);
+                        if (Object.keys(nestedChanges).length > 0) {
+                            changes[key] = nestedChanges;
+                        }
+                    } else if (val !== origVal) {
+                        changes[key] = val;
+                    }
+                });
+                return changes;
+            };
+
+            const submitPayload = isEditing ? getChangedFields(fullPayload, initialData) : fullPayload;
+
+            // Log changes for debugging
+            if (isEditing) {
+                console.log("Partial Update Payload:", submitPayload);
+                if (Object.keys(submitPayload).length === 0) {
+                    toast.info(t('No changes detected'));
+                    setIsSubmitting(false);
+                    return;
+                }
+            }
+
+            // 3. Submit Data (Get Presigned URLs)
             let presignedUrls;
             if (isEditing) {
-                presignedUrls = await onboardingService.updateOnboarding(fullPayload);
+                presignedUrls = await onboardingService.updateOnboarding(submitPayload);
             } else {
-                presignedUrls = await onboardingService.initiateOnboarding(fullPayload);
+                presignedUrls = await onboardingService.initiateOnboarding(submitPayload);
             }
 
             // 3. Upload Files (Step 2)

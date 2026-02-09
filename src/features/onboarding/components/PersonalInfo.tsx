@@ -28,7 +28,8 @@ export const PersonalInfo = () => {
         isEditing,
         setRestaurantInfo,
         setAboutRestaurant,
-        setDocuments
+        setDocuments,
+        setInitialData
     } = useOnboardingStore();
 
     // Verification State (Managed locally instead of store)
@@ -77,6 +78,7 @@ export const PersonalInfo = () => {
                 setIsFetching(true);
                 try {
                     const data = await onboardingService.getOnboardingData();
+                    setInitialData(data);
 
                     // Update Form & Store
                     const pInfo = data.personalInfo;
