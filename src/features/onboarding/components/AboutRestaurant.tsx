@@ -158,7 +158,11 @@ export const AboutRestaurant = () => {
             setDocuments(data);
 
             // Helper to get filename or preserve string (if it's already a filename from prev session)
-            const getFileName = (file: any) => file instanceof File ? file.name : (typeof file === 'string' ? file : '');
+            const getFileName = (file: any) => {
+                if (file instanceof File) return file.name;
+                if (typeof file === 'string') return file.split('/').pop() || '';
+                return '';
+            };
 
             // 1. Prepare Payload for Submission (Full version)
             const fullPayload: OnboardingData = {
@@ -187,23 +191,35 @@ export const AboutRestaurant = () => {
                 if (!original) return current;
                 const changes: any = {};
 
+                // Normalize helper for comparison
+                const normalize = (v: any) => {
+                    if (v === '' || v === undefined || v === null) return null;
+                    if (typeof v === 'string') return v.split('/').pop();
+                    return v;
+                };
+
                 Object.keys(current).forEach(key => {
                     const val = current[key];
                     const origVal = original[key];
 
                     if (Array.isArray(val)) {
-                        // For arrays (cuisines, menuImages), compare stringified versions
-                        if (JSON.stringify(val) !== JSON.stringify(origVal)) {
+                        // For arrays (cuisines, menuImages), compare normalized versions
+                        const normVal = val.map(normalize);
+                        const normOrig = Array.isArray(origVal) ? origVal.map(normalize) : [];
+                        if (JSON.stringify(normVal) !== JSON.stringify(normOrig)) {
                             changes[key] = val;
                         }
-                    } else if (val && typeof val === 'object') {
-                        // Deep compare for objects (foodTypes)
-                        const nestedChanges = getChangedFields(val, origVal);
+                    } else if (val && typeof val === 'object' && !(val instanceof File)) {
+                        // Deep compare for objects (foodTypes, personalInfo, etc.)
+                        const nestedChanges = getChangedFields(val, origVal || {});
                         if (Object.keys(nestedChanges).length > 0) {
                             changes[key] = nestedChanges;
                         }
-                    } else if (val !== origVal) {
-                        changes[key] = val;
+                    } else {
+                        // Single values
+                        if (normalize(val) !== normalize(origVal)) {
+                            changes[key] = val;
+                        }
                     }
                 });
                 return changes;
@@ -213,7 +229,9 @@ export const AboutRestaurant = () => {
 
             // Log changes for debugging
             if (isEditing) {
-                console.log("Partial Update Payload:", submitPayload);
+                console.log("Full Constructed Payload:", fullPayload);
+                console.log("Initial Data for Comparison:", initialData);
+                console.log("Calculated Partial Update Payload:", submitPayload);
                 if (Object.keys(submitPayload).length === 0) {
                     toast.info(t('No changes detected'));
                     setIsSubmitting(false);
