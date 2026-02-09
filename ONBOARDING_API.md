@@ -146,6 +146,114 @@ The `accessToken` contains the following claims:
 
 ---
 
+## Get Onboarding Data (For Editing)
+
+**Endpoint**: `GET /api/v1/restaurant-onboarding`
+
+**Purpose**: Used to retrieve all previously submitted data to pre-fill the onboarding flow when a user needs to edit their application (e.g., when status is `ACTION_REQUIRED` and `isEditLocked` is `false`).
+
+### Response Payload
+
+This endpoint returns a combined object of all sections. The structure of `restaurantInfo` varies based on the `hasCin` flag.
+
+#### Case A: With CIN (Corporate/Brand)
+
+```json
+{
+  "personalInfo": {
+    "fullName": "John Doe",
+    "designation": "Owner",
+    "email": "owner@example.com",
+    "mobile": "9876543210",
+    "whatsapp": "9876543210",
+    "isSameAsMobile": true
+  },
+  "restaurantInfo": {
+    "hasCin": true,
+    "companyName": "Great Foods Pvt Ltd",
+    "brandName": "The Spicy Grill",
+    "hasMultipleBranches": false,
+    "cinNumber": "U12345MH2023PTC123456",
+    "panNumber": "ABCDE1234F",
+    "gstNumber": "22AAAAA0000A1Z5",
+    "registeredAddress": "Shop 1|Floor 2|Landmark|Gurugram|Haryana|122001"
+  },
+  "aboutRestaurant": {
+    "foodTypes": {
+      "isVegAvailable": true,
+      "isNonVegAvailable": true,
+      "isEggAvailable": false
+    },
+    "cuisines": [1, 5, 12],
+    "menuImages": [
+      "https://s3.amazonaws.com/bucket/onboarding/menu_existing_1.jpg?signature=..."
+    ],
+    "dishImage": "https://s3.amazonaws.com/bucket/onboarding/brand_logo_existing.jpg?signature=..."
+  },
+  "documents": {
+    "fssaiDocument": "https://s3.amazonaws.com/bucket/onboarding/fssai_existing.pdf?signature=...",
+    "accountNumber": "1234567890",
+    "ifscCode": "HDFC0001234",
+    "accountHolderName": "Great Foods Pvt Ltd",
+    "bankName": "HDFC Bank",
+    "branchName": "Cyber Hub"
+  }
+}
+```
+
+#### Case B: Without CIN (Individual Restaurant)
+
+```json
+{
+  "personalInfo": {
+    "fullName": "Jane Smith",
+    "designation": "Proprietor",
+    "email": "jane@example.com",
+    "mobile": "9999988888",
+    "whatsapp": "9999988888",
+    "isSameAsMobile": true
+  },
+  "restaurantInfo": {
+    "hasCin": false,
+    "restaurantName": "Jane's Bistro",
+    "panNumber": "BGVPI9876C",
+    "gstNumber": null,
+    "registeredAddress": "Home Plot 10|Vikas Nagar|Delhi|Delhi|110001",
+    "restaurantAddress": "Shop 4|Main Market|Rohini Sec 7|Delhi|Delhi|110085",
+    "location": "28.7041:77.1025",
+    "googleMapsLink": "https://maps.app.goo.gl/jane-bistro-link"
+  },
+  "aboutRestaurant": {
+    "foodTypes": {
+      "isVegAvailable": true,
+      "isNonVegAvailable": false,
+      "isEggAvailable": true
+    },
+    "cuisines": [2, 8],
+    "menuImages": [
+      "https://s3.amazonaws.com/bucket/onboarding/jane_menu_1.jpg?signature=..."
+    ],
+    "dishImage": "https://s3.amazonaws.com/bucket/onboarding/featured_dish.jpg?signature=..."
+  },
+  "documents": {
+    "fssaiDocument": "https://s3.amazonaws.com/bucket/onboarding/jane_fssai.pdf?signature=...",
+    "accountNumber": "987654321012",
+    "ifscCode": "ICIC0006789",
+    "accountHolderName": "Jane Smith",
+    "bankName": "ICICI Bank",
+    "branchName": "Rohini Sector 7"
+  }
+}
+```
+
+### Usage Note
+
+- The image and document fields (`menuImages`, `dishImage`, `fssaiDocument`) contain **fully qualified signed S3 URLs** for direct download/viewing, rather than just filenames.
+- The frontend uses this data to populate the `useOnboardingStore` and `react-hook-form` defaults.
+- If a section hasn't been submitted yet, it may be `null` or missing.
+
+---
+
 ## Notes
 
 - **GSTN**: Optional. If provided, it must match the standard GST regex.

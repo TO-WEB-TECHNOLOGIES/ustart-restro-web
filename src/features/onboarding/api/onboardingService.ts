@@ -63,5 +63,22 @@ export const onboardingService = {
     getOnboardingData: async (): Promise<OnboardingData> => {
         const response = await api.get<OnboardingData>('/api/v1/restaurant-onboarding');
         return response.data;
+    },
+
+    /**
+     * Partial Update Onboarding
+     * Sends changed fields and receives presigned URLs if files changed.
+     */
+    updateOnboarding: async (data: Partial<OnboardingData>): Promise<InitiateOnboardingResponse> => {
+        const response = await api.put<InitiateOnboardingResponse>('/api/v1/restaurant-onboarding', data);
+        return response.data;
+    },
+
+    /**
+     * Confirm S3 Upload
+     * Notifies the backend that files have been successfully uploaded to S3.
+     */
+    confirmUpload: async (): Promise<void> => {
+        await api.put('/api/v1/restaurant-onboarding/confirm-upload');
     }
 };

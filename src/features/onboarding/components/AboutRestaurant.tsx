@@ -181,18 +181,25 @@ export const AboutRestaurant = () => {
                 } as OnboardingDocuments
             };
 
-            // 2. Initiate Onboarding (Get Presigned URLs)
-            const presignedUrls = await onboardingService.initiateOnboarding(fullPayload);
+            // 2. Submit Data (Get Presigned URLs)
+            let presignedUrls;
+            if (isEditing) {
+                presignedUrls = await onboardingService.updateOnboarding(fullPayload);
+            } else {
+                presignedUrls = await onboardingService.initiateOnboarding(fullPayload);
+            }
 
             // 3. Upload Files (Step 2)
             setProgressText(t('Uploading documents...'));
 
             const uploadPromises: Promise<void>[] = [];
+            let hasFilesToUpload = false;
 
             // Helper to match file key and upload
             const queueUpload = (url: string | undefined, file: File | string | undefined) => {
                 if (url && file instanceof File) {
                     uploadPromises.push(onboardingService.uploadFile(url, file));
+                    hasFilesToUpload = true;
                 }
             };
 
@@ -209,14 +216,27 @@ export const AboutRestaurant = () => {
                 });
             }
 
-            await Promise.all(uploadPromises);
+            if (uploadPromises.length > 0) {
+                await Promise.all(uploadPromises);
+            }
 
-            // 4. Complete Onboarding (Step 3)
+            // 4. Finalize
             setProgressText(t('Finalizing...'));
-            const response = await onboardingService.completeOnboarding();
+            if (isEditing) {
+                // For updates, if files were uploaded, we MUST confirm.
+                // If no files were uploaded, the PUT request alone is enough as per guide.
+                if (hasFilesToUpload) {
+                    await onboardingService.confirmUpload();
+                }
+                toast.success(t('Profile updated successfully'));
+            } else {
+                // For fresh onboarding, we always call completeOnboarding
+                const response = await onboardingService.completeOnboarding();
+                // Success - Login with new tokens
+                login(response.accessToken, response.refreshToken);
+            }
 
             // 5. Success
-            login(response.accessToken, response.refreshToken);
             reset();
             setCurrentStep(4);
             navigate('/grow-with-ustart/verification');
