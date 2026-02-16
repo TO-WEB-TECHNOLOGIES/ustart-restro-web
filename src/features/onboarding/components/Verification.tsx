@@ -1,6 +1,6 @@
 import { useEffect, useState, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Mail, Phone, Clock, ClipboardCheck, Pencil, AlertCircle } from 'lucide-react';
+import { Mail, Phone, ClipboardCheck, Pencil, AlertCircle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { onboardingService } from '../api/onboardingService';
 import { useOnboardingStore } from '../store/useOnboardingStore';
