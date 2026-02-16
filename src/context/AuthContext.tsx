@@ -7,6 +7,7 @@ interface User {
     name: string;
     mobile: string;
     role: string;
+    brandId?: string;
 }
 
 interface AuthContextType {
@@ -18,6 +19,7 @@ interface AuthContextType {
     isOnboardingComplete: boolean;
     status: string | null;
     supportId?: string | null;
+    isMultipleRestro: boolean;
     login: (token: string, refreshToken: string) => void;
     logout: () => void;
     updateStatus: (status: string) => void;
@@ -34,6 +36,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const [supportId, setSupportId] = useState<string | null>(null);
     const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
     const [isInitialized, setIsInitialized] = useState<boolean>(false);
+    const [isMultipleRestro, setIsMultipleRestro] = useState<boolean>(false);
 
     const initializeAuth = (authToken: string, refreshTok?: string) => {
         const decoded = decodeToken(authToken);
@@ -60,6 +63,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             setIsOnboardingComplete(decoded.isOnboardingComplete);
             setStatus(decoded.status);
             setSupportId(decoded.supportId);
+            setIsMultipleRestro(decoded.isMultipleRestro || false);
             setIsAuthenticated(true);
 
             // Configure axios default header
@@ -134,6 +138,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             isOnboardingComplete,
             status,
             supportId,
+            isMultipleRestro,
             login,
             logout,
             updateStatus: setStatus,

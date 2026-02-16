@@ -147,8 +147,12 @@
         "subtitle": "In Progress"
       },
       "menu": {
-        "title": "Menu Setup",
-        "subtitle": "Dishes & pricing"
+        "title": "Complete Setup",
+        "subtitle": "Restaurants & outlets"
+      },
+      "upload": {
+        "title": "Upload Menu",
+        "subtitle": "Digitalize catalog"
       }
     },
     "header": {
@@ -308,12 +312,19 @@
         "timerExpiredMessage": "We understand we are delayed by {{hours}} hours and {{minutes}} minutes. We are working tirelessly to get you onboarded at the earliest. We truly value your patience and sincerely regret any delay. Your success is our priority, and we'll be in touch very soon.",
         "lockedHint": "Please contact customer care to edit your application data."
       },
-      "menu": {
-        "fillRequired": "Please fill in all required fields",
-        "itemAdded": "Item added to list",
-        "addAtLeastOne": "Please add at least one item to your menu",
-        "saveSuccess": "Menu saved successfully!",
-        "saveError": "Failed to save menu"
+      "complete": {
+        "title": "Complete Your Profile",
+        "subtitle": "Welcome back, {{name}}. Verify your restaurants to finish setup.",
+        "singleRestro": "I have only single Restaurant",
+        "multiRestro": "I have More than 1 restaurant",
+        "addRestaurant": "Add another restaurant",
+        "ownedRestaurants": "My Restaurants",
+        "ownedRestaurantsDesc": "Manage your outlets associated with this brand.",
+        "fetchingRestros": "Fetching your restaurants...",
+        "expandNetwork": "Expand your business network",
+        "finishButton": "Continue to Menu Upload",
+        "saveSuccess": "Onboarding completed successfully!",
+        "saveError": "Failed to complete onboarding"
       }
     }
   },

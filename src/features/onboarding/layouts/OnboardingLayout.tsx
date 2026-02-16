@@ -13,7 +13,8 @@ import {
     Utensils,
     Globe,
     Lock,
-    Hourglass
+    Hourglass,
+    PlusCircle
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Logo } from '@/components/ui/logo';
@@ -41,8 +42,8 @@ export const OnboardingLayout = () => {
         if ((status === 'APPROVAL_PENDING' || status === 'ACTION_REQUIRED') && !isEditing && !location.pathname.includes('/verification')) {
             console.log("Redirecting to verification...");
             navigate('/grow-with-ustart/verification', { replace: true });
-        } else if (status === 'APPROVED_BUT_MENU_PENDING' && !isEditing && !location.pathname.includes('/menu')) {
-            console.log("Redirecting to menu creation...");
+        } else if (status === 'APPROVED_BUT_MENU_PENDING' && !isEditing && !location.pathname.includes('/complete') && !location.pathname.includes('/upload-menu')) {
+            console.log("Redirecting to completion flow...");
             navigate('/grow-with-ustart/complete', { replace: true });
         }
     }, [status, location.pathname, navigate, isEditing]);
@@ -56,8 +57,10 @@ export const OnboardingLayout = () => {
             setCurrentStep(3);
         } else if (path.includes('/verification')) {
             setCurrentStep(4);
-        } else if (path.includes('/menu')) {
+        } else if (path.includes('/complete')) {
             setCurrentStep(5);
+        } else if (path.includes('/upload-menu')) {
+            setCurrentStep(6);
         }
     }, [location.pathname, setCurrentStep]);
 
@@ -84,6 +87,7 @@ export const OnboardingLayout = () => {
         { id: 3, icon: FileText, label: t('onboarding.steps.documents.title'), subLabel: t('onboarding.steps.documents.subtitle') },
         { id: 4, icon: Hourglass, label: t('onboarding.steps.verification.title'), subLabel: t('onboarding.steps.verification.subtitle') },
         { id: 5, icon: Utensils, label: t('onboarding.steps.menu.title'), subLabel: t('onboarding.steps.menu.subtitle') },
+        { id: 6, icon: PlusCircle, label: t('onboarding.steps.upload.title'), subLabel: t('onboarding.steps.upload.subtitle') },
     ];
 
     const toggleLanguage = () => {
@@ -159,7 +163,7 @@ export const OnboardingLayout = () => {
                 </div>
 
                 {/* Content Area */}
-                <div className="p-8 max-w-4xl mx-auto flex flex-grow items-center">
+                <div className="p-8 mx-auto flex flex-grow items-center">
                     <Outlet />
                 </div>
                 <div className="flex justify-center items-center gap-2 text-xs text-slate-400 mb-4">

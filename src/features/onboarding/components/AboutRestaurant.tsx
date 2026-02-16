@@ -19,6 +19,7 @@ import { onboardingService } from '../api/onboardingService';
 import { toast } from 'sonner';
 import { Info, BookOpen, Image as ImageIcon, X, Paperclip, CloudUpload, CheckCircle2, User, Store, MapPin, Loader2 } from 'lucide-react';
 import type { OnboardingData, RestaurantInfo, AboutRestaurant as OnboardingAboutRestaurant, OnboardingDocuments } from '@/types/onboardingTypes';
+import { getErrorMessage } from '@/utils/error';
 
 // Custom MenuList with IntersectionObserver for bulletproof infinite scroll
 // Defined outside to prevent re-mounting and scroll-to-top issues
@@ -170,10 +171,31 @@ export const AboutRestaurant = () => {
                     ...personalInfo,
                     designation: personalInfo.designation?.split(' / ')[0] || personalInfo.designation
                 },
-                restaurantInfo: {
-                    ...restaurantInfo,
-                    gstNumber: restaurantInfo.gstNumber?.trim() || null
-                } as RestaurantInfo,
+                restaurantInfo: (() => {
+                    const base = {
+                        hasCin: restaurantInfo.hasCin,
+                        panNumber: restaurantInfo.panNumber,
+                        gstNumber: restaurantInfo.gstNumber?.trim() || null,
+                        registeredAddress: restaurantInfo.registeredAddress
+                    };
+                    if (restaurantInfo.hasCin) {
+                        return {
+                            ...base,
+                            companyName: restaurantInfo.companyName,
+                            brandName: restaurantInfo.brandName,
+                            hasMultipleBranches: restaurantInfo.hasMultipleBranches,
+                            cinNumber: restaurantInfo.cinNumber
+                        };
+                    } else {
+                        return {
+                            ...base,
+                            restaurantName: restaurantInfo.restaurantName,
+                            restaurantAddress: restaurantInfo.restaurantAddress,
+                            location: restaurantInfo.location,
+                            googleMapsLink: restaurantInfo.googleMapsLink
+                        };
+                    }
+                })() as RestaurantInfo,
                 aboutRestaurant: {
                     ...aboutRestaurant,
                     menuImages: aboutRestaurant.menuImages?.map(getFileName) || [],
@@ -301,7 +323,7 @@ export const AboutRestaurant = () => {
 
         } catch (error: any) {
             console.error("Submission failed", error);
-            const message = error.response?.data?.message || 'Failed to submit onboarding data. Please try again.';
+            const message = getErrorMessage(error, 'Failed to submit onboarding data. Please try again.');
             toast.error(message);
         } finally {
             setIsSubmitting(false);

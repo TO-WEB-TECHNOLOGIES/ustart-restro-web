@@ -1,7 +1,7 @@
 import { useEffect, useState, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '@/context/AuthContext';
-import { Mail, Phone, ClipboardCheck, Pencil, AlertCircle } from 'lucide-react';
+import { Mail, Phone, ClipboardCheck, Pencil, AlertCircle, Loader2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { onboardingService } from '../api/onboardingService';
 import { useOnboardingStore } from '../store/useOnboardingStore';
@@ -56,6 +56,7 @@ export const Verification = () => {
     const { setIsEditing } = useOnboardingStore();
     const [statusData, setStatusData] = useState<OnboardingStatusResponse | null>(null);
     const [isExpired, setIsExpired] = useState(false);
+    const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
         onboardingService.getOnboardingStatus()
@@ -74,21 +75,16 @@ export const Verification = () => {
                     }
                 }
             })
-            .catch(err => console.error("Failed to fetch status", err));
+            .catch(err => console.error("Failed to fetch status", err))
+            .finally(() => setIsLoading(false));
     }, []);
 
     const supportInfo = useMemo(() => {
-        if (statusData?.supportInfo) {
-            return {
-                ...statusData.supportInfo,
-                isEditLocked: statusData.isEditLocked
-            };
-        }
         return {
-            email: 'partners@ustart.in',
-            phone: '+91 7827234027',
-            supportId: 'UST-8829-XJ',
-            isEditLocked: false
+            email: statusData?.supportInfo?.email || '',
+            phone: statusData?.supportInfo?.phone || '',
+            supportId: statusData?.supportInfo?.supportId || '',
+            isEditLocked: statusData?.isEditLocked || false
         };
     }, [statusData]);
 
@@ -107,13 +103,15 @@ export const Verification = () => {
         return new Date(statusData.submittedAt).getTime() + 72 * 60 * 60 * 1000;
     }, [statusData?.submittedAt]);
 
-    const renderer = ({ hours, minutes, seconds, completed }: CountdownRenderProps) => {
+
+    const renderer = ({ days, hours, minutes, seconds, completed }: CountdownRenderProps) => {
         if (completed) {
             return null;
         }
+        const totalHours = days * 24 + hours;
         return (
             <div className="flex items-center gap-3 animate-in zoom-in duration-500">
-                <ClockBox value={hours} label="Hrs" />
+                <ClockBox value={totalHours} label="Hrs" />
                 <div className="text-xl font-bold text-slate-300 pb-5">:</div>
                 <ClockBox value={minutes} label="Min" />
                 <div className="text-xl font-bold text-slate-300 pb-5">:</div>
@@ -141,9 +139,17 @@ export const Verification = () => {
         const interval = setInterval(updateDelay, 60000); // Update every minute
         return () => clearInterval(interval);
     }, [isExpired, targetDate]);
+    if (isLoading) {
+        return (
+            <div className="flex flex-col items-center justify-center h-64 space-y-4">
+                <Loader2 className="w-8 h-8 animate-spin text-secondary-orange" />
+                <p className="text-slate-500 font-medium">{t('Checking status...')}</p>
+            </div>
+        );
+    }
 
     return (
-        <div className="w-full animate-in fade-in slide-in-from-bottom-4 duration-500">
+        <div className="w-full max-w-4xl mx-auto animate-in fade-in slide-in-from-bottom-4 duration-500">
             <div className="flex flex-col md:flex-row justify-between items-start gap-8 mb-12 relative">
                 <div className="max-w-2xl pt-4">
                     <h2 className="text-3xl md:text-5xl font-bold text-slate-900 mb-4">

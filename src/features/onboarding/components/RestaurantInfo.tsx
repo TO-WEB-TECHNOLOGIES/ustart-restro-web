@@ -106,22 +106,22 @@ export const RestaurantInfo = () => {
         }
 
         if (data.hasCin) {
-            // Clear fields that belong to hasCin: false
-            transformedData.restaurantName = '';
-            transformedData.restaurantAddress = '';
-            transformedData.location = '';
-            transformedData.googleMapsLink = '';
+            // Remove fields that belong to hasCin: false
+            delete transformedData.restaurantName;
+            delete transformedData.restaurantAddress;
+            delete transformedData.location;
+            delete transformedData.googleMapsLink;
         } else {
             // Transform restaurantAddress to string
             if (data.restaurantAddress && typeof data.restaurantAddress === 'object') {
                 const ra = data.restaurantAddress;
                 transformedData.restaurantAddress = `${ra.line1}|${ra.line2}|${ra.landmark || ''}|${ra.locality}|${ra.state}|${ra.pincode}`;
             }
-            // Clear fields that belong to hasCin: true
-            transformedData.companyName = '';
-            transformedData.brandName = '';
-            transformedData.hasMultipleBranches = false;
-            transformedData.cinNumber = '';
+            // Remove fields that belong to hasCin: true
+            delete transformedData.companyName;
+            delete transformedData.brandName;
+            delete transformedData.hasMultipleBranches;
+            delete transformedData.cinNumber;
         }
 
         setRestaurantInfo(transformedData);

@@ -14,6 +14,7 @@ import { useAuth } from '@/context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { decodeToken } from '@/utils/jwt';
 import { toast } from 'sonner';
+import { getErrorMessage } from '@/utils/error';
 
 /**
  * LoginForm Component
@@ -70,7 +71,7 @@ export const LoginForm = () => {
             startResendTimer();
         } catch (error: any) {
             console.error(error);
-            const message = error.response?.data?.message || 'Failed to send OTP. Please try again.';
+            const message = getErrorMessage(error, 'Failed to send OTP. Please try again.');
             toast.error(message);
         } finally {
             setLoading(false);
@@ -88,7 +89,7 @@ export const LoginForm = () => {
             startResendTimer();
         } catch (error: any) {
             console.error(error);
-            const message = error.response?.data?.message || 'Failed to resend OTP.';
+            const message = getErrorMessage(error, 'Failed to resend OTP.');
             toast.error(message);
         } finally {
             setLoading(false);
@@ -140,7 +141,7 @@ export const LoginForm = () => {
                 navigate('/grow-with-ustart');
             }
         } catch (error: any) {
-            const message = error.response?.data?.message || t('auth.otp.invalidError') || "Invalid OTP";
+            const message = getErrorMessage(error, t('auth.otp.invalidError') || "Invalid OTP");
             setOtpError(message);
             toast.error(message);
             console.error(error);

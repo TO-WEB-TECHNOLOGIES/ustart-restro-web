@@ -12,7 +12,8 @@ const PersonalInfo = lazy(() => import('@/features/onboarding/components/Persona
 const RestaurantInfo = lazy(() => import('@/features/onboarding/components/RestaurantInfo').then(module => ({ default: module.RestaurantInfo })));
 const AboutRestaurant = lazy(() => import('@/features/onboarding/components/AboutRestaurant').then(module => ({ default: module.AboutRestaurant })));
 const Verification = lazy(() => import('@/features/onboarding/components/Verification').then(module => ({ default: module.Verification })));
-const MenuCreation = lazy(() => import('@/features/onboarding/components/MenuCreation').then(module => ({ default: module.MenuCreation })));
+const CompleteSetup = lazy(() => import('@/features/onboarding/components/CompleteSetup').then(module => ({ default: module.CompleteSetup })));
+const UploadMenu = lazy(() => import('@/features/onboarding/components/UploadMenu').then(module => ({ default: module.UploadMenu })));
 const HelpCenter = lazy(() => import('@/pages/HelpCenter').then(module => ({ default: module.HelpCenter })));
 const NotFound = lazy(() => import('@/pages/NotFound').then(module => ({ default: module.NotFound })));
 const DashboardLayout = lazy(() => import('@/features/dashboard/layouts/DashboardLayout').then(module => ({ default: module.DashboardLayout })));
@@ -77,7 +78,11 @@ export const router = createBrowserRouter([
                             },
                             {
                                 path: "complete",
-                                element: withSuspense(MenuCreation)
+                                element: withSuspense(CompleteSetup)
+                            },
+                            {
+                                path: "upload-menu",
+                                element: withSuspense(UploadMenu)
                             }
                         ]
                     }

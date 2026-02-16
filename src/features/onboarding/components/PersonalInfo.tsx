@@ -16,6 +16,7 @@ import { OtpInput } from '@/components/ui/otp-input';
 import { toast } from 'sonner';
 import { DESIGNATIONS } from '@/utils/constants';
 import { Briefcase } from 'lucide-react';
+import { getErrorMessage } from '@/utils/error';
 
 /**
  * PersonalInfo Component
@@ -107,11 +108,7 @@ export const PersonalInfo = () => {
                         if (data.aboutRestaurant) setAboutRestaurant(data.aboutRestaurant as any);
                         if (data.documents) setDocuments(data.documents as any);
 
-                        // Check verification for the fetched email
-                        if (pInfo.email) {
-                            const status = await authService.checkEmailVerification(pInfo.email);
-                            setIsEmailVerified(status.isVerified);
-                        }
+                        if (data.documents) setDocuments(data.documents as any);
                     }
 
                 } catch (error) {
@@ -124,23 +121,6 @@ export const PersonalInfo = () => {
         fetchData();
     }, [isEditing, setPersonalInfo, setRestaurantInfo, setAboutRestaurant, setDocuments, reset]);
 
-    // Initial Verification Check on first-time render
-    useEffect(() => {
-        const checkInitialVerification = async () => {
-            if (!isEditing && personalInfo.email && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(personalInfo.email)) {
-                try {
-                    const status = await authService.checkEmailVerification(personalInfo.email);
-                    if (status.isVerified) {
-                        setIsEmailVerified(true);
-                    }
-                } catch (error) {
-                    console.warn("Initial verification check failed", error);
-                }
-            }
-        };
-        checkInitialVerification();
-        // eslint-disable-next-line react-hooks-exhaustive-deps
-    }, []); // Only on mount
 
     // Pre-fill from Auth User (only if NOT editing and empty)
     useEffect(() => {
@@ -177,7 +157,7 @@ export const PersonalInfo = () => {
             setResendTimer(120); // Start 120s timer
         } catch (error: any) {
             console.error(error);
-            const message = error.response?.data?.message || 'Failed to send OTP. Please try again.';
+            const message = getErrorMessage(error, 'Failed to send OTP. Please try again.');
             toast.error(message);
         } finally {
             setIsLoading(false);
@@ -200,7 +180,7 @@ export const PersonalInfo = () => {
             navigate('/grow-with-ustart/restaurant-info');
         } catch (error: any) {
             console.error(error);
-            const message = error.response?.data?.message || 'Invalid OTP. Please try again.';
+            const message = getErrorMessage(error, 'Invalid OTP. Please try again.');
             setOtpError(message);
             toast.error(message);
         } finally {
