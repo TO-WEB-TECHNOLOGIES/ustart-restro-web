@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 // TODO: Replace with environment variable later
-const BASE_URL = 'http://localhost:8080';
+const BASE_URL = 'https://uat.ustart.in';
 
 export const api = axios.create({
     baseURL: BASE_URL,
