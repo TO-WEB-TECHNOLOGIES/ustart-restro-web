@@ -6,20 +6,65 @@ import { onboardingService } from '../api/onboardingService';
 import { useOnboardingStore } from '../store/useOnboardingStore';
 import type { OnboardingStatusResponse } from '../../../types/onboardingTypes';
 
+import Countdown, { type CountdownRenderProps } from 'react-countdown';
+
+import { AnimatePresence, motion } from 'framer-motion';
+
 /**
- * Verification Component
- * Final landing page for the onboarding flow. 
- * Polls backend for approval status or rejection reasons (ACTION_REQUIRED).
+ * Modern Clock Box Component
+ * Creates a premium animated digit flap effect.
  */
+const ClockBox = ({ value, label }: { value: number; label: string }) => {
+    const displayValue = value.toString().padStart(2, '0');
+
+    return (
+        <div className="flex flex-col items-center gap-1.5">
+            <div className="relative w-14 h-16 bg-slate-900 rounded-xl overflow-hidden shadow-xl border border-slate-800 flex items-center justify-center group">
+                {/* Horizontal divider for flap effect */}
+                <div className="absolute inset-0 flex flex-col">
+                    <div className="h-1/2 bg-gradient-to-b from-white/10 to-transparent" />
+                    <div className="h-px bg-white/5 shadow-[0_1px_2px_rgba(0,0,0,0.5)]" />
+                </div>
+
+                <AnimatePresence mode="popLayout">
+                    <motion.span
+                        key={displayValue}
+                        initial={{ y: 20, opacity: 0 }}
+                        animate={{ y: 0, opacity: 1 }}
+                        exit={{ y: -20, opacity: 0 }}
+                        transition={{ duration: 0.4, ease: "backOut" }}
+                        className="text-2xl font-mono font-black text-white relative z-10"
+                    >
+                        {displayValue}
+                    </motion.span>
+                </AnimatePresence>
+
+                {/* Subtle glow effect */}
+                <div className="absolute inset-0 bg-primary-blue/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+            </div>
+            <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">{label}</span>
+        </div>
+    );
+};
+
 export const Verification = () => {
     const { t } = useTranslation();
     const navigate = useNavigate();
     const { setIsEditing } = useOnboardingStore();
     const [statusData, setStatusData] = useState<OnboardingStatusResponse | null>(null);
+    const [isExpired, setIsExpired] = useState(false);
 
     useEffect(() => {
         onboardingService.getOnboardingStatus()
-            .then(setStatusData)
+            .then(data => {
+                setStatusData(data);
+                if (data.submittedAt) {
+                    const targetDate = new Date(data.submittedAt).getTime() + 72 * 60 * 60 * 1000;
+                    if (new Date().getTime() > targetDate) {
+                        setIsExpired(true);
+                    }
+                }
+            })
             .catch(err => console.error("Failed to fetch status", err));
     }, []);
 
@@ -48,6 +93,46 @@ export const Verification = () => {
         }
     };
 
+    const targetDate = useMemo(() => {
+        if (!statusData?.submittedAt) return 0;
+        return new Date(statusData.submittedAt).getTime() + 72 * 60 * 60 * 1000;
+    }, [statusData?.submittedAt]);
+
+    const renderer = ({ hours, minutes, seconds, completed }: CountdownRenderProps) => {
+        if (completed) {
+            return null;
+        }
+        return (
+            <div className="flex items-center gap-3 animate-in zoom-in duration-500">
+                <ClockBox value={hours} label="Hrs" />
+                <div className="text-xl font-bold text-slate-300 pb-5">:</div>
+                <ClockBox value={minutes} label="Min" />
+                <div className="text-xl font-bold text-slate-300 pb-5">:</div>
+                <ClockBox value={seconds} label="Sec" />
+            </div>
+        );
+    };
+
+    const [delayTime, setDelayTime] = useState({ hours: 0, minutes: 0 });
+
+    useEffect(() => {
+        if (!isExpired || !targetDate) return;
+
+        const updateDelay = () => {
+            const now = new Date().getTime();
+            const diff = now - targetDate;
+            if (diff > 0) {
+                const hours = Math.floor(diff / (1000 * 60 * 60));
+                const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+                setDelayTime({ hours, minutes });
+            }
+        };
+
+        updateDelay();
+        const interval = setInterval(updateDelay, 60000); // Update every minute
+        return () => clearInterval(interval);
+    }, [isExpired, targetDate]);
+
     return (
         <div className="w-full animate-in fade-in slide-in-from-bottom-4 duration-500">
             <div className="flex flex-col md:flex-row justify-between items-start gap-8 mb-12 relative">
@@ -57,9 +142,47 @@ export const Verification = () => {
                             ? t('onboarding.restaurant.verification.actionRequiredTitle', 'Action Required')
                             : t('onboarding.restaurant.verification.title')}
                     </h2>
-                    <p className="text-lg md:text-xl text-slate-500 leading-relaxed mb-6">
-                        {statusData?.message || t('onboarding.restaurant.verification.subtitle')}
+                    <p className={`text-lg md:text-xl leading-relaxed mb-8 transition-colors duration-500 ${isExpired ? 'text-slate-700 italic border-l-4 border-primary-blue/20 pl-4 bg-primary-blue/5 py-4 rounded-r-2xl' : 'text-slate-500'}`}>
+                        {isExpired
+                            ? t('onboarding.restaurant.verification.timerExpiredMessage', { hours: delayTime.hours, minutes: delayTime.minutes })
+                            : (statusData?.message || t('onboarding.restaurant.verification.subtitle'))}
                     </p>
+
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 mb-8">
+                        <div className="flex flex-col gap-2 order-2 sm:order-1">
+                            <button
+                                onClick={handleEditClick}
+                                className={`flex items-center gap-2 px-6 py-3 rounded-xl font-semibold transition-all duration-300 w-fit shadow-lg ${supportInfo.isEditLocked
+                                    ? 'bg-slate-100 text-slate-400 cursor-not-allowed border border-slate-200 shadow-none'
+                                    : 'bg-slate-900 text-white hover:bg-slate-800 hover:shadow-xl active:scale-95'
+                                    }`}
+                            >
+                                <Pencil className="w-4 h-4" />
+                                {supportInfo.isEditLocked ? 'Application Locked' : 'Edit Application'}
+                            </button>
+                            {supportInfo.isEditLocked && (
+                                <p className="text-xs text-red-500/80 font-medium animate-in fade-in slide-in-from-top-1 px-1">
+                                    {t('onboarding.restaurant.verification.lockedHint')}
+                                </p>
+                            )}
+                        </div>
+
+                        {statusData?.submittedAt && !isExpired && (
+                            <div className="order-1 sm:order-2 flex flex-col sm:items-end gap-3">
+                                <div className="flex items-center gap-2 px-2">
+                                    <div className="w-1.5 h-1.5 rounded-full bg-primary-blue animate-pulse" />
+                                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">
+                                        {t('onboarding.restaurant.verification.timerTitle')}
+                                    </span>
+                                </div>
+                                <Countdown
+                                    date={targetDate}
+                                    renderer={renderer}
+                                    onComplete={() => setIsExpired(true)}
+                                />
+                            </div>
+                        )}
+                    </div>
 
                     {/* Action Required Reason Box */}
                     {statusData?.status === 'ACTION_REQUIRED' && statusData.reason && (
@@ -73,24 +196,6 @@ export const Verification = () => {
                             </div>
                         </div>
                     )}
-
-                    <div className="flex flex-col gap-2">
-                        <button
-                            onClick={handleEditClick}
-                            className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors w-fit ${supportInfo.isEditLocked
-                                ? 'bg-slate-100 text-slate-400 cursor-not-allowed'
-                                : 'bg-primary-blue text-background-white hover:bg-primary-blue/90'
-                                }`}
-                        >
-                            <Pencil className="w-4 h-4" />
-                            {supportInfo.isEditLocked ? 'Application Locked' : 'Edit Application'}
-                        </button>
-                        {supportInfo.isEditLocked && (
-                            <p className="text-sm text-red-500 animate-in fade-in slide-in-from-top-1">
-                                Please contact customer care to edit your application data.
-                            </p>
-                        )}
-                    </div>
                 </div>
 
                 {/* Icon Component */}
@@ -121,17 +226,7 @@ export const Verification = () => {
                 {/* Left Column - Cards */}
                 <div className="flex-1 space-y-6">
                     {/* Review Timeframe Card */}
-                    <div className="bg-blue-50/50 rounded-2xl p-6 flex gap-4 border border-blue-100/50">
-                        <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center shrink-0">
-                            <Clock className="w-6 h-6 text-blue-600" />
-                        </div>
-                        <div>
-                            <h3 className="font-bold text-lg text-slate-900 mb-2">{t('onboarding.restaurant.verification.reviewTimeframe')}</h3>
-                            <p className="text-slate-600 text-sm leading-relaxed">
-                                {t('onboarding.restaurant.verification.reviewTimeframeDesc')}
-                            </p>
-                        </div>
-                    </div>
+                    {/* Removed static timeframe card since it's now dynamic above */}
 
                     {/* Contact Card */}
                     <div className="bg-secondary-orange/5 rounded-2xl p-6 flex gap-4 border border-secondary-orange/20">
