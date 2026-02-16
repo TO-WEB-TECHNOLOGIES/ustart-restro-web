@@ -41,6 +41,9 @@ export const OnboardingLayout = () => {
         if ((status === 'APPROVAL_PENDING' || status === 'ACTION_REQUIRED') && !isEditing && !location.pathname.includes('/verification')) {
             console.log("Redirecting to verification...");
             navigate('/grow-with-ustart/verification', { replace: true });
+        } else if (status === 'APPROVED_BUT_MENU_PENDING' && !isEditing && !location.pathname.includes('/menu')) {
+            console.log("Redirecting to menu creation...");
+            navigate('/grow-with-ustart/complete', { replace: true });
         }
     }, [status, location.pathname, navigate, isEditing]);
     useEffect(() => {

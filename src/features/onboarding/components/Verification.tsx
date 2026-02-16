@@ -1,5 +1,6 @@
 import { useEffect, useState, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useAuth } from '@/context/AuthContext';
 import { Mail, Phone, ClipboardCheck, Pencil, AlertCircle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { onboardingService } from '../api/onboardingService';
@@ -47,9 +48,11 @@ const ClockBox = ({ value, label }: { value: number; label: string }) => {
     );
 };
 
+
 export const Verification = () => {
     const { t } = useTranslation();
     const navigate = useNavigate();
+    const { updateStatus } = useAuth();
     const { setIsEditing } = useOnboardingStore();
     const [statusData, setStatusData] = useState<OnboardingStatusResponse | null>(null);
     const [isExpired, setIsExpired] = useState(false);
@@ -58,6 +61,12 @@ export const Verification = () => {
         onboardingService.getOnboardingStatus()
             .then(data => {
                 setStatusData(data);
+                updateStatus(data.status);
+
+                if (data.status === 'APPROVED_BUT_MENU_PENDING') {
+                    navigate('/grow-with-ustart/complete', { replace: true });
+                }
+
                 if (data.submittedAt) {
                     const targetDate = new Date(data.submittedAt).getTime() + 72 * 60 * 60 * 1000;
                     if (new Date().getTime() > targetDate) {

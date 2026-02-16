@@ -63,7 +63,7 @@ export interface ContactSupport {
 }
 
 export interface OnboardingStatusResponse {
-    status: 'APPROVAL_PENDING' | 'ACTION_REQUIRED' | 'APPROVED' | 'REJECTED' | 'ACTIVE' | 'BLOCKED' | 'ON_HOLD';
+    status: 'APPROVAL_PENDING' | 'ACTION_REQUIRED' | 'APPROVED' | 'REJECTED' | 'ACTIVE' | 'BLOCKED' | 'ON_HOLD' | 'APPROVED_BUT_MENU_PENDING';
     isEditLocked: boolean;
     message: string;
     reason?: string;

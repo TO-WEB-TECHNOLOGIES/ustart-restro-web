@@ -12,6 +12,7 @@ const PersonalInfo = lazy(() => import('@/features/onboarding/components/Persona
 const RestaurantInfo = lazy(() => import('@/features/onboarding/components/RestaurantInfo').then(module => ({ default: module.RestaurantInfo })));
 const AboutRestaurant = lazy(() => import('@/features/onboarding/components/AboutRestaurant').then(module => ({ default: module.AboutRestaurant })));
 const Verification = lazy(() => import('@/features/onboarding/components/Verification').then(module => ({ default: module.Verification })));
+const MenuCreation = lazy(() => import('@/features/onboarding/components/MenuCreation').then(module => ({ default: module.MenuCreation })));
 const HelpCenter = lazy(() => import('@/pages/HelpCenter').then(module => ({ default: module.HelpCenter })));
 const NotFound = lazy(() => import('@/pages/NotFound').then(module => ({ default: module.NotFound })));
 const DashboardLayout = lazy(() => import('@/features/dashboard/layouts/DashboardLayout').then(module => ({ default: module.DashboardLayout })));
@@ -73,6 +74,10 @@ export const router = createBrowserRouter([
                             {
                                 path: "verification",
                                 element: withSuspense(Verification)
+                            },
+                            {
+                                path: "complete",
+                                element: withSuspense(MenuCreation)
                             }
                         ]
                     }
