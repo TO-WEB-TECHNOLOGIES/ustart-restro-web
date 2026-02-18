@@ -85,7 +85,7 @@ export const OnboardingLayout = () => {
         { id: 1, icon: User, label: t('onboarding.steps.personal.title'), subLabel: t('onboarding.steps.personal.subtitle') },
         { id: 2, icon: Store, label: t('onboarding.steps.restaurant.title'), subLabel: t('onboarding.steps.restaurant.subtitle') },
         { id: 3, icon: FileText, label: t('onboarding.steps.documents.title'), subLabel: t('onboarding.steps.documents.subtitle') },
-        { id: 4, icon: Hourglass, label: t('onboarding.steps.verification.title'), subLabel: t('onboarding.steps.verification.subtitle') },
+        { id: 4, icon: Hourglass, label: t('onboarding.steps.verification.title'), subLabel: status?.startsWith('APPROVED') ? t('onboarding.steps.verification.verified') : t('onboarding.steps.verification.subtitle') },
         { id: 5, icon: Utensils, label: t('onboarding.steps.menu.title'), subLabel: t('onboarding.steps.menu.subtitle') },
         { id: 6, icon: PlusCircle, label: t('onboarding.steps.upload.title'), subLabel: t('onboarding.steps.upload.subtitle') },
     ];
@@ -163,7 +163,7 @@ export const OnboardingLayout = () => {
                 </div>
 
                 {/* Content Area */}
-                <div className="p-8 mx-auto flex flex-grow items-center">
+                <div className="p-8 flex flex-grow items-center justify-center">
                     <Outlet />
                 </div>
                 <div className="flex justify-center items-center gap-2 text-xs text-slate-400 mb-4">

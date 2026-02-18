@@ -62,9 +62,9 @@ export const Verification = () => {
         onboardingService.getOnboardingStatus()
             .then(data => {
                 setStatusData(data);
-                updateStatus(data.status);
+                updateStatus(data.restaurant.status || data.status);
 
-                if (data.status === 'APPROVED_BUT_MENU_PENDING') {
+                if (data.restaurant.status === 'APPROVED_BUT_MENU_PENDING') {
                     navigate('/grow-with-ustart/complete', { replace: true });
                 }
 

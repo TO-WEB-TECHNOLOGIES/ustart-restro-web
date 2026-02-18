@@ -25,3 +25,6 @@ dist-ssr
 
 #Enviornment Variables
 .env
+.agent/downloads
+.agent
+.agents

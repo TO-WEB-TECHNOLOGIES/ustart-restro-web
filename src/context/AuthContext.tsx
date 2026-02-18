@@ -6,6 +6,7 @@ interface User {
     id: string;
     name: string;
     mobile: string;
+    email?: string;
     role: string;
     brandId?: string;
 }
@@ -23,6 +24,7 @@ interface AuthContextType {
     login: (token: string, refreshToken: string) => void;
     logout: () => void;
     updateStatus: (status: string) => void;
+    setIsMultipleRestro: (value: boolean) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -142,6 +144,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             login,
             logout,
             updateStatus: setStatus,
+            setIsMultipleRestro,
         }}>
             {children}
         </AuthContext.Provider>

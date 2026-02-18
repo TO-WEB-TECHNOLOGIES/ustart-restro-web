@@ -29,12 +29,28 @@ export interface AboutRestaurantState {
     dishImage?: File | string;
 }
 
+export interface ManagerInfo {
+    isUserManaging: boolean;
+    name?: string;
+    email?: string;
+    whatsapp?: string;
+    mobile?: string;
+}
+
+export interface RestaurantSettings {
+    servingOptions: ('DELIVERY' | 'DINE_IN')[];
+    hasDeliveryPartners: boolean;
+    isDeliveryViaUSTART: boolean;
+    management: ManagerInfo;
+}
+
 export interface OnboardingState {
     currentStep: number;
     personalInfo: PersonalInfoValues;
     restaurantInfo: RestaurantInfoState;
     aboutRestaurant: AboutRestaurantState;
     documents: Partial<BankDetailsValues>;
+    restaurantSettings: Record<string, RestaurantSettings>;
     isEditing: boolean;
     initialData: OnboardingData | null;
 
@@ -43,6 +59,7 @@ export interface OnboardingState {
     setRestaurantInfo: (data: Partial<RestaurantInfoState>) => void;
     setAboutRestaurant: (data: Partial<AboutRestaurantState>) => void;
     setDocuments: (data: Partial<BankDetailsValues>) => void;
+    setRestaurantSettings: (restroId: string, settings: Partial<RestaurantSettings>) => void;
     setIsEditing: (status: boolean) => void;
     setInitialData: (data: OnboardingData | null) => void;
     setCurrentStep: (step: number) => void;
@@ -94,6 +111,7 @@ const initialState = {
         bankName: '',
         branchName: '',
     },
+    restaurantSettings: {},
 };
 
 export const useOnboardingStore = create<OnboardingState>()(
@@ -111,6 +129,22 @@ export const useOnboardingStore = create<OnboardingState>()(
             })),
             setDocuments: (data) => set((state) => ({
                 documents: { ...state.documents, ...data }
+            })),
+            setRestaurantSettings: (restroId, settings) => set((state) => ({
+                restaurantSettings: {
+                    ...state.restaurantSettings,
+                    [restroId]: {
+                        ...(state.restaurantSettings[restroId] || {
+                            servingOptions: ['DELIVERY'],
+                            hasDeliveryPartners: false,
+                            isDeliveryViaUSTART: false,
+                            management: {
+                                isUserManaging: true
+                            }
+                        }),
+                        ...settings
+                    }
+                }
             })),
             setIsEditing: (status) => set({ isEditing: status }),
             setInitialData: (data) => set({ initialData: data }),
@@ -135,6 +169,7 @@ export const useOnboardingStore = create<OnboardingState>()(
                     // Persist only URLs (strings), drop File objects
                     fssaiDocument: typeof state.documents.fssaiDocument === 'string' ? state.documents.fssaiDocument : undefined,
                 },
+                restaurantSettings: state.restaurantSettings,
             }),
         }
     )
