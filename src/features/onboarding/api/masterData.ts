@@ -4,14 +4,12 @@ import { SUPPORT_CONFIG, simulateNetworkDelay } from './data/onboardingConfig';
 
 export interface PageResponse<T> {
     content: T[];
-    empty: boolean;
-    first: boolean;
-    last: boolean;
-    number: number;
-    numberOfElements: number;
-    size: number;
-    totalElements: number;
-    totalPages: number;
+    page: {
+        size: number;
+        number: number;
+        totalElements: number;
+        totalPages: number;
+    };
 }
 
 /**
