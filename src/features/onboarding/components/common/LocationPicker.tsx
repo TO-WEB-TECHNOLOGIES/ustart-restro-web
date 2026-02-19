@@ -58,7 +58,7 @@ export const LocationPicker = ({
     <div className="space-y-6">
       <div className="space-y-3">
         {label && (
-          <Label className="text-sm font-semibold text-gray-700 uppercase tracking-wide">
+          <Label className="text-base font-semibold text-gray-700 uppercase tracking-wide">
             {label}
           </Label>
         )}
@@ -68,7 +68,7 @@ export const LocationPicker = ({
             <div className="flex items-center justify-between gap-3 w-full h-11 px-4 bg-green-50 border border-green-100 rounded-2xl animate-in fade-in zoom-in-95 duration-300">
               <div className="flex items-center gap-2">
                 <CheckCircle2 className="w-4 h-4 text-green-500" />
-                <span className="text-[10px] font-bold text-green-700 uppercase tracking-wider">
+                <span className="text-xs font-bold text-green-700 uppercase tracking-wider">
                   {t("onboarding.restaurant.form.locationFetched")}
                 </span>
               </div>
@@ -78,7 +78,7 @@ export const LocationPicker = ({
                 className="p-1.5 hover:bg-green-100 rounded-lg transition-colors group flex items-center gap-2"
                 title="Retry"
               >
-                <span className="text-[9px] font-bold text-green-600 uppercase tracking-widest opacity-0 group-hover:opacity-100 transition-opacity">
+                <span className="text-xs font-bold text-green-600 uppercase tracking-widest opacity-0 group-hover:opacity-100 transition-opacity">
                   {t("onboarding.restaurant.complete.setupForm.change")}
                 </span>
                 <RefreshCw className="w-3.5 h-3.5 text-green-600 group-hover:rotate-180 transition-transform duration-500" />
@@ -95,7 +95,7 @@ export const LocationPicker = ({
                 <MapPin
                   className={`w-4 h-4 ${isLocating ? "animate-pulse" : "group-hover:scale-110 transition-transform"}`}
                 />
-                <span className="text-[10px] font-bold uppercase tracking-wider">
+                <span className="text-xs font-bold uppercase tracking-wider">
                   {isLocating
                     ? t("onboarding.restaurant.form.locating")
                     : t("onboarding.restaurant.form.getLocation")}
@@ -104,7 +104,7 @@ export const LocationPicker = ({
 
               <div className="flex items-center gap-2">
                 <div className="w-4 h-[1px] bg-slate-200"></div>
-                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                <span className="text-xs font-bold uppercase tracking-widest text-[#0F2441]">
                   {t("OR")}
                 </span>
                 <div className="w-4 h-[1px] bg-slate-200"></div>
@@ -116,25 +116,25 @@ export const LocationPicker = ({
                 className="flex-1 h-full bg-[#FF9F43]/5 hover:bg-[#FF9F43]/10 text-[#FF9F43] border border-[#FF9F43]/10 rounded-2xl transition-all flex items-center justify-center gap-2 group"
               >
                 <MapPin className="w-4 h-4 group-hover:scale-110 transition-transform" />
-                <span className="text-[10px] font-bold uppercase tracking-wider">
+                <span className="text-xs font-bold uppercase tracking-wider">
                   {t("onboarding.restaurant.form.selectMap")}
                 </span>
               </button>
             </div>
           )}
           {error && (
-            <p className="text-red-500 text-[10px] pl-1 font-medium -mt-1">
+            <p className="text-red-500 text-xs pl-1 font-medium -mt-1">
               {error}
             </p>
           )}
 
           {showGoogleMapsLink && (
             <div className="space-y-1.5">
-              <Label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest pl-1">
+              <Label className="text-xs font-bold uppercase tracking-widest pl-1">
                 {t("onboarding.restaurant.form.mapsLinkLabel")}
               </Label>
               <input
-                className="block px-3 py-2.5 w-full text-sm text-gray-900 bg-white rounded-xl border border-gray-200 focus:outline-none focus:ring-1 focus:ring-[#FF9F43] focus:border-[#FF9F43] transition-all"
+                className="block px-3 py-2.5 w-full text-base text-gray-900 bg-white rounded-xl border border-gray-200 focus:outline-none focus:ring-1 focus:ring-[#FF9F43] focus:border-[#FF9F43] transition-all"
                 placeholder={t(
                   "onboarding.restaurant.form.mapsLinkPlaceholder",
                 )}
@@ -142,7 +142,7 @@ export const LocationPicker = ({
                 onChange={(e) => onGoogleMapsLinkChange?.(e.target.value)}
               />
               {googleMapsLinkError && (
-                <p className="text-red-500 text-[10px] pl-1 font-medium">
+                <p className="text-red-500 text-xs pl-1 font-medium">
                   {googleMapsLinkError}
                 </p>
               )}

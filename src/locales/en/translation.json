@@ -350,8 +350,8 @@
           "governmentDetails": "Government Details",
           "panNumber": "PAN Number",
           "gstNumber": "GST Number (Optional)",
-          "taxCategory": "Tax Category (%)",
           "fssaiLicense": "FSSAI License",
+          "uploadFssai": "Upload FSSAI License (PDF or Image)",
           "change": "Change",
             "management": {
               "title": "Who will Manage this Restaurant?",

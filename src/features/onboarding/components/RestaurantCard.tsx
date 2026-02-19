@@ -20,6 +20,9 @@ import { ManagerDetails } from "./common/ManagerDetails";
 
 interface RestaurantCardProps {
   restaurant: Restaurant;
+  isExpanded: boolean;
+  onToggle: () => void;
+  showToggle?: boolean;
 }
 
 const getStatusDisplay = (status: string, t: any) => {
@@ -71,9 +74,13 @@ const formatAddress = (address: string) => {
     .join(", ");
 };
 
-export const RestaurantCard = ({ restaurant }: RestaurantCardProps) => {
+export const RestaurantCard = ({
+  restaurant,
+  isExpanded,
+  onToggle,
+  showToggle = true,
+}: RestaurantCardProps) => {
   const { t } = useTranslation();
-  const [isExpanded, setIsExpanded] = useState(true);
   const statusDisplay = getStatusDisplay(restaurant.status, t);
   const formattedAddress = formatAddress(restaurant.address);
   const { user } = useAuth();
@@ -152,7 +159,7 @@ export const RestaurantCard = ({ restaurant }: RestaurantCardProps) => {
                 "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?q=80&w=1000&auto=format&fit=crop"
               }
               alt={restaurant.restroName}
-              className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+              className="w-full h-full object-cover transition-transform duration-500"
             />
             <div className="absolute inset-0 bg-black/5 group-hover:bg-transparent transition-colors" />
           </div>
@@ -177,18 +184,20 @@ export const RestaurantCard = ({ restaurant }: RestaurantCardProps) => {
                 </div>
               </div>
 
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={() => setIsExpanded(!isExpanded)}
-                  className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-all duration-300 ${isExpanded ? "bg-primary-blue text-white shadow-lg shadow-primary-blue/20 ring-4 ring-primary-blue/10" : "bg-slate-50 text-slate-400 hover:bg-slate-100 hover:text-slate-600 border border-slate-200/60"}`}
-                >
-                  {isExpanded ? (
-                    <ChevronUp className="w-6 h-6" />
-                  ) : (
-                    <PencilLine className="w-5 h-5" />
-                  )}
-                </button>
-              </div>
+              {showToggle && (
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={onToggle}
+                    className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-all duration-300 ${isExpanded ? "bg-primary-blue text-white shadow-lg shadow-primary-blue/20 ring-4 ring-primary-blue/10" : "bg-slate-50 text-slate-400 hover:bg-slate-100 hover:text-slate-600 border border-slate-200/60"}`}
+                  >
+                    {isExpanded ? (
+                      <ChevronUp className="w-6 h-6" />
+                    ) : (
+                      <PencilLine className="w-5 h-5" />
+                    )}
+                  </button>
+                </div>
+              )}
             </div>
 
             {/* Summary Badges (Only shown when collapsed) */}

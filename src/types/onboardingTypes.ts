@@ -55,13 +55,6 @@ export interface OnboardingData {
     documents?: OnboardingDocuments;
 }
 
-export interface ContactSupport {
-    email: string;
-    phone: string;
-    supportId: string;
-    isEditLocked: boolean;
-}
-
 export interface OnboardingStatusResponse {
     status: 'APPROVAL_PENDING' | 'ACTION_REQUIRED' | 'APPROVED' | 'REJECTED' | 'ACTIVE' | 'BLOCKED' | 'ON_HOLD' | 'APPROVED_BUT_MENU_PENDING';
     isEditLocked: boolean;

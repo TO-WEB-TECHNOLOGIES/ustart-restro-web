@@ -349,8 +349,8 @@
           "governmentDetails": "सरकारी विवरण",
           "panNumber": "पैन नंबर",
           "gstNumber": "जीएसटी नंबर (वैकल्पिक)",
-          "taxCategory": "कर श्रेणी (%)",
           "fssaiLicense": "FSSAI लाइसेंस",
+          "uploadFssai": "FSSAI लाइसेंस अपलोड करें (PDF या इमेज)",
           "change": "बदलें",
             "management": {
               "title": "इस रेस्टोरेंट का प्रबंधन कौन करेगा?",

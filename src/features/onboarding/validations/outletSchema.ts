@@ -49,7 +49,6 @@ export const addRestaurantSchema = z
     // Government
     panNumber: z.string().min(10, "Invalid PAN"),
     gstNumber: z.string().optional(),
-    taxCategory: z.string().optional(),
     fssaiCertificate: z.union([z.instanceof(File), z.string()]).optional(),
 
     // POC

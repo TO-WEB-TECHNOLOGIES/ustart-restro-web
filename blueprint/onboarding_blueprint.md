@@ -94,6 +94,6 @@ Once onboarding is "Finalized", the app polls the status API.
 
 ## 5. Directory Management (Standards)
 
-- **`@/features/onboarding/api`**: Pure service layer. NO static data allowed EXCEPT for `SUPPORT_CONFIG` which remains static for support accessibility.
+- **`@/features/onboarding/api`**: Pure service layer. NO static data allowed.
 - **`@/features/onboarding/schemas.ts`**: The source of truth for all data shape decisions. Derived TypeScript types are used globally.
 - **`@/features/onboarding/store`**: Zustand store with `partialize` to protect the browser's storage from binary bloat.

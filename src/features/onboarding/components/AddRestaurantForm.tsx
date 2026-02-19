@@ -46,17 +46,15 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const FloatingInput = ({ label, error, placeholder, ...props }: any) => (
   <div className="space-y-1.5">
-    <Label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest pl-1">
+    <Label className="text-xs font-bold uppercase tracking-widest pl-1">
       {label}
     </Label>
     <input
-      className="block px-3 py-2.5 w-full text-sm text-gray-900 bg-white rounded-xl border border-gray-200 focus:outline-none focus:ring-1 focus:ring-[#FF9F43] focus:border-[#FF9F43] transition-all"
-      placeholder={placeholder || `Enter ${label.toLowerCase()}`}
+      className="block px-3 py-2.5 w-full text-base text-gray-900 bg-white rounded-xl border border-gray-200 focus:outline-none focus:ring-1 focus:ring-[#FF9F43] focus:border-[#FF9F43] transition-all"
+      placeholder={placeholder || label}
       {...props}
     />
-    {error && (
-      <p className="text-red-500 text-[10px] pl-1 font-medium">{error}</p>
-    )}
+    {error && <p className="text-red-500 text-xs pl-1 font-medium">{error}</p>}
   </div>
 );
 
@@ -66,6 +64,8 @@ interface AddRestaurantFormProps {
   onCancel: () => void;
   onSuccess: (newRestro: Restaurant) => void;
 }
+
+const STORAGE_KEY = "add_restaurant_form_data";
 
 export const AddRestaurantForm = ({
   onCancel,
@@ -128,6 +128,16 @@ export const AddRestaurantForm = ({
     }));
   }, [cuisineData]);
 
+  const savedData = useMemo(() => {
+    try {
+      const data = sessionStorage.getItem(STORAGE_KEY);
+      return data ? JSON.parse(data) : null;
+    } catch (e) {
+      console.error("Failed to parse session storage data", e);
+      return null;
+    }
+  }, []);
+
   const {
     register,
     handleSubmit,
@@ -138,37 +148,54 @@ export const AddRestaurantForm = ({
   } = useForm<AddRestaurantValues>({
     resolver: zodResolver(addRestaurantSchema),
     mode: "onChange",
-    defaultValues: {
-      hasOwnDeliveryPartners: false,
-      deliveryBy: "USTART",
-      servingOptions: ["DELIVERY"],
-      foodTypes: {
-        isVegAvailable: true,
-        isNonVegAvailable: false,
-        isEggAvailable: false,
-      },
-      cuisines: [],
-      isUserManaging: true,
-      restaurantAddress: {
-        line1: "",
-        line2: "",
-        landmark: "",
-        locality: "Gurugram",
-        state: "Haryana",
-        pincode: "",
-      },
-      location: "",
-      googleMapsLink: "",
-      bankAccountType: "BRAND",
-      bankDetails: {
-        accountNumber: "",
-        accountHolderName: "",
-        bankName: "",
-        bankBranch: "",
-        ifscCode: "",
-      },
-    },
+    defaultValues: savedData
+      ? {
+          ...savedData,
+          // Ensure complex objects are merged correctly if needed, but shallow merge with defaults below + savedData usually works
+          // provided savedData structure matches.
+          // We might need to handle specific fields if structure changed, but assuming it matches.
+        }
+      : {
+          hasOwnDeliveryPartners: false,
+          deliveryBy: "USTART",
+          servingOptions: ["DELIVERY"],
+          foodTypes: {
+            isVegAvailable: true,
+            isNonVegAvailable: false,
+            isEggAvailable: false,
+          },
+          cuisines: [],
+          isUserManaging: true,
+          restaurantAddress: {
+            line1: "",
+            line2: "",
+            landmark: "",
+            locality: "Gurugram",
+            state: "Haryana",
+            pincode: "",
+          },
+          location: "",
+          googleMapsLink: "",
+          bankAccountType: "BRAND",
+          bankDetails: {
+            accountNumber: "",
+            accountHolderName: "",
+            bankName: "",
+            bankBranch: "",
+            ifscCode: "",
+          },
+        },
   });
+
+  // Session Storage Persistence
+  useEffect(() => {
+    const subscription = watch((value) => {
+      // Exclude file objects and other non-serializable data
+      const { primaryImage, menuImages, fssaiCertificate, ...rest } = value;
+      sessionStorage.setItem(STORAGE_KEY, JSON.stringify(rest));
+    });
+    return () => subscription.unsubscribe();
+  }, [watch]);
 
   const handlePrimaryImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -239,6 +266,7 @@ export const AddRestaurantForm = ({
         brandName: user?.name || "My Brand",
       };
       onSuccess(newRestro);
+      sessionStorage.removeItem(STORAGE_KEY);
       toast.success(t("onboarding.restaurant.complete.saveSuccess"));
     } catch (error) {
       toast.error(t("onboarding.restaurant.complete.saveError"));
@@ -265,9 +293,9 @@ export const AddRestaurantForm = ({
               value="details"
               className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden border-none"
             >
-              <AccordionTrigger className="p-6 bg-gray-50/50 hover:no-underline border-b border-gray-50 [&>svg]:w-5 [&>svg]:h-5 [&>svg]:text-gray-400">
-                <h2 className="text-lg font-bold text-[#0F2441] flex items-center gap-2">
-                  <Utensils className="w-5 h-5 text-[#FF9F43]" />
+              <AccordionTrigger className="p-6 bg-gray-50/50 hover:no-underline border-b border-gray-50 [&>svg]:w-5 [&>svg]:h-5">
+                <h2 className="text-lg font-bold flex items-center gap-2">
+                  <Utensils className="w-5 h-5" />
                   {t(
                     "onboarding.restaurant.complete.setupForm.restaurantDetails",
                   )}
@@ -289,7 +317,7 @@ export const AddRestaurantForm = ({
                     {/* Left side: Address Fields (60%) */}
                     <div className="space-y-6">
                       <div className="space-y-1">
-                        <Label className="text-sm font-semibold text-gray-700 uppercase tracking-wide">
+                        <Label className="text-base font-semibold uppercase tracking-wide">
                           {t(
                             "onboarding.restaurant.complete.setupForm.completeAddress",
                           )}
@@ -319,7 +347,7 @@ export const AddRestaurantForm = ({
                             error={errors.restaurantAddress?.landmark?.message}
                           />
                           <div className="space-y-1.5">
-                            <Label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest pl-1">
+                            <Label className="text-xs font-bold uppercase tracking-widest pl-1">
                               {t(
                                 "onboarding.restaurant.form.addressLabels.locality",
                               )}
@@ -343,7 +371,7 @@ export const AddRestaurantForm = ({
                                   onChange={(opt: any) =>
                                     field.onChange(opt?.value || "")
                                   }
-                                  className="text-sm"
+                                  className="text-base"
                                   styles={{
                                     control: (base, state) => ({
                                       ...base,
@@ -362,7 +390,7 @@ export const AddRestaurantForm = ({
                               )}
                             />
                             {errors.restaurantAddress?.locality && (
-                              <p className="text-red-500 text-[10px] pl-1 font-medium">
+                              <p className="text-red-500 text-xs pl-1 font-medium">
                                 {errors.restaurantAddress.locality.message}
                               </p>
                             )}
@@ -370,7 +398,7 @@ export const AddRestaurantForm = ({
                         </div>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
                           <div className="space-y-1.5">
-                            <Label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest pl-1">
+                            <Label className="text-xs font-bold uppercase tracking-widest pl-1">
                               {t(
                                 "onboarding.restaurant.form.addressLabels.state",
                               )}
@@ -446,7 +474,7 @@ export const AddRestaurantForm = ({
                       <div className="space-y-4">
                         <div className="flex items-center justify-between p-4 rounded-2xl bg-white border border-slate-100 shadow-sm transition-all hover:border-slate-200">
                           <div className="space-y-0.5">
-                            <Label className="text-sm font-bold text-slate-800">
+                            <Label className="text-base font-bold">
                               {t(
                                 "onboarding.restaurant.complete.setupForm.ownPartners",
                               )}
@@ -472,7 +500,7 @@ export const AddRestaurantForm = ({
                               {hasPartners && (
                                 <div className="space-y-3 animate-in fade-in slide-in-from-top-2 duration-300">
                                   <div className="flex flex-col gap-1">
-                                    <Label className="text-xs font-bold text-slate-400 uppercase tracking-widest pl-1">
+                                    <Label className="text-xs font-bold uppercase tracking-widest pl-1">
                                       {t(
                                         "onboarding.restaurant.complete.setupForm.deliveryBy",
                                       )}
@@ -495,18 +523,18 @@ export const AddRestaurantForm = ({
                                               : "Restaurant",
                                           )
                                         }
-                                        className="w-full"
+                                        className="w-full text-base"
                                       >
                                         <TabsList className="flex w-auto inline-flex bg-slate-100/50 p-1 rounded-xl gap-1 h-11">
                                           <TabsTrigger
                                             value="USTART"
-                                            className="px-6 rounded-lg data-[state=active]:bg-[#0F2441] data-[state=active]:text-white data-[state=active]:shadow-md font-bold text-xs transition-all"
+                                            className="px-6 rounded-lg data-[state=active]:bg-[#0F2441] data-[state=active]:text-white data-[state=active]:shadow-md font-bold text-sm transition-all"
                                           >
                                             USTART
                                           </TabsTrigger>
                                           <TabsTrigger
                                             value="SELF"
-                                            className="px-6 rounded-lg data-[state=active]:bg-[#0F2441] data-[state=active]:text-white data-[state=active]:shadow-md font-bold text-xs transition-all"
+                                            className="px-6 rounded-lg data-[state=active]:bg-[#0F2441] data-[state=active]:text-white data-[state=active]:shadow-md font-bold text-sm transition-all"
                                           >
                                             {t(
                                               "onboarding.restaurant.complete.setupForm.management.me",
@@ -528,12 +556,12 @@ export const AddRestaurantForm = ({
                     <div className="space-y-6">
                       <div className="space-y-3 flex w-full items-start justify-between">
                         <div className="flex flex-col">
-                          <Label className="text-lg font-bold text-slate-400 uppercase tracking-widest pl-1">
+                          <Label className="text-lg font-bold uppercase tracking-widest pl-1">
                             {t(
                               "onboarding.restaurant.complete.setupForm.servingOptions",
                             )}
                           </Label>
-                          <p className="text-sm text-slate-500 pl-1">
+                          <p className="text-base pl-1">
                             {t(
                               "onboarding.restaurant.complete.card.diningHint",
                             )}
@@ -554,7 +582,7 @@ export const AddRestaurantForm = ({
                                       : [...current, "DELIVERY"];
                                     field.onChange(next);
                                   }}
-                                  className={`px-5 py-2.5 rounded-xl text-sm font-bold transition-all border ${field.value?.includes("DELIVERY") ? "bg-[#0F2441] text-white border-[#0F2441] shadow-md shadow-[#0F2441]/20" : "bg-white text-slate-500 border-slate-200 hover:border-slate-300"}`}
+                                  className={`px-5 py-2.5 rounded-xl text-base font-bold transition-all border ${field.value?.includes("DELIVERY") ? "bg-[#0F2441] text-white border-[#0F2441] shadow-md shadow-[#0F2441]/20" : "bg-white border-slate-200 hover:border-slate-300"}`}
                                 >
                                   {t(
                                     "onboarding.restaurant.complete.card.deliveryLabel",
@@ -569,7 +597,7 @@ export const AddRestaurantForm = ({
                                       : [...current, "DINE_IN"];
                                     field.onChange(next);
                                   }}
-                                  className={`px-5 py-2.5 rounded-xl text-sm font-bold transition-all border ${field.value?.includes("DINE_IN") ? "bg-[#0F2441] text-white border-[#0F2441] shadow-md shadow-[#0F2441]/20" : "bg-white text-slate-500 border-slate-200 hover:border-slate-300"}`}
+                                  className={`px-5 py-2.5 rounded-xl text-base font-bold transition-all border ${field.value?.includes("DINE_IN") ? "bg-[#0F2441] text-white border-[#0F2441] shadow-md shadow-[#0F2441]/20" : "bg-white border-slate-200 hover:border-slate-300"}`}
                                 >
                                   {t(
                                     "onboarding.restaurant.complete.card.dineInLabel",
@@ -579,7 +607,7 @@ export const AddRestaurantForm = ({
                             )}
                           />
                           {errors.servingOptions && (
-                            <p className="text-red-500 text-[10px]">
+                            <p className="text-red-500 text-xs">
                               {errors.servingOptions.message}
                             </p>
                           )}
@@ -590,7 +618,7 @@ export const AddRestaurantForm = ({
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-x-10 gap-y-3 pt-4">
                     <div className="space-y-4">
-                      <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wide">
+                      <h3 className="text-base font-semibold uppercase tracking-wide">
                         {t("onboarding.restaurant.about.foodTypeLabel")}
                       </h3>
                       <Controller
@@ -643,7 +671,7 @@ export const AddRestaurantForm = ({
                     </div>
 
                     <div className="space-y-4">
-                      <Label className="text-sm font-semibold text-gray-700 uppercase tracking-wide">
+                      <Label className="text-base font-semibold uppercase tracking-wide">
                         {t("onboarding.restaurant.about.cuisineLabel")}
                       </Label>
                       <Controller
@@ -689,7 +717,7 @@ export const AddRestaurantForm = ({
                             placeholder={t(
                               "onboarding.restaurant.about.cuisinePlaceholder",
                             )}
-                            className="react-select-container text-sm"
+                            className="react-select-container text-base"
                             classNamePrefix="react-select"
                             filterOption={() => true}
                             styles={{
@@ -710,17 +738,18 @@ export const AddRestaurantForm = ({
                               }),
                               multiValue: (base) => ({
                                 ...base,
-                                backgroundColor: "#f1f5f9",
+                                backgroundColor: "#ffffff",
                                 borderRadius: "0.5rem",
+                                border: "1px solid #e2e8f0",
                               }),
                               multiValueLabel: (base) => ({
                                 ...base,
-                                color: "#334155",
+                                color: "#000000",
                                 fontWeight: 500,
                               }),
                               multiValueRemove: (base) => ({
                                 ...base,
-                                color: "#64748b",
+                                color: "#000000",
                                 ":hover": {
                                   backgroundColor: "#e2e8f0",
                                   color: "#ef4444",
@@ -740,7 +769,7 @@ export const AddRestaurantForm = ({
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-2">
                     <div>
-                      <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wide mb-3">
+                      <h3 className="text-base font-semibold uppercase tracking-wide mb-3">
                         {t(
                           "onboarding.restaurant.complete.setupForm.primaryImage",
                         )}
@@ -769,13 +798,13 @@ export const AddRestaurantForm = ({
                           </>
                         ) : (
                           <>
-                            <Upload className="w-8 h-8 text-gray-400 mb-2" />
-                            <span className="text-sm text-gray-600 font-medium">
+                            <Upload className="w-8 h-8 mb-2" />
+                            <span className="text-base font-medium">
                               {t(
                                 "onboarding.restaurant.complete.setupForm.uploadPhoto",
                               )}
                             </span>
-                            <span className="text-xs text-gray-400 mt-1">
+                            <span className="text-xs mt-1">
                               {t(
                                 "onboarding.restaurant.complete.setupForm.imgSpecs",
                                 "Max 1MB, JPG/PNG",
@@ -786,7 +815,7 @@ export const AddRestaurantForm = ({
                       </div>
                     </div>
                     <div>
-                      <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wide mb-3">
+                      <h3 className="text-base font-semibold  uppercase tracking-wide mb-3">
                         {t(
                           "onboarding.restaurant.complete.setupForm.deliveryMenu",
                         )}
@@ -829,10 +858,10 @@ export const AddRestaurantForm = ({
                           className={`border-2 border-dashed border-gray-300 rounded-xl p-2 flex flex-col items-center justify-center bg-gray-50 hover:bg-white hover:border-[#FF9F43] transition-all cursor-pointer flex-shrink-0 ${menuPreviews.length > 0 ? "aspect-[3/4] h-full" : "w-full h-full"}`}
                         >
                           <Plus
-                            className={`${menuPreviews.length > 0 ? "w-6 h-6" : "w-8 h-8"} text-gray-400 mb-2`}
+                            className={`${menuPreviews.length > 0 ? "w-6 h-6" : "w-8 h-8"} mb-2`}
                           />
                           <span
-                            className={`${menuPreviews.length > 0 ? "text-[10px]" : "text-sm"} text-gray-600 font-medium text-center px-2`}
+                            className={`${menuPreviews.length > 0 ? "text-xs" : "text-base"} font-medium text-center px-2`}
                           >
                             {t(
                               "onboarding.restaurant.complete.setupForm.addPage",
@@ -851,9 +880,9 @@ export const AddRestaurantForm = ({
               value="government"
               className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden border-none"
             >
-              <AccordionTrigger className="p-6 bg-gray-50/50 hover:no-underline border-b border-gray-50 [&>svg]:w-5 [&>svg]:h-5 [&>svg]:text-gray-400">
-                <h2 className="text-lg font-bold text-[#0F2441] flex items-center gap-2">
-                  <Store className="w-5 h-5 text-[#FF9F43]" />
+              <AccordionTrigger className="p-6 bg-gray-50/50 hover:no-underline border-b border-gray-50 [&>svg]:w-5 [&>svg]:h-5">
+                <h2 className="text-lg font-bold flex items-center gap-2">
+                  <Store className="w-5 h-5" />
                   {t(
                     "onboarding.restaurant.complete.setupForm.governmentDetails",
                   )}
@@ -861,7 +890,7 @@ export const AddRestaurantForm = ({
               </AccordionTrigger>
               <AccordionContent className="p-0">
                 <div className="p-6 md:p-8 space-y-8">
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <FloatingInput
                       label={t(
                         "onboarding.restaurant.complete.setupForm.panNumber",
@@ -875,16 +904,9 @@ export const AddRestaurantForm = ({
                       )}
                       {...register("gstNumber")}
                     />
-                    <FloatingInput
-                      type="number"
-                      label={t(
-                        "onboarding.restaurant.complete.setupForm.taxCategory",
-                      )}
-                      {...register("taxCategory")}
-                    />
                   </div>
                   <div>
-                    <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wide mb-3">
+                    <h3 className="text-base font-semibold uppercase tracking-wide mb-3">
                       {t(
                         "onboarding.restaurant.complete.setupForm.fssaiLicense",
                       )}
@@ -899,7 +921,7 @@ export const AddRestaurantForm = ({
                     {watch("fssaiCertificate") ? (
                       <div className="flex items-center justify-between p-4 border border-green-200 rounded-xl bg-green-50/50">
                         <div className="flex items-center gap-3">
-                          <div className="h-10 w-10 bg-green-100 rounded-full flex items-center justify-center text-green-600">
+                          <div className="h-10 w-10 bg-green-100 rounded-full flex items-center justify-center text-green-600 ">
                             {(() => {
                               const cert = watch("fssaiCertificate");
                               return cert instanceof File &&
@@ -911,7 +933,7 @@ export const AddRestaurantForm = ({
                             })()}
                           </div>
                           <div>
-                            <p className="text-sm font-medium text-[#0F2441] truncate max-w-[200px]">
+                            <p className="text-base font-medium truncate max-w-[200px]">
                               {(() => {
                                 const cert = watch("fssaiCertificate");
                                 return cert instanceof File
@@ -921,7 +943,7 @@ export const AddRestaurantForm = ({
                                     : "";
                               })()}
                             </p>
-                            <p className="text-xs text-gray-400">
+                            <p className="text-xs">
                               {(() => {
                                 const cert = watch("fssaiCertificate");
                                 return cert instanceof File
@@ -934,7 +956,7 @@ export const AddRestaurantForm = ({
                         <button
                           type="button"
                           onClick={() => fssaiInputRef.current?.click()}
-                          className="text-sm text-[#FF9F43] font-medium hover:text-[#e0853d]"
+                          className="text-base font-medium"
                         >
                           {t("onboarding.restaurant.complete.setupForm.change")}
                         </button>
@@ -945,11 +967,10 @@ export const AddRestaurantForm = ({
                         onClick={() => fssaiInputRef.current?.click()}
                         className="w-full flex items-center justify-center gap-2 p-8 border-2 border-dashed border-gray-300 rounded-xl bg-gray-50 hover:bg-white hover:border-[#FF9F43] transition-all group"
                       >
-                        <Upload className="w-5 h-5 text-gray-400 group-hover:text-[#FF9F43] transition-colors" />
-                        <span className="text-sm text-gray-500 font-medium group-hover:text-gray-700">
+                        <Upload className="w-5 h-5 group-hover:text-[#FF9F43] transition-colors" />
+                        <span className="text-base font-medium">
                           {t(
                             "onboarding.restaurant.complete.setupForm.uploadFssai",
-                            "Upload FSSAI License (PDF or Image)",
                           )}
                         </span>
                       </button>
@@ -961,11 +982,11 @@ export const AddRestaurantForm = ({
 
             <AccordionItem
               value="management"
-              className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden border-none text-gray-400"
+              className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden border-none"
             >
-              <AccordionTrigger className="p-6 bg-gray-50/50 hover:no-underline border-b border-gray-50 [&>svg]:w-5 [&>svg]:h-5 [&>svg]:text-gray-400">
-                <h2 className="text-lg font-bold text-[#0F2441] flex items-center gap-2">
-                  <User className="w-5 h-5 text-[#FF9F43]" />
+              <AccordionTrigger className="p-6 bg-gray-50/50 hover:no-underline border-b border-gray-50 [&>svg]:w-5 [&>svg]:h-5">
+                <h2 className="text-lg font-bold flex items-center gap-2">
+                  <User className="w-5 h-5" />
                   {t(
                     "onboarding.restaurant.complete.setupForm.management.outletTitle",
                     "Outlet Manager Details",
@@ -1012,9 +1033,9 @@ export const AddRestaurantForm = ({
               value="bank"
               className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden border-none"
             >
-              <AccordionTrigger className="p-6 bg-gray-50/50 hover:no-underline border-b border-gray-50 [&>svg]:w-5 [&>svg]:h-5 [&>svg]:text-gray-400">
-                <h2 className="text-lg font-bold text-[#0F2441] flex items-center gap-2">
-                  <CreditCard className="w-5 h-5 text-[#FF9F43]" />
+              <AccordionTrigger className="p-6 bg-gray-50/50 hover:no-underline border-b border-gray-50 [&>svg]:w-5 [&>svg]:h-5">
+                <h2 className="text-lg font-bold flex items-center gap-2">
+                  <CreditCard className="w-5 h-5" />
                   {t("onboarding.restaurant.complete.setupForm.bank.title")}
                 </h2>
               </AccordionTrigger>
@@ -1022,7 +1043,7 @@ export const AddRestaurantForm = ({
                 <div className="p-6 md:p-8 space-y-8">
                   <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-6">
                     <div className="space-y-1">
-                      <Label className="text-sm font-semibold text-gray-700 uppercase tracking-wide">
+                      <Label className="text-base font-semibold uppercase tracking-wide">
                         {t(
                           "onboarding.restaurant.complete.setupForm.bank.subtitle",
                         )}
@@ -1038,10 +1059,10 @@ export const AddRestaurantForm = ({
                           onValueChange={field.onChange}
                           className="w-full sm:w-auto"
                         >
-                          <TabsList className="flex w-full sm:w-auto inline-flex bg-slate-100/50 p-1.5 rounded-2xl gap-1.5 h-12">
+                          <TabsList className="flex w-full sm:w-auto inline-flex bg-white p-1.5 rounded-2xl gap-1.5 h-12 border border-slate-200">
                             <TabsTrigger
                               value="BRAND"
-                              className="flex-1 sm:flex-none px-8 rounded-xl data-[state=active]:bg-white data-[state=active]:text-[#0F2441] data-[state=active]:shadow-sm font-bold text-sm transition-all"
+                              className="flex-1 sm:flex-none px-8 rounded-xl data-[state=active]:bg-white data-[state=active]:text-[#0F2441] data-[state=active]:shadow-sm font-bold text-base transition-all"
                             >
                               {t(
                                 "onboarding.restaurant.complete.setupForm.bank.sameAsBrand",
@@ -1049,7 +1070,7 @@ export const AddRestaurantForm = ({
                             </TabsTrigger>
                             <TabsTrigger
                               value="OTHER"
-                              className="flex-1 sm:flex-none px-8 rounded-xl data-[state=active]:bg-white data-[state=active]:text-[#0F2441] data-[state=active]:shadow-sm font-bold text-sm transition-all"
+                              className="flex-1 sm:flex-none px-8 rounded-xl data-[state=active]:bg-white data-[state=active]:shadow-sm font-bold text-base transition-all"
                             >
                               {t(
                                 "onboarding.restaurant.complete.setupForm.bank.other",
@@ -1111,7 +1132,7 @@ export const AddRestaurantForm = ({
               type="button"
               variant="ghost"
               onClick={onCancel}
-              className="text-[#0F2441] font-semibold text-sm hover:bg-gray-100 transition-colors"
+              className="font-semibold text-base hover:bg-gray-100 transition-colors"
             >
               {t("onboarding.restaurant.complete.setupForm.management.cancel")}
             </Button>

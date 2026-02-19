@@ -76,8 +76,58 @@ export const ManagerDetails = ({
     setIsModalOpen(true);
   };
 
+  // Validation state
+  const [errors, setErrors] = useState<{
+    name?: string;
+    email?: string;
+    mobile?: string;
+    whatsapp?: string;
+  }>({});
+
+  const validate = () => {
+    const newErrors: typeof errors = {};
+    let isValid = true;
+
+    if (!newManager.name || newManager.name.length < 3) {
+      newErrors.name = t(
+        "onboarding.restaurant.validation.nameMinLength",
+        "Name must be at least 3 characters",
+      );
+      isValid = false;
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (newManager.email && !emailRegex.test(newManager.email)) {
+      newErrors.email = t(
+        "onboarding.restaurant.validation.invalidEmail",
+        "Invalid email format",
+      );
+      isValid = false;
+    }
+
+    const mobileRegex = /^\d{10}$/;
+    if (!newManager.mobile || !mobileRegex.test(newManager.mobile)) {
+      newErrors.mobile = t(
+        "onboarding.restaurant.validation.invalidMobile",
+        "Mobile must be 10 digits",
+      );
+      isValid = false;
+    }
+
+    if (newManager.whatsapp && !mobileRegex.test(newManager.whatsapp)) {
+      newErrors.whatsapp = t(
+        "onboarding.restaurant.validation.invalidWhatsapp",
+        "WhatsApp number must be 10 digits",
+      );
+      isValid = false;
+    }
+
+    setErrors(newErrors);
+    return isValid;
+  };
+
   const handleSave = () => {
-    if (!newManager.name || !newManager.mobile) return;
+    if (!validate()) return;
 
     const managerData = {
       isUserManaging: false,
@@ -87,18 +137,19 @@ export const ManagerDetails = ({
 
     onSaveManager(managerData);
     setIsModalOpen(false);
+    setErrors({});
   };
 
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-6">
         <div className="space-y-1">
-          <Label className="text-xl font-bold text-slate-800 uppercase tracking-wider">
+          <Label className="text-xl font-bold uppercase tracking-wider">
             {t(
               "onboarding.restaurant.complete.setupForm.management.outletTitle",
             )}
           </Label>
-          <p className="text-md text-slate-500">
+          <p className="text-md">
             {t("onboarding.restaurant.complete.setupForm.management.hint")}
           </p>
         </div>
@@ -140,7 +191,7 @@ export const ManagerDetails = ({
                       {user?.name ||
                         t("onboarding.restaurant.complete.card.owner")}
                     </p>
-                    <p className="text-[10px] text-slate-500 font-medium">
+                    <p className="text-[10px] font-medium">
                       {maskMobile(user?.mobile || "")}
                     </p>
                   </div>
@@ -156,7 +207,7 @@ export const ManagerDetails = ({
                     <p className="text-xs font-bold text-slate-900 leading-none">
                       {managerDetails.name}
                     </p>
-                    <p className="text-[10px] text-slate-500 font-medium">
+                    <p className="text-[10px] font-medium">
                       {maskMobile(managerDetails.mobile || "")}
                     </p>
                   </div>
@@ -239,7 +290,7 @@ export const ManagerDetails = ({
         <div className="space-y-4 py-2">
           {/* Using standard Input logic but styling to match the rest roughly */}
           <div className="space-y-1.5">
-            <Label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest pl-1">
+            <Label className="text-[10px] font-bold uppercase tracking-widest pl-1">
               {t("onboarding.restaurant.complete.setupForm.management.name")}
             </Label>
             <div className="space-y-1.5">
@@ -253,11 +304,16 @@ export const ManagerDetails = ({
                 }
                 className="block px-3 py-2.5 w-full text-sm text-gray-900 bg-white rounded-xl border border-gray-200 focus:outline-none focus:ring-1 focus:ring-[#FF9F43] focus:border-[#FF9F43] transition-all h-auto"
               />
+              {errors.name && (
+                <p className="text-red-500 text-[10px] pl-1 font-medium">
+                  {errors.name}
+                </p>
+              )}
             </div>
           </div>
 
           <div className="space-y-1.5">
-            <Label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest pl-1">
+            <Label className="text-[10px] font-bold uppercase tracking-widest pl-1">
               {t("onboarding.restaurant.complete.setupForm.management.email")}
             </Label>
             <Input
@@ -271,10 +327,15 @@ export const ManagerDetails = ({
               }
               className="block px-3 py-2.5 w-full text-sm text-gray-900 bg-white rounded-xl border border-gray-200 focus:outline-none focus:ring-1 focus:ring-[#FF9F43] focus:border-[#FF9F43] transition-all h-auto"
             />
+            {errors.email && (
+              <p className="text-red-500 text-[10px] pl-1 font-medium">
+                {errors.email}
+              </p>
+            )}
           </div>
 
           <div className="space-y-1.5">
-            <Label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest pl-1">
+            <Label className="text-[10px] font-bold uppercase tracking-widest pl-1">
               {t("onboarding.restaurant.complete.setupForm.management.mobile")}
             </Label>
             <Input
@@ -290,11 +351,16 @@ export const ManagerDetails = ({
               }}
               className="block px-3 py-2.5 w-full text-sm text-gray-900 bg-white rounded-xl border border-gray-200 focus:outline-none focus:ring-1 focus:ring-[#FF9F43] focus:border-[#FF9F43] transition-all h-auto"
             />
+            {errors.mobile && (
+              <p className="text-red-500 text-[10px] pl-1 font-medium">
+                {errors.mobile}
+              </p>
+            )}
           </div>
 
           <div className="space-y-3">
             <div className="flex items-center justify-between px-1">
-              <Label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+              <Label className="text-[10px] font-bold uppercase tracking-widest">
                 {t(
                   "onboarding.restaurant.complete.setupForm.management.whatsapp",
                 )}
@@ -332,6 +398,11 @@ export const ManagerDetails = ({
               disabled={isWhatsAppSame}
               className={`block px-3 py-2.5 w-full text-sm text-gray-900 bg-white rounded-xl border border-gray-200 focus:outline-none focus:ring-1 focus:ring-[#FF9F43] focus:border-[#FF9F43] transition-all h-auto ${isWhatsAppSame ? "bg-slate-50 border-slate-100 text-slate-400" : ""}`}
             />
+            {errors.whatsapp && (
+              <p className="text-red-500 text-[10px] pl-1 font-medium">
+                {errors.whatsapp}
+              </p>
+            )}
           </div>
 
           <div className="pt-4 flex gap-3">

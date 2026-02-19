@@ -1,6 +1,5 @@
 import { api } from '@/api/axios';
-import type { Cuisine, ContactSupport } from '../../../types/onboardingTypes';
-import { SUPPORT_CONFIG, simulateNetworkDelay } from './data/onboardingConfig';
+import type { Cuisine } from '../../../types/onboardingTypes';
 
 export interface PageResponse<T> {
     content: T[];
@@ -36,21 +35,6 @@ export const masterDataService = {
             throw error;
         }
     },
-
-    /**
-     * Fetches support contact details.
-     * NOTE: Currently using static configuration as per system requirements.
-     */
-    getContactSupport: async (): Promise<ContactSupport> => {
-        try {
-            // Simulating API delay for consistent UX
-            await simulateNetworkDelay(400);
-            return SUPPORT_CONFIG;
-        } catch (error) {
-            console.error('[MasterData] Fetch support error:', error);
-            throw error;
-        }
-    }
 };
 
 
