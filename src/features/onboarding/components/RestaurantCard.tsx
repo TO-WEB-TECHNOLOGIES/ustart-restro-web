@@ -93,30 +93,10 @@ export const RestaurantCard = ({
     management: { isUserManaging: true },
   };
 
-  const [managers, setManagers] = useState<
-    { name: string; mobile: string; email: string; whatsapp: string }[]
-  >([]);
-  // Mock API call to fetch managers
+  const [managers, setManagers] = useState<ManagerInfo[]>([]);
   useEffect(() => {
-    const fetchManagers = async () => {
-      // Simulate API delay
-      await new Promise((resolve) => setTimeout(resolve, 500));
-      setManagers([
-        {
-          name: "Rahul Sharma",
-          mobile: "9876543210",
-          email: "rahul@example.com",
-          whatsapp: "9876543210",
-        },
-        {
-          name: "Priya Verma",
-          mobile: "9123456789",
-          email: "priya@example.com",
-          whatsapp: "9123456789",
-        },
-      ]);
-    };
-    fetchManagers();
+    // Managers should be fetched from a real API or passed down from parent if available
+    setManagers([]);
   }, []);
 
   // Ensure management exists (for backward compatibility if any)
@@ -366,7 +346,9 @@ export const RestaurantCard = ({
                 user={user || undefined}
                 onSaveManager={(newMgr) => {
                   const existingIndex = managers.findIndex(
-                    (m) => m.mobile === management.mobile,
+                    (m) =>
+                      (m.userId && m.userId === management.userId) ||
+                      m.mobile === management.mobile,
                   );
                   if (existingIndex > -1) {
                     const updated = [...managers];

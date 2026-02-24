@@ -41,6 +41,7 @@ export const ManagerDetails = ({
 
   // Local state for the modal form
   const [newManager, setNewManager] = useState<Partial<ManagerInfo>>({
+    userId: "",
     name: "",
     email: "",
     mobile: "",
@@ -56,6 +57,7 @@ export const ManagerDetails = ({
 
   const handleEditManager = () => {
     setNewManager({
+      userId: managerDetails.userId || "",
       name: managerDetails.name || "",
       email: managerDetails.email || "",
       mobile: managerDetails.mobile || "",
@@ -70,7 +72,13 @@ export const ManagerDetails = ({
   };
 
   const handleAddNewManager = () => {
-    setNewManager({ name: "", email: "", mobile: "", whatsapp: "" });
+    setNewManager({
+      userId: "",
+      name: "",
+      email: "",
+      mobile: "",
+      whatsapp: "",
+    });
     setIsWhatsAppSame(false);
     setIsEditingExisting(false);
     setIsModalOpen(true);
@@ -239,7 +247,7 @@ export const ManagerDetails = ({
                     value=""
                     onChange={(e) => {
                       const selected = managersList.find(
-                        (m) => m.mobile === e.target.value,
+                        (m) => (m.userId || m.mobile) === e.target.value,
                       );
                       if (selected && onSelectManagerFromList) {
                         onSelectManagerFromList(selected);
@@ -252,7 +260,10 @@ export const ManagerDetails = ({
                       )}
                     </option>
                     {managersList.map((mgr, idx) => (
-                      <option key={mgr.mobile || idx} value={mgr.mobile}>
+                      <option
+                        key={mgr.userId || mgr.mobile || idx}
+                        value={mgr.userId || mgr.mobile}
+                      >
                         {mgr.name}
                       </option>
                     ))}

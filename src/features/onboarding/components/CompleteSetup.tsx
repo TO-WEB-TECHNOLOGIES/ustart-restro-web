@@ -68,7 +68,6 @@ export const CompleteSetup = () => {
     }
     setIsSaving(true);
     try {
-      await new Promise((resolve) => setTimeout(resolve, 1500));
       navigate("/grow-with-ustart/upload-menu");
     } finally {
       setIsSaving(false);

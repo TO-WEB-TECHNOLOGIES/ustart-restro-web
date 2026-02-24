@@ -43,25 +43,23 @@ export const addRestaurantSchema = z
     cuisines: z.array(z.number()).min(1, "Select at least one"),
 
     // Images
-    primaryImage: z.union([z.instanceof(File), z.string()]).optional(),
+    primaryImage: z.union([z.instanceof(File), z.string()]).refine(val => !!val, "Primary image is required"),
     menuImages: z.array(z.union([z.instanceof(File), z.string()])).optional(),
 
     // Government
-    panNumber: z.string().min(10, "Invalid PAN"),
+    panNumber: z.string().regex(/^[A-Z]{5}[0-9]{4}[A-Z]$/, "Invalid PAN format (e.g. ABCDE1234F)"),
     gstNumber: z.string().optional(),
-    fssaiCertificate: z.union([z.instanceof(File), z.string()]).optional(),
+    fssaiCertificate: z.union([z.instanceof(File), z.string()]).refine(val => !!val, "FSSAI Certificate is required"),
 
-    // POC
-    pocName: z.string().min(3, "Required"),
-    pocMobile: z.string().min(10, "Required"),
-    pocEmail: z.string().email("Invalid email"),
+
 
     // Management
     isUserManaging: z.boolean(),
+    managerId: z.string().optional(),
     managerName: z.string().optional(),
-    managerMobile: z.string().optional(),
-    managerEmail: z.string().optional(),
-    managerWhatsapp: z.string().optional(),
+    managerMobile: z.string().regex(/^\d{10}$/, "Mobile must be 10 digits").optional().or(z.literal("")),
+    managerEmail: z.string().email("Invalid email format").optional().or(z.literal("")),
+    managerWhatsapp: z.string().regex(/^\d{10}$/, "WhatsApp must be 10 digits").optional().or(z.literal("")),
 
     // Bank Details
     bankAccountType: z.enum(["BRAND", "OTHER"]),
@@ -71,13 +69,16 @@ export const addRestaurantSchema = z
         accountHolderName: z.string().optional(),
         bankName: z.string().optional(),
         bankBranch: z.string().optional(),
-        ifscCode: z.string().optional(),
+        ifscCode: z.string().regex(/^[A-Z]{4}0[A-Z0-9]{6}$/, "Invalid IFSC format (e.g. HDFC0001234)").optional().or(z.literal("")),
       })
       .optional(),
   })
   .refine(
     (data) => {
       if (!data.isUserManaging) {
+        // If managerId exists, we assume user was picked from dropdown and details are verified
+        if (data.managerId) return true;
+        
         return (
           !!data.managerName &&
           !!data.managerMobile &&

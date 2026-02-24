@@ -30,6 +30,7 @@ export interface AboutRestaurantState {
 }
 
 export interface ManagerInfo {
+    userId?: string;
     isUserManaging: boolean;
     name?: string;
     email?: string;

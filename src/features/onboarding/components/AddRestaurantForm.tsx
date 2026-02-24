@@ -33,6 +33,8 @@ import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { type Restaurant } from "@/types/restaurantTypes";
 import { masterDataService } from "../api/masterData";
+import { restaurantService } from "@/api/restaurantService";
+import { multimediaService } from "@/api/multimediaService";
 import {
   Accordion,
   AccordionContent,
@@ -73,7 +75,7 @@ export const AddRestaurantForm = ({
 }: AddRestaurantFormProps) => {
   const { t } = useTranslation();
   const { user } = useAuth();
-
+  const { setIsMultipleRestro } = useAuth();
   const {
     isSaving,
     setIsSaving,
@@ -143,7 +145,7 @@ export const AddRestaurantForm = ({
     handleSubmit,
     watch,
     control,
-    formState: { errors, isValid },
+    formState: { errors },
     setValue,
   } = useForm<AddRestaurantValues>({
     resolver: zodResolver(addRestaurantSchema),
@@ -254,22 +256,136 @@ export const AddRestaurantForm = ({
   const onSubmit = async (data: AddRestaurantValues) => {
     setIsSaving(true);
     try {
-      await new Promise((resolve) => setTimeout(resolve, 1500));
-      const newRestro: Restaurant = {
-        restroId: Math.random().toString(),
+      // 1. Prepare Address (Pipe-separated: Line1 | Line2 | Landmark | City | State | PostalCode)
+      const formattedAddress = [
+        data.restaurantAddress.line1,
+        data.restaurantAddress.line2,
+        data.restaurantAddress.landmark || "",
+        data.restaurantAddress.locality,
+        data.restaurantAddress.state,
+        data.restaurantAddress.pincode,
+      ].join("|");
+
+      // 2. File Uploads to S3
+      toast.info(
+        t("onboarding.restaurant.uploadingDocs", "Uploading documents..."),
+      );
+
+      let primaryImageResult: any = "";
+      if (data.primaryImage instanceof File) {
+        primaryImageResult = await multimediaService.uploadRestaurantDoc(
+          data.primaryImage,
+          "restaurant_primary_image",
+        );
+      } else if (typeof data.primaryImage === "string") {
+        primaryImageResult = data.primaryImage;
+      }
+
+      const menuImageResult: any[] = [];
+      if (data.menuImages && data.menuImages.length > 0) {
+        for (const file of data.menuImages) {
+          if (file instanceof File) {
+            const result = await multimediaService.uploadRestaurantDoc(
+              file,
+              "restaurant_delivery_menu",
+            );
+            menuImageResult.push(result);
+          } else if (typeof file === "string") {
+            menuImageResult.push(file);
+          }
+        }
+      }
+
+      let fssaiResult: any = "";
+      if (data.fssaiCertificate instanceof File) {
+        fssaiResult = await multimediaService.uploadRestaurantDoc(
+          data.fssaiCertificate,
+          "restaurant_fssai",
+        );
+      } else if (typeof data.fssaiCertificate === "string") {
+        fssaiResult = data.fssaiCertificate;
+      }
+
+      // 3. Construct Payload
+      // Extract S3 keys — backend expects plain strings, not { key, fileName } objects
+      const primaryImageKey =
+        typeof primaryImageResult === "object"
+          ? primaryImageResult.key
+          : primaryImageResult;
+      const fssaiKey =
+        typeof fssaiResult === "object" ? fssaiResult.key : fssaiResult;
+      const menuImageKeys = menuImageResult.map((r: any) =>
+        typeof r === "object" ? r.key : r,
+      );
+
+      const payload = {
         restroName: data.restaurantName,
-        address: `${data.restaurantAddress.line1}, ${data.restaurantAddress.line2}, ${data.restaurantAddress.locality}`,
-        cityName: "Unknown",
-        status: "PENDING",
-        primaryImage: "",
-        isBlocked: false,
-        brandName: user?.name || "My Brand",
+        address: formattedAddress,
+        coordinates: data.location,
+        isDeliveryViaUSTART: data.deliveryBy === "USTART",
+        doHaveDeliveryPartners: data.hasOwnDeliveryPartners,
+        isVegAvailable: data.foodTypes.isVegAvailable,
+        isEggAvailable: data.foodTypes.isEggAvailable,
+        isNonVegAvailable: data.foodTypes.isNonVegAvailable,
+        servingOptions: data.servingOptions,
+        cuisineIds: data.cuisines,
+        primaryImage: primaryImageKey,
+        deliveryMenuImages: menuImageKeys,
+        isUserManaging: data.isUserManaging,
+        managerId: !data.isUserManaging ? data.managerId : undefined,
+        managerName: !data.isUserManaging ? data.managerName : undefined,
+        managerMobile: !data.isUserManaging ? data.managerMobile : undefined,
+        managerEmail: !data.isUserManaging ? data.managerEmail : undefined,
+        managerWhatsapp: !data.isUserManaging
+          ? data.managerWhatsapp
+          : undefined,
+        bankAccountType: data.bankAccountType,
+        bankDetails:
+          data.bankAccountType === "OTHER"
+            ? {
+                bankAccountNumber: data.bankDetails?.accountNumber || "",
+                ifscCode: data.bankDetails?.ifscCode || "",
+                accountHolderName: data.bankDetails?.accountHolderName || "",
+                bankName: data.bankDetails?.bankName || "",
+                branchName: data.bankDetails?.bankBranch || "",
+              }
+            : undefined,
+        gstNumber: data.gstNumber,
+        googleMapLink: data.googleMapsLink,
+        fssaiLicenseImage: fssaiKey,
+        panNumber: data.panNumber,
       };
+
+      // 4. API Call
+      const response = await restaurantService.createRestaurant(payload as any);
+
+      // 5. Success Handling
+      const newRestro: Restaurant = {
+        restroId: response.restroId,
+        restroName: response.restroName,
+        address: `${data.restaurantAddress.line1}, ${data.restaurantAddress.line2}, ${data.restaurantAddress.locality}`,
+        cityName: data.restaurantAddress.locality,
+        status: response.newStatus,
+        primaryImage: primaryImageKey,
+        isBlocked: false,
+        brandName: user?.brandId || "My Brand",
+        isUserManaging: data.isUserManaging,
+        managerId: payload.managerId,
+        managerName: payload.managerName,
+        managerMobile: payload.managerMobile,
+        managerEmail: payload.managerEmail,
+        managerWhatsapp: payload.managerWhatsapp,
+      };
+
       onSuccess(newRestro);
       sessionStorage.removeItem(STORAGE_KEY);
       toast.success(t("onboarding.restaurant.complete.saveSuccess"));
-    } catch (error) {
-      toast.error(t("onboarding.restaurant.complete.saveError"));
+      setIsMultipleRestro(true);
+    } catch (error: any) {
+      const errorMsg =
+        error.response?.data?.message ||
+        t("onboarding.restaurant.complete.saveError");
+      toast.error(errorMsg);
     } finally {
       setIsSaving(false);
     }
@@ -280,7 +396,23 @@ export const AddRestaurantForm = ({
       {/* Content */}
       <div className="flex-1 overflow-y-auto px-6 md:px-10 py-8 scroll-smooth">
         <form
-          onSubmit={handleSubmit(onSubmit)}
+          onSubmit={handleSubmit(onSubmit, (errors) => {
+            console.error("Validation Errors:", errors);
+            const errorFields = Object.keys(errors).join(", ");
+            toast.error(
+              t(
+                "onboarding.restaurant.complete.setupForm.validationError",
+                `Please fix the following errors: ${errorFields}`,
+              ),
+            );
+            // Optionally scroll to first error
+            const firstErrorField = Object.keys(errors)[0];
+            if (firstErrorField) {
+              const element = document.getElementsByName(firstErrorField)[0];
+              element?.scrollIntoView({ behavior: "smooth", block: "center" });
+              element?.focus();
+            }
+          })}
           className="w-full space-y-6 pb-20"
         >
           <Accordion
@@ -1003,19 +1135,31 @@ export const AddRestaurantForm = ({
                         isUserManaging={field.value}
                         onToggleManaging={field.onChange}
                         managerDetails={{
+                          userId: watch("managerId"),
                           name: watch("managerName"),
                           email: watch("managerEmail"),
                           mobile: watch("managerMobile"),
                           whatsapp: watch("managerWhatsapp"),
                         }}
+                        // In a real app, this list would come from an API query
+                        managersList={[]}
+                        onSelectManagerFromList={(mgr) => {
+                          setValue("managerId", mgr.userId);
+                          setValue("managerName", mgr.name);
+                          setValue("managerEmail", mgr.email);
+                          setValue("managerMobile", mgr.mobile);
+                          setValue("managerWhatsapp", mgr.whatsapp);
+                        }}
                         user={user || undefined}
                         onSaveManager={(mgmt) => {
+                          setValue("managerId", mgmt.userId);
                           setValue("managerName", mgmt.name);
                           setValue("managerEmail", mgmt.email);
                           setValue("managerMobile", mgmt.mobile);
                           setValue("managerWhatsapp", mgmt.whatsapp);
                         }}
                         onRemoveManager={() => {
+                          setValue("managerId", "");
                           setValue("managerName", "");
                           setValue("managerEmail", "");
                           setValue("managerMobile", "");
@@ -1138,7 +1282,7 @@ export const AddRestaurantForm = ({
             </Button>
             <Button
               type="submit"
-              disabled={isSaving || !isValid}
+              disabled={isSaving}
               className="w-full sm:w-auto px-10 py-6 bg-slate-900 hover:bg-black text-white font-bold rounded-2xl shadow-xl transition-all transform hover:scale-[1.02] flex items-center justify-center gap-2"
             >
               {isSaving ? (
