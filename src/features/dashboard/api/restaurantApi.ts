@@ -10,6 +10,7 @@ export const restaurantApi = {
         return {
             name: restaurants[0]?.restroName || "My Restaurant",
             addresses: restaurants.map((r: Restaurant) => ({
+                ...r,
                 id: r.restroId,
                 label: r.restroName,
                 address: r.address
@@ -29,6 +30,7 @@ export const restaurantApi = {
                 r.address.toLowerCase().includes(query.toLowerCase())
             )
             .map((r: Restaurant) => ({
+                ...r,
                 id: r.restroId,
                 label: r.restroName,
                 address: r.address
@@ -36,8 +38,8 @@ export const restaurantApi = {
 
         return {
             addresses: filtered,
-            total: response.totalElements,
-            totalPages: response.totalPages
+            total: response.page.totalElements,
+            totalPages: response.page.totalPages
         };
     },
 };

@@ -13,6 +13,11 @@ export interface Restaurant {
     managerMobile?: string;
     managerEmail?: string;
     managerWhatsapp?: string;
+    servingOptions?: string;
+    isDeliveryViaUSTART?: boolean;
+    doHaveDeliveryPartners?: boolean;
+    isAssociated?: boolean;
+    associatedUserId?: string;
 }
 
 export interface RestaurantRequestDTO {
@@ -57,12 +62,20 @@ export interface RestaurantResponse {
 
 export interface PaginatedResponse<T> {
     content: T[];
-    totalPages: number;
-    totalElements: number;
-    size: number;
-    number: number;
-    last: boolean;
-    first: boolean;
-    numberOfElements: number;
-    empty: boolean;
+    page: {
+        size: number;
+        number: number;
+        totalElements: number;
+        totalPages: number;
+    };
+}
+
+export interface AssociatedUser {
+    userId: string;
+    name: string;
+    email: string;
+    mobileNumber: string;
+    whatsappNumber?: string;
+    role?: string;
+    associatedWith?: string;
 }

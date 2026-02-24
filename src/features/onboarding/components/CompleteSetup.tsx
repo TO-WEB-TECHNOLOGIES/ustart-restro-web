@@ -61,6 +61,22 @@ export const CompleteSetup = () => {
     setView("list");
   };
 
+  // Prevent tab close if there are unsaved drafts
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      const hasUnsavedDrafts = Object.keys(sessionStorage).some((key) =>
+        key.startsWith("draft_settings_"),
+      );
+      if (hasUnsavedDrafts) {
+        e.preventDefault();
+        e.returnValue = "";
+      }
+    };
+
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    return () => window.removeEventListener("beforeunload", handleBeforeUnload);
+  }, []);
+
   const handleFinalSubmit = async () => {
     if (restaurants.length === 0) {
       toast.error("Please add at least one restaurant to proceed");
@@ -104,6 +120,10 @@ export const CompleteSetup = () => {
           value={activeTab}
           onValueChange={(v: string) => {
             const val = v as "single" | "multi";
+            // Don't allow changing back to single if they have multiple restaurants
+            if (val === "single" && restaurants.length > 1) {
+              return;
+            }
             setActiveTab(val);
             setIsMultipleRestro(val === "multi");
           }}

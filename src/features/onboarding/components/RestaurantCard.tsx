@@ -1,10 +1,13 @@
 import { type Restaurant } from "@/types/restaurantTypes";
+import { restaurantService } from "@/api/restaurantService";
 import {
   Bike,
   UtensilsCrossed,
   ChevronUp,
   PencilLine,
   User,
+  Check,
+  X,
 } from "lucide-react";
 import {
   useOnboardingStore,
@@ -84,47 +87,126 @@ export const RestaurantCard = ({
   const statusDisplay = getStatusDisplay(restaurant.status, t);
   const formattedAddress = formatAddress(restaurant.address);
   const { user } = useAuth();
-  const { restaurantSettings, setRestaurantSettings } = useOnboardingStore();
+  const { setRestaurantSettings } = useOnboardingStore();
 
-  const settings = restaurantSettings[restaurant.restroId] || {
-    servingOptions: ["DELIVERY"],
-    hasDeliveryPartners: false,
-    isDeliveryViaUSTART: false,
-    management: { isUserManaging: true },
+  const computedInitial = {
+    servingOptions:
+      restaurant.servingOptions === "BOTH"
+        ? ["DELIVERY", "DINE_IN"]
+        : restaurant.servingOptions
+          ? [restaurant.servingOptions]
+          : ["DINE_IN"],
+    hasDeliveryPartners: restaurant.doHaveDeliveryPartners ?? false,
+    isDeliveryViaUSTART: restaurant.isDeliveryViaUSTART ?? false,
+    management: {
+      isUserManaging: restaurant.isAssociated ?? true,
+      name: restaurant.managerName,
+      mobile: restaurant.managerMobile,
+      email: restaurant.managerEmail,
+      whatsapp: restaurant.managerWhatsapp,
+      userId: restaurant.associatedUserId,
+    },
+  };
+
+  const [initialSettings, setInitialSettings] = useState<any>(computedInitial);
+
+  const getSessionSettings = () => {
+    try {
+      const stored = sessionStorage.getItem(
+        `draft_settings_${restaurant.restroId}`,
+      );
+      if (stored) return JSON.parse(stored);
+    } catch (e) {}
+    return null;
+  };
+
+  const [draftSettings, setDraftSettings] = useState<any>(
+    getSessionSettings() || computedInitial,
+  );
+
+  const hasChanges =
+    JSON.stringify(draftSettings) !== JSON.stringify(initialSettings);
+
+  const updateDraft = (newDraft: any) => {
+    setDraftSettings(newDraft);
+    sessionStorage.setItem(
+      `draft_settings_${restaurant.restroId}`,
+      JSON.stringify(newDraft),
+    );
+  };
+
+  const handleSaveDraft = () => {
+    setRestaurantSettings(restaurant.restroId, draftSettings);
+    sessionStorage.removeItem(`draft_settings_${restaurant.restroId}`);
+    setInitialSettings(draftSettings);
+  };
+
+  const handleDiscardDraft = () => {
+    setDraftSettings(initialSettings);
+    sessionStorage.removeItem(`draft_settings_${restaurant.restroId}`);
   };
 
   const [managers, setManagers] = useState<ManagerInfo[]>([]);
   useEffect(() => {
-    // Managers should be fetched from a real API or passed down from parent if available
-    setManagers([]);
+    restaurantService
+      .getAssociatedUsers()
+      .then((users) => {
+        const mapped = users.map((u) => ({
+          userId: u.userId,
+          isUserManaging: false,
+          name: u.name,
+          email: u.email,
+          mobile: u.mobileNumber,
+          whatsapp: u.whatsappNumber,
+        }));
+        setManagers(mapped);
+
+        // If restaurant has an associatedUserId, enrich management from the matched user
+        if (restaurant.associatedUserId && !getSessionSettings()) {
+          const matched = mapped.find(
+            (m) => m.userId === restaurant.associatedUserId,
+          );
+          if (matched) {
+            const enriched = {
+              ...computedInitial,
+              management: {
+                ...computedInitial.management,
+                name: matched.name || computedInitial.management.name,
+                email: matched.email || computedInitial.management.email,
+                mobile: matched.mobile || computedInitial.management.mobile,
+                whatsapp:
+                  matched.whatsapp || computedInitial.management.whatsapp,
+              },
+            };
+            // Update both so no false "hasChanges"
+            setInitialSettings(enriched);
+            setDraftSettings(enriched);
+          }
+        }
+      })
+      .catch(() => setManagers([]));
   }, []);
 
-  // Ensure management exists (for backward compatibility if any)
-  const management = settings.management || { isUserManaging: true };
+  const management = draftSettings.management || { isUserManaging: true };
   const toggleServingOption = (
     option: "DELIVERY" | "DINE_IN",
     checked: boolean,
   ) => {
-    const currentOptions = settings.servingOptions || [];
+    const currentOptions = draftSettings.servingOptions || [];
     const newOptions = checked
       ? [...new Set([...currentOptions, option])]
-      : currentOptions.filter((o) => o !== option);
+      : currentOptions.filter((o: string) => o !== option);
 
-    setRestaurantSettings(restaurant.restroId, { servingOptions: newOptions });
+    updateDraft({ ...draftSettings, servingOptions: newOptions });
   };
 
   const handleToggleDelivery = (checked: boolean) => {
-    setRestaurantSettings(restaurant.restroId, {
-      hasDeliveryPartners: checked,
-    });
+    updateDraft({ ...draftSettings, hasDeliveryPartners: checked });
   };
 
   const handleToggleUStartDelivery = (checked: boolean) => {
-    setRestaurantSettings(restaurant.restroId, {
-      isDeliveryViaUSTART: checked,
-    });
+    updateDraft({ ...draftSettings, isDeliveryViaUSTART: checked });
   };
-
   return (
     <div
       className={`group relative rounded-3xl border-2 transition-all duration-300 ${isExpanded ? "border-primary-blue bg-primary-blue/[0.02] shadow-sm" : "border-slate-100 bg-white hover:border-slate-200 shadow-sm hover:shadow-md"}`}
@@ -156,6 +238,11 @@ export const RestaurantCard = ({
                   >
                     {statusDisplay.label}
                   </span>
+                  {hasChanges && (
+                    <span className="text-[10px] font-black px-2.5 py-1 rounded-lg uppercase tracking-wider shadow-sm bg-blue-100 text-primary-blue">
+                      {t("common.edited")}
+                    </span>
+                  )}
                 </div>
                 <div className="flex items-center gap-2 text-slate-500 text-sm">
                   <span className="line-clamp-1">
@@ -166,6 +253,28 @@ export const RestaurantCard = ({
 
               {showToggle && (
                 <div className="flex items-center gap-2">
+                  {!isExpanded && hasChanges && (
+                    <>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleSaveDraft();
+                        }}
+                        className="w-10 h-10 rounded-xl flex items-center justify-center bg-green-50 text-green-600 hover:bg-green-100 transition-colors border border-green-200"
+                      >
+                        <Check className="w-5 h-5" />
+                      </button>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDiscardDraft();
+                        }}
+                        className="w-10 h-10 rounded-xl flex items-center justify-center bg-red-50 text-red-600 hover:bg-red-100 transition-colors border border-red-200"
+                      >
+                        <X className="w-5 h-5" />
+                      </button>
+                    </>
+                  )}
                   <button
                     onClick={onToggle}
                     className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-all duration-300 ${isExpanded ? "bg-primary-blue text-white shadow-lg shadow-primary-blue/20 ring-4 ring-primary-blue/10" : "bg-slate-50 text-slate-400 hover:bg-slate-100 hover:text-slate-600 border border-slate-200/60"}`}
@@ -183,19 +292,19 @@ export const RestaurantCard = ({
             {/* Summary Badges (Only shown when collapsed) */}
             {!isExpanded && (
               <div className="flex flex-wrap gap-2 animate-in fade-in slide-in-from-left-2 duration-300">
-                {settings.servingOptions?.includes("DELIVERY") && (
+                {draftSettings.servingOptions?.includes("DELIVERY") && (
                   <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-blue-50/50 border border-blue-100/50 shadow-sm">
                     <div className="w-5 h-5 rounded-lg bg-white flex items-center justify-center shadow-sm">
                       <Bike className="w-3 h-3 text-primary-blue" />
                     </div>
                     <span className="text-[10px] font-bold text-slate-600">
                       {t("onboarding.restaurant.complete.card.deliveryLabel")}{" "}
-                      {settings.isDeliveryViaUSTART &&
+                      {draftSettings.isDeliveryViaUSTART &&
                         `(${t("onboarding.restaurant.complete.card.ustartLabel")})`}
                     </span>
                   </div>
                 )}
-                {settings.servingOptions?.includes("DINE_IN") && (
+                {draftSettings.servingOptions?.includes("DINE_IN") && (
                   <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-orange-50/50 border border-orange-100/50 shadow-sm">
                     <div className="w-5 h-5 rounded-lg bg-white flex items-center justify-center shadow-sm">
                       <UtensilsCrossed className="w-3 h-3 text-orange-500" />
@@ -247,10 +356,10 @@ export const RestaurantCard = ({
                       onClick={() =>
                         toggleServingOption(
                           "DELIVERY",
-                          !settings.servingOptions?.includes("DELIVERY"),
+                          !draftSettings.servingOptions?.includes("DELIVERY"),
                         )
                       }
-                      className={`px-5 py-2.5 rounded-xl text-sm font-bold transition-all border ${settings.servingOptions?.includes("DELIVERY") ? "bg-[#0F2441] text-white border-[#0F2441] shadow-md shadow-[#0F2441]/20" : "bg-white text-slate-500 border-slate-200 hover:border-slate-300"}`}
+                      className={`px-5 py-2.5 rounded-xl text-sm font-bold transition-all border ${draftSettings.servingOptions?.includes("DELIVERY") ? "bg-[#0F2441] text-white border-[#0F2441] shadow-md shadow-[#0F2441]/20" : "bg-white text-slate-500 border-slate-200 hover:border-slate-300"}`}
                     >
                       {t("onboarding.restaurant.complete.card.deliveryLabel")}
                     </button>
@@ -258,10 +367,10 @@ export const RestaurantCard = ({
                       onClick={() =>
                         toggleServingOption(
                           "DINE_IN",
-                          !settings.servingOptions?.includes("DINE_IN"),
+                          !draftSettings.servingOptions?.includes("DINE_IN"),
                         )
                       }
-                      className={`px-5 py-2.5 rounded-xl text-sm font-bold transition-all border ${settings.servingOptions?.includes("DINE_IN") ? "bg-[#0F2441] text-white border-[#0F2441] shadow-md shadow-[#0F2441]/20" : "bg-white text-slate-500 border-slate-200 hover:border-slate-300"}`}
+                      className={`px-5 py-2.5 rounded-xl text-sm font-bold transition-all border ${draftSettings.servingOptions?.includes("DINE_IN") ? "bg-[#0F2441] text-white border-[#0F2441] shadow-md shadow-[#0F2441]/20" : "bg-white text-slate-500 border-slate-200 hover:border-slate-300"}`}
                     >
                       {t("onboarding.restaurant.complete.card.dineInLabel")}
                     </button>
@@ -281,12 +390,12 @@ export const RestaurantCard = ({
                       </Label>
                     </div>
                     <Switch
-                      checked={settings.hasDeliveryPartners}
+                      checked={draftSettings.hasDeliveryPartners}
                       onCheckedChange={handleToggleDelivery}
                     />
                   </div>
 
-                  {settings.hasDeliveryPartners && (
+                  {draftSettings.hasDeliveryPartners && (
                     <div className="space-y-3 animate-in fade-in slide-in-from-top-2 duration-300">
                       <div className="flex flex-col gap-1">
                         <Label className="text-xs font-bold text-slate-400 uppercase tracking-widest pl-1">
@@ -296,7 +405,9 @@ export const RestaurantCard = ({
                         </Label>
                       </div>
                       <Tabs
-                        value={settings.isDeliveryViaUSTART ? "USTART" : "SELF"}
+                        value={
+                          draftSettings.isDeliveryViaUSTART ? "USTART" : "SELF"
+                        }
                         onValueChange={(value) =>
                           handleToggleUStartDelivery(value === "USTART")
                         }
@@ -330,14 +441,16 @@ export const RestaurantCard = ({
               <ManagerDetails
                 isUserManaging={management.isUserManaging}
                 onToggleManaging={(val) =>
-                  setRestaurantSettings(restaurant.restroId, {
+                  updateDraft({
+                    ...draftSettings,
                     management: { ...management, isUserManaging: val },
                   })
                 }
                 managerDetails={management}
                 managersList={managers as ManagerInfo[]}
                 onSelectManagerFromList={(mgr) => {
-                  setRestaurantSettings(restaurant.restroId, {
+                  updateDraft({
+                    ...draftSettings,
                     management: {
                       ...mgr,
                     },
@@ -358,14 +471,16 @@ export const RestaurantCard = ({
                     setManagers((prev) => [...prev, newMgr as any]);
                   }
 
-                  setRestaurantSettings(restaurant.restroId, {
+                  updateDraft({
+                    ...draftSettings,
                     management: {
                       ...newMgr,
                     },
                   });
                 }}
                 onRemoveManager={() => {
-                  setRestaurantSettings(restaurant.restroId, {
+                  updateDraft({
+                    ...draftSettings,
                     management: {
                       isUserManaging: false,
                       name: undefined,
@@ -377,6 +492,25 @@ export const RestaurantCard = ({
                 }}
               />
             </div>
+
+            {/* Expanded Form Floating Actions */}
+            {hasChanges && (
+              <div className="sticky bottom-4 z-10 flex items-center justify-end gap-3 p-4 mt-6 bg-white/80 backdrop-blur-md border border-slate-200 rounded-2xl shadow-xl animate-in slide-in-from-bottom-4">
+                <button
+                  onClick={handleDiscardDraft}
+                  className="px-6 py-2.5 rounded-xl text-sm font-bold text-slate-600 hover:bg-slate-100 transition-colors"
+                >
+                  {t("common.discard")}
+                </button>
+                <button
+                  onClick={handleSaveDraft}
+                  className="px-6 py-2.5 rounded-xl text-sm font-bold bg-[#0F2441] text-white shadow-md shadow-[#0F2441]/20 hover:bg-black transition-colors flex items-center gap-2"
+                >
+                  <Check className="w-4 h-4" />
+                  {t("common.saveChanges")}
+                </button>
+              </div>
+            )}
           </div>
         </div>
       </div>

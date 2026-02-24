@@ -6,6 +6,7 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Modal } from "@/components/ui/modal";
 import { Input } from "@/components/ui/input";
 import { type ManagerInfo } from "../../store/useOnboardingStore";
+import { restaurantService } from "@/api/restaurantService";
 
 interface ManagerDetailsProps {
   isUserManaging: boolean;
@@ -53,6 +54,15 @@ export const ManagerDetails = ({
     const cleanMobile = mobile.replace(/\D/g, "");
     if (cleanMobile.length < 4) return mobile;
     return `XXXXXX${cleanMobile.slice(-4)}`;
+  };
+
+  const getDisplayName = (name?: string, mobile?: string) => {
+    if (name) return name;
+    if (mobile) {
+      const clean = mobile.replace(/\D/g, "");
+      return clean.length >= 4 ? `XXX...${clean.slice(-4)}` : mobile;
+    }
+    return t("onboarding.restaurant.complete.card.manager");
   };
 
   const handleEditManager = () => {
@@ -134,7 +144,7 @@ export const ManagerDetails = ({
     return isValid;
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!validate()) return;
 
     const managerData = {
@@ -142,6 +152,19 @@ export const ManagerDetails = ({
       ...newManager,
       whatsapp: isWhatsAppSame ? newManager.mobile : newManager.whatsapp,
     } as ManagerInfo;
+
+    // If editing an existing user with a userId, call the update API
+    if (isEditingExisting && managerData.userId) {
+      try {
+        await restaurantService.updateAssociatedUser(managerData.userId, {
+          name: managerData.name,
+          email: managerData.email,
+          whatsappNumber: managerData.whatsapp,
+        });
+      } catch (error) {
+        console.error("Failed to update associated user:", error);
+      }
+    }
 
     onSaveManager(managerData);
     setIsModalOpen(false);
@@ -205,7 +228,7 @@ export const ManagerDetails = ({
                   </div>
                 </div>
               </div>
-            ) : managerDetails?.name ? (
+            ) : managerDetails?.name || managerDetails?.mobile ? (
               <div className="flex items-center justify-between pl-3 pr-2 py-1.5">
                 <div className="flex items-center gap-3">
                   <div className="w-9 h-9 rounded-xl bg-[#0F2441]/5 flex items-center justify-center border border-[#0F2441]/10">
@@ -213,7 +236,10 @@ export const ManagerDetails = ({
                   </div>
                   <div className="space-y-0.5">
                     <p className="text-xs font-bold text-slate-900 leading-none">
-                      {managerDetails.name}
+                      {getDisplayName(
+                        managerDetails.name,
+                        managerDetails.mobile,
+                      )}
                     </p>
                     <p className="text-[10px] font-medium">
                       {maskMobile(managerDetails.mobile || "")}
@@ -264,7 +290,7 @@ export const ManagerDetails = ({
                         key={mgr.userId || mgr.mobile || idx}
                         value={mgr.userId || mgr.mobile}
                       >
-                        {mgr.name}
+                        {getDisplayName(mgr.name, mgr.mobile)}
                       </option>
                     ))}
                   </select>
@@ -360,7 +386,8 @@ export const ManagerDetails = ({
                 if (isWhatsAppSame)
                   setNewManager((prev) => ({ ...prev, whatsapp: val }));
               }}
-              className="block px-3 py-2.5 w-full text-sm text-gray-900 bg-white rounded-xl border border-gray-200 focus:outline-none focus:ring-1 focus:ring-[#FF9F43] focus:border-[#FF9F43] transition-all h-auto"
+              disabled={isEditingExisting}
+              className={`block px-3 py-2.5 w-full text-sm text-gray-900 bg-white rounded-xl border border-gray-200 focus:outline-none focus:ring-1 focus:ring-[#FF9F43] focus:border-[#FF9F43] transition-all h-auto ${isEditingExisting ? "bg-slate-50 border-slate-100 text-slate-400 cursor-not-allowed" : ""}`}
             />
             {errors.mobile && (
               <p className="text-red-500 text-[10px] pl-1 font-medium">

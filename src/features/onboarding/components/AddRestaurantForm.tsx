@@ -89,6 +89,35 @@ export const AddRestaurantForm = ({
   const menuInputRef = useRef<HTMLInputElement>(null);
   const fssaiInputRef = useRef<HTMLInputElement>(null);
 
+  // Fetch associated users for manager selection
+  const [managers, setManagers] = useState<
+    {
+      userId?: string;
+      isUserManaging: boolean;
+      name?: string;
+      email?: string;
+      mobile?: string;
+      whatsapp?: string;
+    }[]
+  >([]);
+  useEffect(() => {
+    restaurantService
+      .getAssociatedUsers()
+      .then((users) => {
+        setManagers(
+          users.map((u) => ({
+            userId: u.userId,
+            isUserManaging: false,
+            name: u.name,
+            email: u.email,
+            mobile: u.mobileNumber,
+            whatsapp: u.whatsappNumber,
+          })),
+        );
+      })
+      .catch(() => setManagers([]));
+  }, []);
+
   // --- Infinite Scroll & Search logic using ReactSelect ---
   const [searchQuery, setSearchQuery] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
@@ -1141,8 +1170,7 @@ export const AddRestaurantForm = ({
                           mobile: watch("managerMobile"),
                           whatsapp: watch("managerWhatsapp"),
                         }}
-                        // In a real app, this list would come from an API query
-                        managersList={[]}
+                        managersList={managers as any}
                         onSelectManagerFromList={(mgr) => {
                           setValue("managerId", mgr.userId);
                           setValue("managerName", mgr.name);
