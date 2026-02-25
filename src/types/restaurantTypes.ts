@@ -39,7 +39,7 @@ export interface RestaurantRequestDTO {
     managerMobile?: string;
     managerEmail?: string;
     managerWhatsapp?: string;
-    bankAccountType: 'BRAND' | 'OTHER';
+    bankAccountType?: 'BRAND' | 'OTHER';
     bankDetails?: {
         bankAccountNumber: string;
         ifscCode: string;

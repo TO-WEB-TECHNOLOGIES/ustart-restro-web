@@ -35,7 +35,7 @@ export const LogoutConfirmationModal = ({
             onClick={onClose}
             className="rounded-xl dark:bg-slate-800 dark:text-background-white dark:border-slate-700 dark:hover:bg-slate-700"
           >
-            Cancel
+            {t("common.cancel")}
           </Button>
           <Button
             onClick={onConfirm}

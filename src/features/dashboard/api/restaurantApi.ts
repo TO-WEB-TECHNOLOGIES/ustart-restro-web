@@ -1,8 +1,11 @@
 import { restaurantService } from '@/api/restaurantService';
 import { type Restaurant } from '@/types/restaurantTypes';
+import { useOnboardingStore } from '@/features/onboarding/store/useOnboardingStore';
 
 export const restaurantApi = {
     getRestaurantDetails: async (): Promise<{ name: string; addresses: { id: string; label: string; address: string }[] }> => {
+        // Clear cached associated users whenever restaurant data runs to ensure freshness on next visit
+        useOnboardingStore.getState().clearAssociatedUsers();
         console.log("Fetching real restaurant details...");
         const response = await restaurantService.getRestaurants();
         const restaurants = response.content;

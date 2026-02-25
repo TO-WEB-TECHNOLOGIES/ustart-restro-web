@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import type { PersonalInfoValues, BankDetailsValues } from '../schemas';
 import type { OnboardingData } from '@/types/onboardingTypes';
+import { type AssociatedUser } from '@/types/restaurantTypes';
 
 export interface RestaurantInfoState {
     hasCin?: boolean;
@@ -54,6 +55,7 @@ export interface OnboardingState {
     restaurantSettings: Record<string, RestaurantSettings>;
     isEditing: boolean;
     initialData: OnboardingData | null;
+    associatedUsers: AssociatedUser[];
 
     // Actions
     setPersonalInfo: (data: PersonalInfoValues) => void;
@@ -64,6 +66,8 @@ export interface OnboardingState {
     setIsEditing: (status: boolean) => void;
     setInitialData: (data: OnboardingData | null) => void;
     setCurrentStep: (step: number) => void;
+    setAssociatedUsers: (users: AssociatedUser[]) => void;
+    clearAssociatedUsers: () => void;
     reset: () => void;
 }
 
@@ -71,6 +75,7 @@ const initialState = {
     currentStep: 1,
     isEditing: false,
     initialData: null,
+    associatedUsers: [],
     personalInfo: {
         fullName: '',
         designation: '',
@@ -150,6 +155,8 @@ export const useOnboardingStore = create<OnboardingState>()(
             setIsEditing: (status) => set({ isEditing: status }),
             setInitialData: (data) => set({ initialData: data }),
             setCurrentStep: (step) => set({ currentStep: step }),
+            setAssociatedUsers: (users) => set({ associatedUsers: users }),
+            clearAssociatedUsers: () => set({ associatedUsers: [] }),
             reset: () => set(initialState),
         }),
         {

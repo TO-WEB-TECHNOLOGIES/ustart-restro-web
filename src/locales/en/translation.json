@@ -7,6 +7,16 @@
     "edited": "Edited",
     "discard": "Discard",
     "saveChanges": "Save Changes",
+    "cancel": "Cancel",
+    "warning": "Warning",
+    "discardChanges": "Discard Changes",
+    "saving": "Saving...",
+    "change": "Change",
+    "upload": "Upload",
+    "success": "Success",
+    "error": {
+      "generic": "Something went wrong. Please try again."
+    },
     "delete": "Delete",
     "unsavedChangesWarning": "You have unsaved changes. Logging out will discard them.",
     "welcome": "Welcome to the Admin Dashboard",
@@ -415,7 +425,10 @@
           "additionalDetails": "Additional Details",
           "managedBy": "Managed by",
           "owner": "Owner",
-          "manager": "Manager"
+          "manager": "Manager",
+          "viewModifyDetails": "View/ Modify Other Details",
+          "discardWarning": "Are you sure you want to close? Any unsaved changes will be lost.",
+          "deleteConfirm": "Are you sure you want to delete this restaurant? This action cannot be undone."
         }
       }
     }

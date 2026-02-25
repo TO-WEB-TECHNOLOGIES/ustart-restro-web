@@ -25,6 +25,20 @@ export const restaurantService = {
     },
 
     /**
+     * Fetches a single restaurant by ID.
+     * GET /api/v1/restaurants/{restroId}
+     */
+    getRestaurantById: async (restroId: string): Promise<Restaurant> => {
+        try {
+            const response = await api.get<Restaurant>(`/api/v1/restaurants/${restroId}`);
+            return response.data;
+        } catch (error) {
+            console.error('Error fetching restaurant:', error);
+            throw error;
+        }
+    },
+
+    /**
      * Create a new restaurant.
      * POST /api/v1/restaurants
      */
@@ -34,6 +48,20 @@ export const restaurantService = {
             return response.data;
         } catch (error) {
             console.error('Error creating restaurant:', error);
+            throw error;
+        }
+    },
+
+    /**
+     * Update an existing restaurant.
+     * PATCH /api/v1/restaurants/{restroId}
+     */
+    updateRestaurant: async (restroId: string, payload: Partial<RestaurantRequestDTO>): Promise<RestaurantResponse> => {
+        try {
+            const response = await api.patch<RestaurantResponse>(`/api/v1/restaurants/${restroId}`, payload);
+            return response.data;
+        } catch (error) {
+            console.error('Error updating restaurant:', error);
             throw error;
         }
     },
@@ -74,6 +102,22 @@ export const restaurantService = {
             return response.data;
         } catch (error) {
             console.error('Error updating associated user:', error);
+            throw error;
+        }
+    },
+
+    /**
+     * Soft-delete a restaurant.
+     * DELETE /api/v1/restaurants/{restroId}
+     */
+    deleteRestaurant: async (restroId: string): Promise<{ restroId: string; restroName: string; message: string }> => {
+        try {
+            const response = await api.delete<{ restroId: string; restroName: string; message: string }>(
+                `/api/v1/restaurants/${restroId}`
+            );
+            return response.data;
+        } catch (error) {
+            console.error('Error deleting restaurant:', error);
             throw error;
         }
     }

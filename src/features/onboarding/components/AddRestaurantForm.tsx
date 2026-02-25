@@ -65,6 +65,10 @@ const FloatingInput = ({ label, error, placeholder, ...props }: any) => (
 interface AddRestaurantFormProps {
   onCancel: () => void;
   onSuccess: (newRestro: Restaurant) => void;
+  // New props for Edit Mode
+  isEditMode?: boolean;
+  initialData?: any; // the raw restaurant data from GET
+  onDirtyStateChange?: (isDirty: boolean) => void;
 }
 
 const STORAGE_KEY = "add_restaurant_form_data";
@@ -72,6 +76,9 @@ const STORAGE_KEY = "add_restaurant_form_data";
 export const AddRestaurantForm = ({
   onCancel,
   onSuccess,
+  isEditMode = false,
+  initialData = null,
+  onDirtyStateChange,
 }: AddRestaurantFormProps) => {
   const { t } = useTranslation();
   const { user } = useAuth();
@@ -160,6 +167,7 @@ export const AddRestaurantForm = ({
   }, [cuisineData]);
 
   const savedData = useMemo(() => {
+    if (isEditMode) return null; // Don't use session storage in edit mode
     try {
       const data = sessionStorage.getItem(STORAGE_KEY);
       return data ? JSON.parse(data) : null;
@@ -167,24 +175,82 @@ export const AddRestaurantForm = ({
       console.error("Failed to parse session storage data", e);
       return null;
     }
-  }, []);
+  }, [isEditMode]);
+
+  // Transform initialData into AddRestaurantValues format
+  const getEditValues = () => {
+    if (!initialData) return null;
+
+    // Parse address parts
+    const parts = (initialData.address || "").split("|");
+    const restaurantAddress = {
+      line1: parts[0] || "",
+      landmark: parts[1] || "",
+      line2: parts[2] || "",
+      locality: parts[3] || "",
+      state: parts[4] || "",
+      pincode: parts[5] || "",
+    };
+
+    return {
+      restaurantName: initialData.restroName || "",
+      restaurantAddress,
+      location: initialData.coordinates || "",
+      googleMapsLink: initialData.googleMapLink || "",
+      hasOwnDeliveryPartners: initialData.doHaveDeliveryPartners ?? false,
+      deliveryBy: initialData.isDeliveryViaUSTART ? "USTART" : "OWN",
+      servingOptions:
+        initialData.servingOptions === "BOTH"
+          ? ["DELIVERY", "DINE_IN"]
+          : initialData.servingOptions
+            ? [initialData.servingOptions]
+            : ["DELIVERY"],
+      foodTypes: {
+        isVegAvailable: initialData.isVegAvailable ?? true,
+        isNonVegAvailable: initialData.isNonVegAvailable ?? false,
+        isEggAvailable: initialData.isEggAvailable ?? false,
+      },
+      cuisines: initialData.cuisineIds || [],
+
+      isUserManaging: initialData.isAssociated ?? true,
+      managerId: initialData.associatedUserId || "",
+      managerName: initialData.managerName || "",
+      managerMobile: initialData.managerMobile || "",
+      managerEmail: initialData.managerEmail || "",
+      managerWhatsapp: initialData.managerWhatsapp || "",
+
+      bankAccountType: "BRAND", // Forced in creation flows, keeping it BRAND
+      bankDetails: {
+        accountNumber: "", // Won't have full acc num from API, will handle differently
+        accountHolderName: initialData.accountHolderName || "",
+        bankName: "",
+        bankBranch: "",
+        ifscCode: "",
+      },
+      fssaiLicenseNumber: "", // Not returned by normal API
+      panNumber: initialData.panNumber || "",
+      gstNumber: initialData.gstNumber || "",
+      fssaiCertificate: initialData.fssaiLicenseImage,
+      primaryImage: initialData.primaryImage,
+      menuImages: initialData.deliveryMenuImages || [],
+    };
+  };
+
+  const initialValues = isEditMode ? getEditValues() : savedData;
 
   const {
     register,
     handleSubmit,
     watch,
     control,
-    formState: { errors },
+    formState: { errors, isDirty },
     setValue,
   } = useForm<AddRestaurantValues>({
     resolver: zodResolver(addRestaurantSchema),
     mode: "onChange",
-    defaultValues: savedData
+    defaultValues: initialValues
       ? {
-          ...savedData,
-          // Ensure complex objects are merged correctly if needed, but shallow merge with defaults below + savedData usually works
-          // provided savedData structure matches.
-          // We might need to handle specific fields if structure changed, but assuming it matches.
+          ...initialValues,
         }
       : {
           hasOwnDeliveryPartners: false,
@@ -218,15 +284,23 @@ export const AddRestaurantForm = ({
         },
   });
 
+  // Notify parent of dirty state changes
+  useEffect(() => {
+    if (onDirtyStateChange) {
+      onDirtyStateChange(isDirty);
+    }
+  }, [isDirty, onDirtyStateChange]);
+
   // Session Storage Persistence
   useEffect(() => {
+    if (isEditMode) return; // Do not persist to session storage in edit mode
     const subscription = watch((value) => {
       // Exclude file objects and other non-serializable data
       const { primaryImage, menuImages, fssaiCertificate, ...rest } = value;
       sessionStorage.setItem(STORAGE_KEY, JSON.stringify(rest));
     });
     return () => subscription.unsubscribe();
-  }, [watch]);
+  }, [watch, isEditMode]);
 
   const handlePrimaryImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -386,7 +460,16 @@ export const AddRestaurantForm = ({
       };
 
       // 4. API Call
-      const response = await restaurantService.createRestaurant(payload as any);
+      let response: any;
+      if (isEditMode && initialData?.restroId) {
+        // Prepare update payload - typically we can send the whole payload
+        response = await restaurantService.updateRestaurant(
+          initialData.restroId,
+          payload as any,
+        );
+      } else {
+        response = await restaurantService.createRestaurant(payload as any);
+      }
 
       // 5. Success Handling
       const newRestro: Restaurant = {
@@ -407,8 +490,17 @@ export const AddRestaurantForm = ({
       };
 
       onSuccess(newRestro);
-      sessionStorage.removeItem(STORAGE_KEY);
-      toast.success(t("onboarding.restaurant.complete.saveSuccess"));
+      if (!isEditMode) {
+        sessionStorage.removeItem(STORAGE_KEY);
+      }
+      toast.success(
+        isEditMode
+          ? t(
+              "onboarding.restaurant.complete.updateSuccess",
+              "Restaurant updated successfully",
+            )
+          : t("onboarding.restaurant.complete.saveSuccess"),
+      );
       setIsMultipleRestro(true);
     } catch (error: any) {
       const errorMsg =

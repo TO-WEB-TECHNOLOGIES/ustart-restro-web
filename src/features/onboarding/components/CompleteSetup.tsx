@@ -11,6 +11,7 @@ import { type Restaurant } from "@/types/restaurantTypes";
 import { RestaurantCard } from "./RestaurantCard";
 import { AddRestaurantCard } from "./AddRestaurantCard";
 import { AddRestaurantForm } from "./AddRestaurantForm";
+import { useOnboardingStore } from "../store/useOnboardingStore";
 
 // --- Main Component ---
 
@@ -29,22 +30,37 @@ export const CompleteSetup = () => {
     isMultipleRestro ? "multi" : "single",
   );
   const [expandedIds, setExpandedIds] = useState<Record<string, boolean>>({});
+  const { associatedUsers, setAssociatedUsers } = useOnboardingStore();
 
-  // Fetch Restaurants
+  // Fetch Restaurants and Associated Users
   useEffect(() => {
-    const fetchRestaurants = async () => {
+    const fetchInitialData = async () => {
       setIsLoadingRestros(true);
       try {
-        const response = await restaurantService.getRestaurants();
-        setRestaurants(response.content);
+        const [restaurantsRes, usersRes] = await Promise.all([
+          restaurantService.getRestaurants(),
+          // Only fetch users if not already cached
+          associatedUsers.length > 0
+            ? Promise.resolve(associatedUsers)
+            : restaurantService.getAssociatedUsers(),
+        ]);
+
+        const restaurants = restaurantsRes.content;
+        setRestaurants(restaurants);
+
+        if (associatedUsers.length === 0 && Array.isArray(usersRes)) {
+          // Filter out the current user
+          const filteredUsers = usersRes.filter(
+            (u: any) => u.userId !== user?.id,
+          );
+          setAssociatedUsers(filteredUsers);
+        }
+
         // Expand all by default (as per original RestaurantCard behavior)
-        const initialExpanded = response.content.reduce(
-          (acc: any, restro: any) => {
-            acc[restro.restroId] = true;
-            return acc;
-          },
-          {},
-        );
+        const initialExpanded = restaurants.reduce((acc: any, restro: any) => {
+          acc[restro.restroId] = true;
+          return acc;
+        }, {});
         setExpandedIds(initialExpanded);
       } catch (error) {
         toast.error("Failed to fetch data");
@@ -52,8 +68,8 @@ export const CompleteSetup = () => {
         setIsLoadingRestros(false);
       }
     };
-    fetchRestaurants();
-  }, []);
+    fetchInitialData();
+  }, [setAssociatedUsers, associatedUsers.length]);
 
   const onAddSuccess = (newRestro: Restaurant) => {
     setRestaurants((prev) => [...prev, newRestro]);
@@ -82,6 +98,21 @@ export const CompleteSetup = () => {
       toast.error("Please add at least one restaurant to proceed");
       return;
     }
+
+    // Block navigation if any card has unsaved draft changes
+    const hasUnsavedDrafts = Object.keys(sessionStorage).some((key) =>
+      key.startsWith("draft_settings_"),
+    );
+    if (hasUnsavedDrafts) {
+      toast.error(
+        t(
+          "onboarding.restaurant.complete.unsavedChanges",
+          "Please save or discard all changes before proceeding",
+        ),
+      );
+      return;
+    }
+
     setIsSaving(true);
     try {
       navigate("/grow-with-ustart/upload-menu");
@@ -199,6 +230,11 @@ export const CompleteSetup = () => {
                       }))
                     }
                     showToggle={isMultipleRestro}
+                    onDeleteSuccess={(id) =>
+                      setRestaurants((prev) =>
+                        prev.filter((r) => r.restroId !== id),
+                      )
+                    }
                   />
                 </div>
               ))}
