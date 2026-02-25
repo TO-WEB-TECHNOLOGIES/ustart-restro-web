@@ -35,6 +35,7 @@ import { type Restaurant } from "@/types/restaurantTypes";
 import { masterDataService } from "../api/masterData";
 import { restaurantService } from "@/api/restaurantService";
 import { multimediaService } from "@/api/multimediaService";
+import { useOnboardingStore } from "../store/useOnboardingStore";
 import {
   Accordion,
   AccordionContent,
@@ -91,6 +92,7 @@ export const AddRestaurantForm = ({
     menuPreviews,
     setMenuPreviews,
   } = useOutletStore();
+  const { associatedUsers } = useOnboardingStore();
 
   const primaryInputRef = useRef<HTMLInputElement>(null);
   const menuInputRef = useRef<HTMLInputElement>(null);
@@ -108,22 +110,19 @@ export const AddRestaurantForm = ({
     }[]
   >([]);
   useEffect(() => {
-    restaurantService
-      .getAssociatedUsers()
-      .then((users) => {
-        setManagers(
-          users.map((u) => ({
-            userId: u.userId,
-            isUserManaging: false,
-            name: u.name,
-            email: u.email,
-            mobile: u.mobileNumber,
-            whatsapp: u.whatsappNumber,
-          })),
-        );
-      })
-      .catch(() => setManagers([]));
-  }, []);
+    if (associatedUsers && associatedUsers.length > 0) {
+      setManagers(
+        associatedUsers.map((u) => ({
+          userId: u.userId,
+          isUserManaging: false,
+          name: u.name,
+          email: u.email,
+          mobile: u.mobileNumber,
+          whatsapp: u.whatsappNumber,
+        })),
+      );
+    }
+  }, [associatedUsers]);
 
   // --- Infinite Scroll & Search logic using ReactSelect ---
   const [searchQuery, setSearchQuery] = useState("");
