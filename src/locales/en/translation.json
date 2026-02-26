@@ -344,6 +344,11 @@
         "saveSuccess": "Onboarding completed successfully!",
         "saveError": "Failed to complete onboarding",
         "moveToMenu": "Move to Menu",
+        "error": {
+          "noRestaurants": "Please add at least one restaurant to proceed",
+          "singleAsMulti": "You have selected 'Multiple Restaurants' but only added one. Please switch to 'Single Restaurant' or add more outlets.",
+          "multiAsSingle": "You have added multiple restaurants but selected 'Single Restaurant'. Please switch to 'Multiple Restaurants'."
+        },
         "setupForm": {
           "restaurantDetails": "Restaurant Details",
           "restaurantName": "Restaurant Name",

@@ -20,6 +20,7 @@ import { type RestroDay } from "@/types/restaurantTypes";
 export const CompleteSetup = () => {
   const { t } = useTranslation();
   const { isMultipleRestro, setIsMultipleRestro, user } = useAuth();
+  const [initialIsMultipleRestro] = useState(isMultipleRestro);
   const navigate = useNavigate();
 
   // View state: 'list' is the main dashboard, 'add' is the new form
@@ -128,7 +129,32 @@ export const CompleteSetup = () => {
 
   const handleFinalSubmit = async () => {
     if (restaurants.length === 0) {
-      toast.error("Please add at least one restaurant to proceed");
+      toast.error(
+        t(
+          "onboarding.restaurant.complete.error.noRestaurants",
+          "Please add at least one restaurant to proceed",
+        ),
+      );
+      return;
+    }
+
+    if (restaurants.length === 1 && isMultipleRestro) {
+      toast.error(
+        t(
+          "onboarding.restaurant.complete.error.singleAsMulti",
+          "You have selected 'Multiple Restaurants' but only added one. Please switch to 'Single Restaurant' or add more outlets.",
+        ),
+      );
+      return;
+    }
+
+    if (restaurants.length > 1 && !isMultipleRestro) {
+      toast.error(
+        t(
+          "onboarding.restaurant.complete.error.multiAsSingle",
+          "You have added multiple restaurants but selected 'Single Restaurant'. Please switch to 'Multiple Restaurants'.",
+        ),
+      );
       return;
     }
 
@@ -160,10 +186,14 @@ export const CompleteSetup = () => {
 
     setIsSaving(true);
     try {
+      // Sync isMultipleRestro flag if it has changed
+      if (isMultipleRestro !== initialIsMultipleRestro) {
+        await restaurantService.updateBrand({ isMultipleRestro });
+      }
       navigate("/grow-with-ustart/upload-menu");
     } catch (error) {
       console.error(error);
-      toast.error("Failed to save schedule. Please try again.");
+      toast.error("Failed to complete setup. Please try again.");
     } finally {
       setIsSaving(false);
     }

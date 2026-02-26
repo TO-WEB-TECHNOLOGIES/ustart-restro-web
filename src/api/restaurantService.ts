@@ -178,5 +178,33 @@ export const restaurantService = {
             console.error('Error deleting restaurant:', error);
             throw error;
         }
+    },
+
+    /**
+     * Update brand details.
+     * PATCH /api/v1/brands
+     */
+    updateBrand: async (payload: {
+        isMultipleRestro?: boolean;
+        companyName?: string;
+        brandName?: string;
+        primaryImage?: string;
+        cinNumber?: string;
+        panNumber?: string;
+        gstNumber?: string;
+        fssaiLicenseImage?: string;
+        address?: string;
+        description?: string;
+        pocName?: string;
+        pocMobileNumber?: string;
+        pocEmailAddress?: string;
+    }): Promise<{ status: string, message: string, brandId: string }> => {
+        try {
+            const response = await api.patch<{ status: string, message: string, brandId: string }>('/api/v1/brands', payload);
+            return response.data;
+        } catch (error) {
+            console.error('Error updating brand:', error);
+            throw error;
+        }
     }
 };
