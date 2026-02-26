@@ -429,6 +429,40 @@
           "viewModifyDetails": "View/ Modify Other Details",
           "discardWarning": "Are you sure you want to close? Any unsaved changes will be lost.",
           "deleteConfirm": "Are you sure you want to delete this restaurant? This action cannot be undone."
+        },
+        "schedule": {
+          "title": "Opening Schedule",
+          "subtitle": "Set the operating hours for {{name}}",
+          "updateButton": "Update Schedule",
+          "copyFrom": "Copy schedule from",
+          "copySelectPlaceholder": "Select restaurant...",
+          "addTimeSlot": "Add time slot",
+          "openTime": "Open",
+          "closeTime": "Close",
+          "statusError": "Failed to save schedule.",
+          "bulkTitle": "Verify Restaurant Hours",
+          "bulkSubtitle": "Please review and verify the operating hours for all your restaurants before proceeding.",
+          "verifyAllButton": "Verify & Save All",
+          "verifyTitle": "Operational Hours Verification",
+          "verifySubtitle": "Please verify the opening hours for all your restaurants to continue.",
+          "verifiedTitle": "Schedules Verified!",
+          "verifiedSubtitle": "All restaurants have their opening hours configured.",
+          "fixButton": "Fix & Verify Schedules",
+          "error": {
+            "timeOrder": "Close time must be after Open time",
+            "atLeastOneDay": "At least one day must be open",
+            "overlapping": "Time slots cannot overlap",
+            "bulkRequired": "Please verify schedules for all restaurants before proceeding"
+          },
+          "days": {
+            "sunday": "Sunday",
+            "monday": "Monday",
+            "tuesday": "Tuesday",
+            "wednesday": "Wednesday",
+            "thursday": "Thursday",
+            "friday": "Friday",
+            "saturday": "Saturday"
+          }
         }
       }
     }

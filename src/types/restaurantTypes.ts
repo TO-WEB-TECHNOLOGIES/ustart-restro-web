@@ -1,3 +1,21 @@
+export interface TimeSlot {
+    startTime: string; // HH:mm:ss format
+    endTime: string;   // HH:mm:ss format
+}
+
+export interface RestroDay {
+    dayOfWeek: number; // 0 = Sunday, 1 = Monday, ..., 6 = Saturday
+    isClosed: boolean;
+    schedules: TimeSlot[];
+    restroDayId?: number; // returned by backend, optional for requests
+}
+
+export interface RestroScheduleDto {
+    restroId: string;
+    days?: RestroDay[];
+    copyFromRestroId?: string;
+}
+
 export interface Restaurant {
     restroId: string;
     restroName: string;

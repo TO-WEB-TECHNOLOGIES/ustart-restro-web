@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
-import { Loader2, ArrowRight, FileUp } from "lucide-react";
+import { Loader2, ArrowRight, FileUp, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/context/AuthContext";
@@ -12,6 +12,8 @@ import { RestaurantCard } from "./RestaurantCard";
 import { AddRestaurantCard } from "./AddRestaurantCard";
 import { AddRestaurantForm } from "./AddRestaurantForm";
 import { useOnboardingStore } from "../store/useOnboardingStore";
+import { BulkScheduleModal } from "./common/BulkScheduleModal";
+import { type RestroDay } from "@/types/restaurantTypes";
 
 // --- Main Component ---
 
@@ -24,13 +26,22 @@ export const CompleteSetup = () => {
   const [view, setView] = useState<"list" | "add">("list");
 
   const [restaurants, setRestaurants] = useState<Restaurant[]>([]);
+  const [schedules, setSchedules] = useState<Record<string, RestroDay[]>>({});
   const [isLoadingRestros, setIsLoadingRestros] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [activeTab, setActiveTab] = useState<"single" | "multi">(
     isMultipleRestro ? "multi" : "single",
   );
   const [expandedIds, setExpandedIds] = useState<Record<string, boolean>>({});
+  const [isBulkScheduleModalOpen, setIsBulkScheduleModalOpen] = useState(false);
   const { associatedUsers, setAssociatedUsers } = useOnboardingStore();
+
+  const allSchedulesVerified =
+    restaurants.length > 0 &&
+    restaurants.every((restro) => {
+      const restroDays = schedules[restro.restroId] || [];
+      return restroDays.some((d) => !d.isClosed);
+    });
 
   // Fetch Restaurants and Associated Users
   useEffect(() => {
@@ -51,25 +62,47 @@ export const CompleteSetup = () => {
         if (associatedUsers.length === 0 && Array.isArray(usersRes)) {
           // Filter out the current user
           const filteredUsers = usersRes.filter(
-            (u: any) => u.userId !== user?.id,
+            (u: { userId: string }) => u.userId !== user?.id,
           );
           setAssociatedUsers(filteredUsers);
         }
 
+        // Fetch schedules for all restaurants
+        const schedulePromises = restaurants.map((r) =>
+          restaurantService.getSchedule(r.restroId).catch(() => null),
+        );
+        const scheduleResults = await Promise.all(schedulePromises);
+
+        const newSchedules: Record<string, RestroDay[]> = {};
+        restaurants.forEach((r, idx) => {
+          if (scheduleResults[idx] && scheduleResults[idx].data?.days) {
+            newSchedules[r.restroId] = scheduleResults[idx].data.days;
+          } else {
+            // Default 7-day schedule array
+            newSchedules[r.restroId] = [];
+          }
+        });
+        setSchedules(newSchedules);
+
         // Expand all by default (as per original RestaurantCard behavior)
-        const initialExpanded = restaurants.reduce((acc: any, restro: any) => {
-          acc[restro.restroId] = true;
-          return acc;
-        }, {});
+        const initialExpanded = restaurants.reduce(
+          (acc: Record<string, boolean>, restro: Restaurant) => {
+            acc[restro.restroId] = true;
+            return acc;
+          },
+          {},
+        );
         setExpandedIds(initialExpanded);
       } catch (error) {
+        console.error("Failed to fetch initial data", error);
         toast.error("Failed to fetch data");
       } finally {
         setIsLoadingRestros(false);
       }
     };
     fetchInitialData();
-  }, [setAssociatedUsers, associatedUsers.length]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [setAssociatedUsers, associatedUsers.length, user?.id]);
 
   const onAddSuccess = (newRestro: Restaurant) => {
     setRestaurants((prev) => [...prev, newRestro]);
@@ -113,9 +146,24 @@ export const CompleteSetup = () => {
       return;
     }
 
+    // Check if each restaurant has a schedule saved
+    if (!allSchedulesVerified) {
+      toast.error(
+        t(
+          "onboarding.restaurant.complete.schedule.error.bulkRequired",
+          "Please verify schedules for all restaurants before proceeding",
+        ),
+      );
+      setIsBulkScheduleModalOpen(true);
+      return;
+    }
+
     setIsSaving(true);
     try {
       navigate("/grow-with-ustart/upload-menu");
+    } catch (error) {
+      console.error(error);
+      toast.error("Failed to save schedule. Please try again.");
     } finally {
       setIsSaving(false);
     }
@@ -200,6 +248,64 @@ export const CompleteSetup = () => {
             </div>
           )}
 
+          {restaurants.length > 0 && (
+            <div
+              className={`mb-8 p-6 rounded-3xl flex flex-col md:flex-row items-center justify-between gap-4 animate-in fade-in slide-in-from-top-4 duration-500 border transition-all ${allSchedulesVerified ? "bg-green-50 border-green-100" : "bg-secondary-orange/5 border-secondary-orange/20"}`}
+            >
+              <div className="flex items-center gap-4">
+                <div
+                  className={`w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 ${allSchedulesVerified ? "bg-green-100" : "bg-secondary-orange/10"}`}
+                >
+                  {allSchedulesVerified ? (
+                    <CheckCircle2 className="w-6 h-6 text-green-600" />
+                  ) : (
+                    <Loader2 className="w-6 h-6 text-secondary-orange" />
+                  )}
+                </div>
+                <div>
+                  <h3 className="text-lg font-bold text-slate-900">
+                    {allSchedulesVerified
+                      ? t(
+                          "onboarding.restaurant.complete.schedule.verifiedTitle",
+                          "Schedules Verified!",
+                        )
+                      : t(
+                          "onboarding.restaurant.complete.schedule.verifyTitle",
+                          "Operational Hours Verification",
+                        )}
+                  </h3>
+                  <p className="text-sm text-slate-500">
+                    {allSchedulesVerified
+                      ? t(
+                          "onboarding.restaurant.complete.schedule.verifiedSubtitle",
+                          "All restaurants have their opening hours configured.",
+                        )
+                      : t(
+                          "onboarding.restaurant.complete.schedule.verifySubtitle",
+                          "Please verify the opening hours for all your restaurants to continue.",
+                        )}
+                  </p>
+                </div>
+              </div>
+              <Button
+                onClick={() => setIsBulkScheduleModalOpen(true)}
+                variant={allSchedulesVerified ? "outline" : "default"}
+                className={
+                  allSchedulesVerified
+                    ? "border-green-200 text-green-700 hover:bg-green-100/50 rounded-xl h-12 px-8"
+                    : "bg-secondary-orange hover:bg-orange-600 text-white px-8 h-12 rounded-xl shadow-lg shadow-orange-200 transition-all active:scale-95 whitespace-nowrap"
+                }
+              >
+                {allSchedulesVerified
+                  ? t("common.edit", "Edit Schedules")
+                  : t(
+                      "onboarding.restaurant.complete.schedule.fixButton",
+                      "Fix & Verify Schedules",
+                    )}
+              </Button>
+            </div>
+          )}
+
           {isLoadingRestros ? (
             <div className="flex flex-col items-center justify-center py-20 gap-4">
               <Loader2 className="w-8 h-8 animate-spin text-primary-blue" />
@@ -218,24 +324,26 @@ export const CompleteSetup = () => {
                       : ""
                   }
                 >
-                  <RestaurantCard
-                    restaurant={restro}
-                    isExpanded={
-                      !isMultipleRestro || !!expandedIds[restro.restroId]
-                    }
-                    onToggle={() =>
-                      setExpandedIds((prev) => ({
-                        ...prev,
-                        [restro.restroId]: !prev[restro.restroId],
-                      }))
-                    }
-                    showToggle={isMultipleRestro}
-                    onDeleteSuccess={(id) =>
-                      setRestaurants((prev) =>
-                        prev.filter((r) => r.restroId !== id),
-                      )
-                    }
-                  />
+                  <div className="flex flex-col gap-6">
+                    <RestaurantCard
+                      restaurant={restro}
+                      isExpanded={
+                        !isMultipleRestro || !!expandedIds[restro.restroId]
+                      }
+                      onToggle={() =>
+                        setExpandedIds((prev) => ({
+                          ...prev,
+                          [restro.restroId]: !prev[restro.restroId],
+                        }))
+                      }
+                      showToggle={isMultipleRestro}
+                      onDeleteSuccess={(id) =>
+                        setRestaurants((prev) =>
+                          prev.filter((r) => r.restroId !== id),
+                        )
+                      }
+                    />
+                  </div>
                 </div>
               ))}
 
@@ -262,7 +370,10 @@ export const CompleteSetup = () => {
                 <Loader2 className="w-6 h-6 animate-spin" />
               ) : (
                 <>
-                  {t("onboarding.restaurant.complete.moveToMenu")}
+                  {t(
+                    "onboarding.restaurant.complete.moveToMenu",
+                    "Move to Menu",
+                  )}
                   <ArrowRight className="w-5 h-5 ml-3 group-hover:translate-x-1 transition-transform" />
                 </>
               )}
@@ -270,6 +381,18 @@ export const CompleteSetup = () => {
           </div>
         )}
       </div>
+
+      {isBulkScheduleModalOpen && (
+        <BulkScheduleModal
+          isOpen={isBulkScheduleModalOpen}
+          onClose={() => setIsBulkScheduleModalOpen(false)}
+          restaurants={restaurants}
+          initialSchedules={schedules}
+          onSaveSuccess={(updatedSchedules) => {
+            setSchedules(updatedSchedules);
+          }}
+        />
+      )}
     </div>
   );
 };

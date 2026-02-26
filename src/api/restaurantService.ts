@@ -4,7 +4,9 @@ import {
     type PaginatedResponse, 
     type RestaurantRequestDTO, 
     type RestaurantResponse,
-    type AssociatedUser 
+    type AssociatedUser,
+    type RestroDay,
+    type RestroScheduleDto
 } from '@/types/restaurantTypes';
 
 export const restaurantService = {
@@ -102,6 +104,62 @@ export const restaurantService = {
             return response.data;
         } catch (error) {
             console.error('Error updating associated user:', error);
+            throw error;
+        }
+    },
+
+    /**
+     * Fetches schedule for a single restaurant.
+     * GET /api/v1/schedules/{restroId}
+     */
+    getSchedule: async (restroId: string): Promise<{ data: { restroId: string, restroName: string, days: RestroDay[] } }> => {
+        try {
+            const response = await api.get<{ status: string, data: { restroId: string, restroName: string, days: RestroDay[] } }>(`/api/v1/schedules/${restroId}`);
+            return response.data;
+        } catch (error) {
+            console.error('Error fetching schedule:', error);
+            throw error;
+        }
+    },
+
+    /**
+     * Create a new schedule for a restaurant.
+     * POST /api/v1/schedules
+     */
+    createSchedule: async (payload: RestroScheduleDto): Promise<{ status: string, data: { restroId: string, restroName: string, days: RestroDay[] } }> => {
+        try {
+            const response = await api.post<{ status: string, data: { restroId: string, restroName: string, days: RestroDay[] } }>('/api/v1/schedules', payload);
+            return response.data;
+        } catch (error) {
+            console.error('Error creating schedule:', error);
+            throw error;
+        }
+    },
+
+    /**
+     * Update an existing schedule for a restaurant.
+     * PATCH /api/v1/schedules/{restroId}
+     */
+    updateSchedule: async (restroId: string, payload: { days: RestroDay[] }): Promise<{ status: string, data: { restroId: string, restroName: string, days: RestroDay[] } }> => {
+        try {
+            const response = await api.patch<{ status: string, data: { restroId: string, restroName: string, days: RestroDay[] } }>(`/api/v1/schedules/${restroId}`, payload);
+            return response.data;
+        } catch (error) {
+            console.error('Error updating schedule:', error);
+            throw error;
+        }
+    },
+
+    /**
+     * Fetches all schedules for a specific brand.
+     * GET /api/v1/schedules/brand/{brandId}
+     */
+    getBrandSchedules: async (brandId: string): Promise<{ status: string, data: { brandId: string, brandName: string, restaurants: { restroId: string, restroName: string, days: RestroDay[] }[] } }> => {
+        try {
+            const response = await api.get<{ status: string, data: { brandId: string, brandName: string, restaurants: { restroId: string, restroName: string, days: RestroDay[] }[] } }>(`/api/v1/schedules/brand/${brandId}`);
+            return response.data;
+        } catch (error) {
+            console.error('Error fetching brand schedules:', error);
             throw error;
         }
     },
