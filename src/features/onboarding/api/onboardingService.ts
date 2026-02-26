@@ -45,7 +45,7 @@ export const onboardingService = {
      * Finalizes the process and retrieves the authentication tokens.
      */
     completeOnboarding: async (): Promise<CompleteOnboardingResponse> => {
-        const response = await api.post<CompleteOnboardingResponse>('/api/v1/restaurant-onboarding/onboard-complete');
+        const response = await api.post<CompleteOnboardingResponse>('/api/v1/brands/activate');
         return response.data;
     },
 

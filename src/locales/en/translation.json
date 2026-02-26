@@ -51,7 +51,8 @@
       "pieces": "Pieces",
       "unit": "Unit",
       "order": "Order"
-    }
+    },
+    "finishAndComplete": "Finish & Complete"
   },
   "landing": {
     "nav": {
@@ -167,7 +168,8 @@
       },
       "upload": {
         "title": "Upload Menu",
-        "subtitle": "Digitalize catalog"
+        "subtitle": "Digitalize catalog",
+        "completing": "Finalizing Onboarding..."
       }
     },
     "header": {

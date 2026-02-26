@@ -61,6 +61,9 @@ export const OnboardingLayout = () => {
       navigate("/grow-with-ustart/complete", { replace: true });
     }
   }, [status, location.pathname, navigate, isEditing]);
+
+  const isUploadMenu = location.pathname.includes("/upload-menu");
+
   useEffect(() => {
     const path = location.pathname;
     if (path.includes("/personal-info")) {
@@ -77,7 +80,30 @@ export const OnboardingLayout = () => {
       setCurrentStep(6);
     }
   }, [location.pathname, setCurrentStep]);
+  /**
+   * Strictly enforce light mode for this page only.
+   */
+  useEffect(() => {
+    const root = window.document.documentElement;
+    const originalClasses = Array.from(root.classList);
+    const isDark = root.classList.contains("dark");
 
+    // Force light mode
+    root.classList.remove("dark");
+    root.classList.add("light");
+
+    return () => {
+      // Restore original theme state
+      root.classList.remove("light");
+      if (isDark) {
+        root.classList.add("dark");
+      } else {
+        // If it wasn't dark, it might have been light or system-resolved light.
+        // We restore whatever classes were there except the one we definitely added.
+        originalClasses.forEach((cls) => root.classList.add(cls));
+      }
+    };
+  }, []);
   // Reset onboarding if different user logs in
   useEffect(() => {
     if (
@@ -251,13 +277,17 @@ export const OnboardingLayout = () => {
         </div>
 
         {/* Content Area */}
-        <div className="p-8 flex flex-grow items-center justify-center">
+        <div
+          className={`${isUploadMenu ? "p-0" : "p-8 flex flex-grow items-center justify-center"}`}
+        >
           <Outlet />
         </div>
-        <div className="flex justify-center items-center gap-2 text-xs text-slate-400 mb-4">
-          <Lock className="w-3 h-3" />
-          {t("onboarding.personal.secureText")}
-        </div>
+        {!isUploadMenu && (
+          <div className="flex justify-center items-center gap-2 text-xs text-slate-400 mb-4">
+            <Lock className="w-3 h-3" />
+            {t("onboarding.personal.secureText")}
+          </div>
+        )}
       </div>
 
       <LogoutConfirmationModal
