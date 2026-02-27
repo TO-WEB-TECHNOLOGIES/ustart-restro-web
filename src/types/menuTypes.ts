@@ -1,10 +1,10 @@
 /**
  * Represents the dietary type of a menu item.
  */
-export type FoodType = 'veg' | 'non_veg' | 'contains_egg';
+export type FoodType = 'VEG' | 'NON_VEG' | 'CONTAINS_EGG';
 
-export type Allergen = 'milk' | 'eggs' | 'fish' | 'shellfish' | 'tree_nuts' | 'peanuts' | 'wheat' | 'soy' | 'sesame' | 'none_of_these';
-export type MenuTag = 'gluten_free' | 'sugar_free' | 'jain' | 'vegan' | 'chefs_special' | 'high_protien' | 'none_of_these';
+export type Allergen = 'MILK' | 'EGGS' | 'FISH' | 'SHELLFISH' | 'TREE_NUTS' | 'PEANUTS' | 'WHEAT' | 'SOY' | 'SESAME' | 'NONE_OF_THESE';
+export type MenuTag = 'GLUTEN_FREE' | 'SUGAR_FREE' | 'JAIN' | 'VEGAN' | 'CHEFS_SPECIAL' | 'HIGH_PROTIEN' | 'NONE_OF_THESE';
 
 /**
  * Represents a single item in the restaurant menu.
@@ -44,9 +44,9 @@ export interface MenuItem {
     status?: string;
 
     // --- New Fields for Detailed Editor ---
-    serviceType?: 'Delivery' | 'Dine-In' | 'Both';
-    itemType?: ('Solid' | 'Liquid' | 'Semi-Solid' | 'Frozen')[];
-    isFrosting?: 'Fresh' | 'Pre-Frosted' | 'No';
+    serviceType?: 'DELIVERY' | 'DINE_IN' | 'BOTH';
+    itemType?: ('SOLID' | 'LIQUID' | 'SEMI_SOLID' | 'FROZEN')[];
+    isFrosting?: 'FRESH' | 'PRE_FROSTED' | 'NO';
     availability?: {
         startTime: string;
         endTime: string;

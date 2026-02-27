@@ -11,6 +11,7 @@ import {
   PanelLeftClose,
   CheckCircle2,
   ArrowRight,
+  Sparkles,
 } from "lucide-react";
 import { onboardingService } from "../api/onboardingService";
 import { toast } from "sonner";
@@ -134,13 +135,41 @@ export const UploadMenu = () => {
           )}
         </div>
 
-        {/* Floating Finish & Complete Button - Dedicated to the Menu View */}
+        {/* Floating Actions Container */}
         {!isAddPage && (
-          <div className="absolute bottom-8 right-4 z-50 flex flex-col items-end">
+          <div className="absolute bottom-8 right-8 z-50 flex flex-col items-end gap-3 pointer-events-none">
+            {/* Save Changes Floating Bar - Only shown when dirty */}
+            {isDirty && (
+              <div className="flex items-center gap-3 bg-white/80 backdrop-blur-md p-2 rounded-2xl border border-blue-100 shadow-xl pointer-events-auto animate-in fade-in slide-in-from-right-4">
+                <div className="flex items-center gap-2 px-3 py-1 bg-blue-50 text-[var(--color-primary-blue)] rounded-xl">
+                  <Sparkles className="w-4 h-4 text-orange-500 animate-pulse" />
+                  <span className="text-[10px] font-black uppercase tracking-widest whitespace-nowrap">
+                    {t(
+                      "dashboard.menuEditor.tabs.unsavedChanges",
+                      "Unsaved Changes",
+                    )}
+                  </span>
+                </div>
+
+                <button
+                  onClick={submitChanges}
+                  disabled={isSubmitting}
+                  className="px-6 py-2.5 bg-[var(--color-primary-blue)] hover:bg-[#1a3a5f] text-white rounded-xl text-xs font-black uppercase tracking-widest transition-all shadow-md active:scale-95 disabled:opacity-50"
+                >
+                  {isSubmitting ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    t("dashboard.menuEditor.submitChanges", "Save Changes")
+                  )}
+                </button>
+              </div>
+            )}
+
+            {/* Finish & Complete Button */}
             <Button
               onClick={handleFinalSubmit}
               disabled={isCompleting || isSubmitting}
-              className="bg-slate-900 hover:bg-black text-white px-8 h-14 rounded-2xl flex items-center gap-4 shadow-2xl shadow-black/20 transition-all active:scale-95 group border border-slate-700/30 backdrop-blur-md"
+              className="bg-slate-900 hover:bg-black text-white px-8 h-14 rounded-2xl flex items-center gap-4 shadow-2xl shadow-black/20 transition-all active:scale-95 group border border-slate-700/30 backdrop-blur-md pointer-events-auto"
             >
               {isCompleting ? (
                 <Loader2 className="w-5 h-5 animate-spin" />

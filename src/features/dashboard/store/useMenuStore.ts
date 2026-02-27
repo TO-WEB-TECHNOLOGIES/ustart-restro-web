@@ -26,7 +26,7 @@ export interface MenuStore {
     /** Current filters for menu items */
     filters: {
         stock: ('in_stock' | 'out_of_stock')[];
-        foodType: ('veg' | 'non_veg' | 'contains_egg')[];
+        foodType: ('VEG' | 'NON_VEG' | 'CONTAINS_EGG')[];
         discounted: boolean | null;
     };
     /** Tracks if any changes have been made since the last submission */
@@ -320,8 +320,36 @@ export const useMenuStore = create<MenuStore>()(
                         searchQuery,
                         filters
                     );
+
+                    // 1. Merge session-stored local edits into API items
+                    const { updatedItems } = get();
+                    const mergedItems = response.items.map(item => {
+                        if (updatedItems[item.id]) {
+                            return updatedItems[item.id].current;
+                        }
+                        return item;
+                    });
+
+                    // 2. Prepend local NEW items belonging to this category from session storage
+                    const localNewItems = Object.values(updatedItems)
+                        .filter(entry => {
+                            const item = entry.current;
+                            if (!entry.isNewItem || item.categoryId !== categoryId) return false;
+
+                            // Apply Query Filter
+                            if (searchQuery && !item.name.toLowerCase().includes(searchQuery.toLowerCase())) return false;
+
+                            // Apply FoodType Filter
+                            if (filters.foodType.length > 0 && !filters.foodType.includes(item.foodType)) return false;
+
+                            return true;
+                        })
+                        .map(entry => entry.current);
+
+                    const finalItems = [...localNewItems, ...mergedItems];
+
                     const updatedCategories = updateCategoryInTree(categories, categoryId, {
-                        items: response.items,
+                        items: finalItems,
                         currentPage: response.currentPage,
                         totalPages: response.totalPages
                     });
@@ -375,11 +403,21 @@ export const useMenuStore = create<MenuStore>()(
                         searchQuery,
                         filters
                     );
+
+                    // Merge session-stored local edits into NEW API items being appended
+                    const { updatedItems } = get();
+                    const mergedItems = response.items.map(item => {
+                        if (updatedItems[item.id]) {
+                            return updatedItems[item.id].current;
+                        }
+                        return item;
+                    });
+
                     const baseItems = Array.isArray(currentCategory.items) ? currentCategory.items : [];
-                    const updatedItems = [...baseItems, ...response.items];
+                    const finalUpdatedItemsList = [...baseItems, ...mergedItems];
 
                     const updatedCategories = updateCategoryInTree(categories, categoryId, {
-                        items: updatedItems,
+                        items: finalUpdatedItemsList,
                         currentPage: response.currentPage,
                         totalPages: response.totalPages
                     });
@@ -468,51 +506,62 @@ export const useMenuStore = create<MenuStore>()(
             },
 
             submitChanges: async () => {
-                const { categories, updatedItems, isDirty, isSubmitting } = get();
+                const { updatedItems, isDirty, isSubmitting } = get();
                 if (!isDirty || isSubmitting) return;
 
                 set({ isSubmitting: true });
 
-                // 1. Construct Payload
-                const payload = Object.values(updatedItems).map(({ original, current, modifiedByAddressId }) => {
-                    const changes: Record<string, unknown> = { itemId: current.id };
-
-                    // Add restroId if specific update
-                    if (modifiedByAddressId) {
-                        changes['restroId'] = modifiedByAddressId;
-                    }
-
-                    // Diff fields
-                    (Object.keys(current) as Array<keyof MenuItem>).forEach(key => {
-                        if (JSON.stringify(original[key]) !== JSON.stringify(current[key])) {
-                            changes[key] = current[key];
-                        }
-                    });
-
-                    return changes;
-                });
+                const updates = Object.values(updatedItems);
+                
+                // Separate items into "Create" (new) and "Update" (existing modified)
+                const itemsToCreate = updates.filter(u => u.isNewItem);
+                const itemsToUpdate = updates.filter(u => !u.isNewItem);
 
                 try {
-                    const response = await updateMenu(payload);
-                    if (response.success) {
-                        // 2. Apply changes to local 'categories' state (make them permanent)
-                        const applyUpdatesToTree = (cats: Category[]): Category[] => {
-                            return cats.map(cat => ({
-                                ...cat,
-                                items: cat.items?.map(item => updatedItems[item.id]?.current || item),
-                                subCategories: cat.subCategories ? applyUpdatesToTree(cat.subCategories) : []
-                            }));
-                        };
+                    // 1. Handle New Items (Creations)
+                    const creationPromises = itemsToCreate.map(async ({ current }) => {
+                        const { id, ...itemData } = current;
+                        return createMenuItem(current.categoryId, itemData);
+                    });
 
-                        const newCategories = applyUpdatesToTree(categories);
+                    // 2. Handle Existing Items (Updates)
+                    const updatePayload = itemsToUpdate.map(({ original, current, modifiedByAddressId }) => {
+                        const changes: Record<string, unknown> = { itemId: current.id };
+                        if (modifiedByAddressId) changes['restroId'] = modifiedByAddressId;
 
+                        (Object.keys(current) as Array<keyof MenuItem>).forEach(key => {
+                            if (JSON.stringify(original[key]) !== JSON.stringify(current[key])) {
+                                changes[key] = current[key];
+                            }
+                        });
+                        return changes;
+                    });
+
+                    // Fire all API calls concurrently
+                    const results = await Promise.all([
+                        ...creationPromises,
+                        updatePayload.length > 0 ? updateMenu(updatePayload) : Promise.resolve({ success: true })
+                    ]);
+
+                    const allSuccessful = results.every(r => r.success);
+
+                    if (allSuccessful) {
+                        // 3. Apply changes to local 'categories' state (make them permanent)
+                        // Note: New items will have new IDs from the backend, but for simplicity 
+                        // in this unified "Save" we might need a re-fetch or ID mapping.
+                        // Here we just clear the dirty state and reset.
+                        
                         set({
-                            categories: newCategories,
                             isDirty: false,
                             updatedItems: {},
                             isSubmitting: false,
-                            lastCategoriesFetch: null
+                            lastCategoriesFetch: null // Force re-fetch on next access to get real IDs
                         });
+                        
+                        // Immediately re-fetch to sync IDs and baseline
+                        await get().fetchCategories(true);
+                    } else {
+                        throw new Error('Some changes failed to save');
                     }
                 } catch (error) {
                     console.error('Failed to submit menu changes:', error);
@@ -673,7 +722,7 @@ export const useMenuStore = create<MenuStore>()(
                     name: '',
                     itemPrice: 0,
                     discountAmount: 0,
-                    foodType: 'veg',
+                    foodType: 'VEG',
                     isCustomisable: false,
                     inStock: {},
                     taxAmount: 0,

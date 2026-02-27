@@ -188,6 +188,13 @@ export const MenuItemList = ({ onOpenSidebar }: MenuItemListProps) => {
     filters.foodType.length +
     (filters.discounted !== null ? 1 : 0);
 
+  const handleAddNewItem = () => {
+    const basePath = location.pathname.includes("/grow-with-ustart")
+      ? "/grow-with-ustart/upload-menu"
+      : "/dashboard/menu";
+    navigate(`${basePath}/new`);
+  };
+
   // Show empty state if no category is selected
   if (!selectedCategory) {
     return (
@@ -303,15 +310,15 @@ export const MenuItemList = ({ onOpenSidebar }: MenuItemListProps) => {
                       {[
                         {
                           label: t("dashboard.menuEditor.filter.veg"),
-                          value: "veg",
+                          value: "VEG",
                         },
                         {
                           label: t("dashboard.menuEditor.filter.nonVeg"),
-                          value: "non_veg",
+                          value: "NON_VEG",
                         },
                         {
                           label: t("dashboard.menuEditor.filter.containsEgg"),
-                          value: "contains_egg",
+                          value: "CONTAINS_EGG",
                         },
                       ].map((opt) => (
                         <button
@@ -382,12 +389,7 @@ export const MenuItemList = ({ onOpenSidebar }: MenuItemListProps) => {
             <div className="hidden md:block flex-1" />
 
             <button
-              onClick={() => {
-                const basePath = location.pathname.includes("/grow-with-ustart")
-                  ? "/grow-with-ustart/upload-menu"
-                  : "/dashboard/menu";
-                navigate(`${basePath}/new`);
-              }}
+              onClick={handleAddNewItem}
               className="flex-1 md:flex-none flex items-center justify-center gap-2 bg-[var(--color-primary-blue)] hover:bg-[#1a3a5f] text-white text-sm font-black px-4 md:px-6 py-2 rounded-xl transition-all shadow-md active:scale-95"
             >
               <Plus className="w-5 h-5 shrink-0" />
@@ -454,7 +456,7 @@ export const MenuItemList = ({ onOpenSidebar }: MenuItemListProps) => {
                 {t("dashboard.menuEditor.noItemsInCategory")}
               </h3>
               <button
-                onClick={() => navigate("/dashboard/menu/new")}
+                onClick={handleAddNewItem}
                 className="mt-4 flex items-center gap-2 bg-[var(--color-primary-blue)] text-white text-xs font-black px-5 py-2.5 rounded-xl hover:bg-[#1a3a5f] transition-all"
               >
                 <Plus className="w-4 h-4" />
