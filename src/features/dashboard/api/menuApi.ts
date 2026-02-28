@@ -381,6 +381,20 @@ export const deleteCategory = async (categoryId: number): Promise<{ success: boo
 };
 
 /**
+ * Deletes a menu item from the server.
+ * @returns {Promise<{ success: boolean }>}
+ */
+export const deleteMenuItem = async (itemId: number): Promise<{ success: boolean }> => {
+    try {
+        await api.delete(`/api/v1/menu/items?itemId=${itemId}`);
+        return { success: true };
+    } catch (error) {
+        console.error(`API Call: Error deleting menu item ${itemId}:`, error);
+        throw error;
+    }
+};
+
+/**
  * Toggles the status of a category (active/inactive).
  * @returns {Promise<{ success: boolean }>}
  */

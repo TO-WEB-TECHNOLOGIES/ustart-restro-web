@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import { type Category, type MenuItem } from '../../../types/menuTypes';
-import { fetchMenuScore, updateMenu, fetchCategories, fetchCategoryItems, createCategory, createMenuItem, patchCategory, deleteCategory, toggleCategoryStatus } from '../api/menuApi';
+import { fetchMenuScore, updateMenu, fetchCategories, fetchCategoryItems, createCategory, createMenuItem, patchCategory, deleteCategory, toggleCategoryStatus, deleteMenuItem } from '../api/menuApi';
 
 /**
  * Interface representing the state and actions for the Menu Store.
@@ -74,6 +74,8 @@ export interface MenuStore {
     toggleCategoryStatus: (categoryId: number, status: 'active' | 'inactive') => Promise<void>;
     /** Directly adds a new item via API */
     addMenuItem: (categoryId: number, item: Partial<MenuItem>) => Promise<void>;
+    /** Directly deletes a menu item via API */
+    deleteMenuItem: (categoryId: number, itemId: number) => Promise<void>;
     /** Adds a new item locally to updatedItems without calling API */
     addNewItemLocally: (categoryId: number, item: MenuItem, options?: { addToStockImmediately?: boolean; scheduledDate?: string | null }) => void;
     /** Updates scheduling options for a tracked item */
@@ -786,6 +788,43 @@ export const useMenuStore = create<MenuStore>()(
                     }
                 } catch (error) {
                     console.error('Failed to delete category:', error);
+                } finally {
+                    set({ isSubmitting: false });
+                }
+            },
+
+            deleteMenuItem: async (categoryId, itemId) => {
+                set({ isSubmitting: true });
+                try {
+                    const response = await deleteMenuItem(itemId);
+                    if (response.success) {
+                        const { categories } = get();
+
+                        const deleteItemRecursive = (list: Category[]): Category[] => {
+                            return list.map(cat => {
+                                if (cat.id === categoryId) {
+                                    return {
+                                        ...cat,
+                                        items: (cat.items || []).filter(item => item.id !== itemId),
+                                        itemCount: Math.max(0, (cat.itemCount || 1) - 1)
+                                    };
+                                }
+                                if (cat.subCategories && cat.subCategories.length > 0) {
+                                    return {
+                                        ...cat,
+                                        subCategories: deleteItemRecursive(cat.subCategories)
+                                    };
+                                }
+                                return cat;
+                            });
+                        };
+
+                        set({
+                            categories: deleteItemRecursive(categories)
+                        });
+                    }
+                } catch (error) {
+                    console.error('Failed to delete menu item:', error);
                 } finally {
                     set({ isSubmitting: false });
                 }

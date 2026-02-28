@@ -57,7 +57,8 @@ const FoodTypeMarker = ({ type }: { type: FoodType }) => {
 export const MenuItemCard = ({ item }: MenuItemCardProps) => {
   const { t } = useTranslation();
   const location = useLocation();
-  const { updateMenuItem, updatedItems, selectedCategoryId } = useMenu();
+  const { updateMenuItem, updatedItems, selectedCategoryId, deleteMenuItem } =
+    useMenu();
   const { selectedAddressId } = useRestaurantStore();
 
   const activeTab = location.pathname.split("/").pop() || "edit";
@@ -156,14 +157,9 @@ export const MenuItemCard = ({ item }: MenuItemCardProps) => {
     setStockConfirmOpen(false);
   };
 
-  const handleDeleteItem = () => {
+  const handleDeleteItem = async () => {
     if (selectedCategoryId === null) return;
-    updateMenuItem(
-      selectedCategoryId,
-      item.id,
-      { isDeleted: true },
-      selectedAddressId,
-    );
+    await deleteMenuItem(selectedCategoryId, item.id);
   };
 
   const handleBlockItem = () => {
