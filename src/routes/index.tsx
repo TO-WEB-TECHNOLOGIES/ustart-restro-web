@@ -23,6 +23,16 @@ const Orders = lazy(() =>
     default: module.Orders,
   })),
 );
+const Offers = lazy(() =>
+  import("@/features/dashboard/outlets/Offers").then((module) => ({
+    default: module.Offers,
+  })),
+);
+const CustomerDelighters = lazy(() =>
+  import("@/features/dashboard/outlets/CustomerDelighters").then((module) => ({
+    default: module.CustomerDelighters,
+  })),
+);
 const MenuScore = lazy(() =>
   import("@/features/dashboard/outlets/MenuScore").then((module) => ({
     default: module.MenuScore,
@@ -178,6 +188,19 @@ export const router = createBrowserRouter([
               {
                 path: "orders",
                 element: withSuspense(Orders),
+              },
+              {
+                path: "offers",
+                children: [
+                  {
+                    index: true,
+                    element: withSuspense(Offers),
+                  },
+                  {
+                    path: "customer-delighters",
+                    element: withSuspense(CustomerDelighters),
+                  },
+                ],
               },
               {
                 path: "menu",

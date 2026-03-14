@@ -589,6 +589,46 @@
         "logout": "Logout"
       }
     },
+    "offers": {
+      "title": "Build your own discounts",
+      "quickSetup": {
+        "title": "Quick Setup",
+        "description": "Get superfast order growth in just 1 click. Used by 5 out of 10 partners."
+      },
+      "customerDelighters": {
+        "title": "Customer Delighters",
+        "popular": "Most Popular",
+        "description": "Use extra constructs for extra visibility within DOTD, BOGO and Flat off"
+      },
+      "exclusiveOffers": {
+        "title": "USTART Elite Exclusive Offers",
+        "description": "Attract high-value USTART Elite customers by using exclusive discounts"
+      },
+      "percentageDiscounts": {
+        "title": "Percentage Discounts",
+        "description": "Increase orders and average order values using USTARTNOW, PARTY & JUMBO promo codes"
+      },
+      "customerDelightersDetails": {
+        "title": "Delight your customers",
+        "subtitle": "Create a spark with something extra special for your customers",
+        "flatDeals": {
+          "title": "Flat deals",
+          "description": "Give customers a flat amount off on orders above a certain value. Perfect for increasing total order value."
+        },
+        "bogo": {
+          "title": "Buy 1 Get 1 or More",
+          "description": "Delight your customers with free items to increase loyalty & trial of new dishes."
+        },
+        "dotd": {
+          "title": "Deal of the Day",
+          "description": "Spike your orders on specific days and timeslots using high-impact limited-time discounts."
+        },
+        "itemDiscount": {
+          "title": "Item Level Discount",
+          "description": "Promote special items or best-sellers with extra discounts specifically for your fans."
+        }
+      }
+    },
     "outletStatus": "Outlet Status",
     "statusOpen": "You are currently OPEN for orders",
     "statusClosed": "You are currently CLOSED for orders",
