@@ -8,6 +8,7 @@ export interface OfferItem {
   icon: React.ReactNode;
   path?: string;
   isPopular?: boolean;
+  isHighlighted?: boolean;
   hasPattern?: boolean;
   hoverStyles: {
     card: string;
@@ -27,9 +28,14 @@ export const OfferCard = ({ item, onClick }: { item: OfferItem; onClick: () => v
   return (
     <button
       onClick={onClick}
-      className="w-full text-left group transition-all duration-300 hover:scale-[1.01]"
+      className={`w-full text-left group transition-all duration-300 hover:scale-[1.01] ${item.isHighlighted ? 'scale-[1.02]' : ''}`}
     >
-      <div className={`bg-white dark:bg-slate-900 rounded-2xl p-6 shadow-sm border border-slate-100 dark:border-slate-800 flex items-center justify-between relative overflow-hidden transition-all duration-300 ${item.hoverStyles.card}`}>
+      <div className={`bg-white dark:bg-slate-900 rounded-2xl p-6 shadow-sm border flex items-center justify-between relative overflow-hidden transition-all duration-300 ${item.isHighlighted ? 'border-secondary-orange shadow-lg shadow-secondary-orange/10 ring-1 ring-secondary-orange/20' : 'border-slate-100 dark:border-slate-800'} ${item.hoverStyles.card}`}>
+        {item.isHighlighted && (
+          <div className="absolute top-0 left-0 px-4 py-1.5 bg-secondary-orange text-white text-[10px] font-black rounded-br-xl uppercase tracking-widest z-20 shadow-sm translate-x-[-1px] translate-y-[-1px]">
+            {t("dashboard.offers.recommended")}
+          </div>
+        )}
         {item.hasPattern && (
           <div className="absolute top-0 right-0 w-64 h-64 bg-primary-blue/5 rounded-full -mr-16 -mt-32 blur-3xl pointer-events-none group-hover:bg-white/10"></div>
         )}

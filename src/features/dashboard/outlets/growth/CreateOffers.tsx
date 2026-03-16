@@ -15,6 +15,7 @@ export const CreateOffers = () => {
       description: t("dashboard.offers.quickSetup.description"),
       icon: <Zap className="w-8 h-8" />,
       hasPattern: true,
+      isHighlighted: true,
       hoverStyles: {
         card: "group-hover:bg-gradient-to-r group-hover:from-primary-blue group-hover:via-[#1e3a8a] group-hover:to-[#4338ca] group-hover:border-transparent group-hover:shadow-lg group-hover:shadow-primary-blue/20",
         icon: "group-hover:bg-white/10 group-hover:border-white/10 group-hover:text-yellow-300 group-hover:fill-current",
@@ -89,12 +90,20 @@ export const CreateOffers = () => {
         </div>
 
         <div className="w-full flex flex-col gap-4">
-          {offers.map((item) => (
-            <OfferCard 
-              key={item.id} 
-              item={item} 
-              onClick={() => item.path && navigate(item.path)} 
-            />
+          {offers.map((item, index) => (
+            <div key={item.id} className="w-full flex flex-col gap-6">
+              <OfferCard 
+                item={item} 
+                onClick={() => item.path && navigate(item.path)} 
+              />
+              {index === 0 && (
+                <div className="relative py-2 flex items-center">
+                  <div className="flex-grow border-t border-slate-200 dark:border-slate-800"></div>
+                  <span className="flex-shrink mx-4 text-[10px] font-black text-slate-400 dark:text-slate-600 tracking-[0.2em] uppercase">{t("dashboard.offers.or")}</span>
+                  <div className="flex-grow border-t border-slate-200 dark:border-slate-800"></div>
+                </div>
+              )}
+            </div>
           ))}
         </div>
 

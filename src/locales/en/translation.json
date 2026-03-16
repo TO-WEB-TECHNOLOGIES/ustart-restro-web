@@ -591,6 +591,8 @@
     },
     "offers": {
       "title": "Build your own discounts",
+      "recommended": "Recommended",
+      "or": "OR",
       "quickSetup": {
         "title": "Quick Setup",
         "description": "Get superfast order growth in just 1 click. Used by 5 out of 10 partners."
