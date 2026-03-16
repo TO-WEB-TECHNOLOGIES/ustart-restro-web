@@ -615,7 +615,74 @@
         "subtitle": "Create a spark with something extra special for your customers",
         "flatDeals": {
           "title": "Flat deals",
-          "description": "Give customers a flat amount off on orders above a certain value. Perfect for increasing total order value."
+          "description": "Give customers a flat amount off on orders above a certain value. Perfect for increasing total order value.",
+          "subtitle": "Attract more customers with a flat discount on their bill",
+          "selectValue": "SELECT DISCOUNT VALUE (FLAT ₹)",
+          "popular": "POPULAR",
+          "other": "Other",
+          "customMovPlaceholder": "Enter MOV",
+          "tip": "Did you know? High-value flat discounts (₹150+) are 2x more likely to attract first-time customers.",
+          "mov": "MINIMUM ORDER VALUE (MOV)",
+          "selectMov": "Select a minimum order value",
+          "movHint": "The discount will only apply if the customer's cart value is above this amount.",
+          "duration": "DISCOUNT DURATION",
+          "startDate": "START DATE",
+          "endDate": "END DATE",
+          "note": "Note: 100% of the discount value will be borne by the restaurant.",
+          "activate": "Activate Offer",
+          "validations": {
+            "discountValueRequired": "Please select a discount value",
+            "movRequired": "Please select a minimum order value",
+            "customMovRequired": "Please enter a custom MOV",
+            "startDateFuture": "Start date must be in the future",
+            "endDateAfterStart": "End date must be after the start date",
+            "minDiscount": "Discount must be at least ₹10",
+            "minMov": "Minimum order value must be at least ₹100",
+            "ratioRange": "Discount must be between 2% and 70% of the order value",
+            "durationRange": "Offer duration must be more than 15 days",
+            "targetCustomerRequired": "Please select a target customer"
+          },
+          "targetCustomerSelection": {
+            "title": "Select target customers",
+            "subtitle": "Pick the customers who will be able to redeem this discount",
+            "allCustomers": "All customers",
+            "allCustomersDesc": "Target all your users! Great for boosting order numbers.",
+            "newCustomers": "New customers",
+            "newCustomersDesc": "Target users who have never ordered from your restaurant before.",
+            "returningCustomers": "Returning customers",
+            "returningCustomersDesc": "Target loyal customers who have ordered from you recently.",
+            "tip": "Over 50% of our partners choose to create discounts for all users",
+            "nextBtn": "Next: Set Discount Amount",
+            "goBack": "Go Back"
+          },
+          "learningCenter": {
+            "title": "Learning Center",
+            "q1": "Why use Flat Deals?",
+            "q2": "How to set the right MOV?",
+            "q3": "Can I end the deal early?"
+          },
+          "help": {
+            "title": "Need help?",
+            "text": "Our partner support team is here to assist you.",
+            "chat": "Chat Support"
+          },
+          "reviewDialog": {
+            "title": "Review your offer",
+            "subtitle": "Almost there! Review your offer details before activating it.",
+            "targetCustomers": "Target Customers",
+            "discountValue": "Discount Value",
+            "minOrderValue": "Min. Order Value",
+            "duration": "Duration",
+            "confirmBtn": "Confirm & Activate",
+            "cancelBtn": "Go Back & Edit",
+            "offerDetails": "OFFER DETAILS",
+            "off": "OFF",
+            "flatDiscountHint": "Flat discount per bill",
+            "minOrder": "MIN. ORDER",
+            "cartValue": "Cart Value",
+            "durationUppercase": "DURATION",
+            "daysCount": "{{count}} Days"
+          }
         },
         "bogo": {
           "title": "Buy 1 Get 1 or More",

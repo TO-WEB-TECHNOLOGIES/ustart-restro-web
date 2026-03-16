@@ -7,10 +7,11 @@ import {
   Star,
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
 export const CustomerDelighters = () => {
   const { t } = useTranslation();
+  const navigate = useNavigate();
 
   const delighters = [
     {
@@ -67,6 +68,7 @@ export const CustomerDelighters = () => {
           {delighters.map((item) => (
             <button
               key={item.id}
+              onClick={() => item.id === "flatDeals" && navigate("flat-deals")}
               className="w-full text-left group transition-all duration-300 hover:bg-slate-50 dark:hover:bg-slate-800/50 p-5 md:p-6 flex items-start justify-between gap-4"
             >
               <div className="flex items-start gap-5">

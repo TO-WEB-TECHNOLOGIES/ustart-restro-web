@@ -33,6 +33,11 @@ const CustomerDelighters = lazy(() =>
     default: module.CustomerDelighters,
   })),
 );
+const FlatDeals = lazy(() =>
+  import("@/features/dashboard/outlets/growth/FlatDeals").then((module) => ({
+    default: module.FlatDeals,
+  })),
+);
 const MenuScore = lazy(() =>
   import("@/features/dashboard/outlets/menu/MenuScore").then((module) => ({
     default: module.MenuScore,
@@ -198,7 +203,16 @@ export const router = createBrowserRouter([
                   },
                   {
                     path: "customer-delighters",
-                    element: withSuspense(CustomerDelighters),
+                    children: [
+                      {
+                        index: true,
+                        element: withSuspense(CustomerDelighters),
+                      },
+                      {
+                        path: "flat-deals",
+                        element: withSuspense(FlatDeals),
+                      },
+                    ],
                   },
                 ],
               },
