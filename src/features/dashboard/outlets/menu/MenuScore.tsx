@@ -16,10 +16,10 @@ import {
     Package
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { OpportunityCard, ActionCard, MenuScoreGauge } from '../components/menu-score';
-import { useMenuData } from '../hooks/useMenuData';
-import { useLanguage } from '@/hooks/useLanguage';
-import ComingSoonModal from '../components/orders/ComingSoonModal';
+import { OpportunityCard, ActionCard, MenuScoreGauge } from "../../components/menu-score";
+import { useMenuData } from "../../hooks/useMenuData";
+import { useLanguage } from "@/hooks/useLanguage";
+import ComingSoonModal from "../../components/orders/ComingSoonModal";
 
 export const MenuScore = () => {
     const navigate = useNavigate();

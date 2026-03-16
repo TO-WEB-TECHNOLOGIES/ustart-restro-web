@@ -14,27 +14,27 @@ const LandingPage = lazy(() =>
   })),
 );
 const Dashboard = lazy(() =>
-  import("@/features/dashboard/outlets/Dashboard").then((module) => ({
+  import("@/features/dashboard/outlets/dashboard/Dashboard").then((module) => ({
     default: module.Dashboard,
   })),
 );
 const Orders = lazy(() =>
-  import("@/features/dashboard/outlets/Orders").then((module) => ({
+  import("@/features/dashboard/outlets/dashboard/Orders").then((module) => ({
     default: module.Orders,
   })),
 );
-const Offers = lazy(() =>
-  import("@/features/dashboard/outlets/Offers").then((module) => ({
-    default: module.Offers,
+const CreateOffers = lazy(() =>
+  import("@/features/dashboard/outlets/growth/CreateOffers").then((module) => ({
+    default: module.CreateOffers,
   })),
 );
 const CustomerDelighters = lazy(() =>
-  import("@/features/dashboard/outlets/CustomerDelighters").then((module) => ({
+  import("@/features/dashboard/outlets/growth/CustomerDelighters").then((module) => ({
     default: module.CustomerDelighters,
   })),
 );
 const MenuScore = lazy(() =>
-  import("@/features/dashboard/outlets/MenuScore").then((module) => ({
+  import("@/features/dashboard/outlets/menu/MenuScore").then((module) => ({
     default: module.MenuScore,
   })),
 );
@@ -87,12 +87,12 @@ const DashboardLayout = lazy(() =>
   })),
 );
 const MenuEditor = lazy(() =>
-  import("@/features/dashboard/outlets/MenuEditor").then((module) => ({
+  import("@/features/dashboard/outlets/menu/MenuEditor").then((module) => ({
     default: module.MenuEditor,
   })),
 );
 const ComingSoon = lazy(() =>
-  import("@/features/dashboard/outlets/ComingSoon").then((module) => ({
+  import("@/features/dashboard/outlets/static/ComingSoon").then((module) => ({
     default: module.ComingSoon,
   })),
 );
@@ -190,11 +190,11 @@ export const router = createBrowserRouter([
                 element: withSuspense(Orders),
               },
               {
-                path: "offers",
+                path: "growth",
                 children: [
                   {
                     index: true,
-                    element: withSuspense(Offers),
+                    element: withSuspense(CreateOffers),
                   },
                   {
                     path: "customer-delighters",

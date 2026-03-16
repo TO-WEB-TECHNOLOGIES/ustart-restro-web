@@ -92,7 +92,7 @@ export const CustomerDelighters = () => {
         </div>
         <div className="mt-8">
           <Link
-            to="/dashboard/offers"
+            to="/dashboard/growth"
             className="text-primary-blue dark:text-slate-400 hover:text-secondary-orange transition-colors flex items-center gap-2 font-medium"
           >
             ← {t("common.titles.overview")} /{" "}

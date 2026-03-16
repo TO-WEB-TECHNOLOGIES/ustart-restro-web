@@ -1,10 +1,10 @@
 import { Zap, Pizza, Gem, Percent } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
-import { OfferCard } from "../components/OfferCard";
-import type { OfferItem } from "../components/OfferCard";
+import { OfferCard } from "../../components/OfferCard";
+import type { OfferItem } from "../../components/OfferCard";
 
-export const Offers = () => {
+export const CreateOffers = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
 

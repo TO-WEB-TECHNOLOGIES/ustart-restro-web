@@ -1,12 +1,12 @@
 import { useState } from 'react';
-import { useLiveOrders } from '../hooks/useOrdersData';
-import { OrdersTabs } from '../components/orders/OrdersTabs';
-import { ActiveOrderCard } from '../components/orders/ActiveOrderCard';
-import { ProcessingOrderCard } from '../components/orders/ProcessingOrderCard';
-import NoOrdersScreen from '../components/orders/NoOrdersScreen';
-import ComingSoonModal from '../components/orders/ComingSoonModal';
-import { OrderItemsModal } from '../components/orders/OrderItemsModal';
-import type { Order } from '../api/mockDashboard';
+import { useLiveOrders } from "../../hooks/useOrdersData";
+import { OrdersTabs } from "../../components/orders/OrdersTabs";
+import { ActiveOrderCard } from "../../components/orders/ActiveOrderCard";
+import { ProcessingOrderCard } from "../../components/orders/ProcessingOrderCard";
+import NoOrdersScreen from "../../components/orders/NoOrdersScreen";
+import ComingSoonModal from "../../components/orders/ComingSoonModal";
+import { OrderItemsModal } from "../../components/orders/OrderItemsModal";
+import type { Order } from "../../api/mockDashboard";
 
 export const Orders = () => {
     const { activeTab, setActiveTab, counts, orders, actions } = useLiveOrders();

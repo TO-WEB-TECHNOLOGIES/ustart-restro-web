@@ -1,14 +1,14 @@
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useLocation } from 'react-router-dom';
-import { MenuTabs } from '../components/MenuEditor/MenuTabs';
-import { CategorySidebar } from '../components/MenuEditor/CategorySidebar';
-import { MenuItemList } from '../components/MenuEditor/MenuItemList';
-import { ReviewChanges } from '../components/MenuEditor/ReviewChanges';
-import { useMenu } from '../hooks/useMenu';
-import { Loader2, PanelLeftOpen, PanelLeftClose, Menu } from 'lucide-react';
+import { MenuTabs } from "../../components/MenuEditor/MenuTabs";
+import { CategorySidebar } from "../../components/MenuEditor/CategorySidebar";
+import { MenuItemList } from "../../components/MenuEditor/MenuItemList";
+import { ReviewChanges } from "../../components/MenuEditor/ReviewChanges";
+import { useMenu } from "../../hooks/useMenu";
+import { Loader2, PanelLeftOpen, PanelLeftClose, Menu } from "lucide-react";
 
-import { AddItemPage } from '../components/MenuEditor/AddItemPage';
+import { AddItemPage } from "../../components/MenuEditor/AddItemPage";
 
 /**
  * MenuEditor component provides the interface for managing a restaurant's menu.

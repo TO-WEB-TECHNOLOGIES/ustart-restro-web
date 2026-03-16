@@ -1,7 +1,7 @@
-import { OutletStatus } from '../components/OutletStatus';
-import { StatsCards } from '../components/StatsCards';
-import { RecentOrders } from '../components/RecentOrders';
-import { BoostWidget, HelpWidget } from '../components/DashboardWidgets';
+import { OutletStatus } from "../../components/OutletStatus";
+import { StatsCards } from "../../components/StatsCards";
+import { RecentOrders } from "../../components/RecentOrders";
+import { BoostWidget, HelpWidget } from "../../components/DashboardWidgets";
 export const Dashboard = () => {
 
     return (
