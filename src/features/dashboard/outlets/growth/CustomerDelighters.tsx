@@ -68,7 +68,10 @@ export const CustomerDelighters = () => {
           {delighters.map((item) => (
             <button
               key={item.id}
-              onClick={() => item.id === "flatDeals" && navigate("flat-deals")}
+              onClick={() => {
+                if (item.id === "flatDeals") navigate("flat-deals");
+                if (item.id === "dotd") navigate("dotd");
+              }}
               className="w-full text-left group transition-all duration-300 hover:bg-slate-50 dark:hover:bg-slate-800/50 p-5 md:p-6 flex items-start justify-between gap-4"
             >
               <div className="flex items-start gap-5">

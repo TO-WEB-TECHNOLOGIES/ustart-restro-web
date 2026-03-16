@@ -35,6 +35,38 @@ export const MOCK_OFFERS_DATA: Record<string, number[]> = {
   "999": [200, 250, 400, 500]
 };
 
+export const MOCK_DAY_DEALS: Record<string, Record<string, any[]>> = {
+  en: {
+    percentage: [
+      { id: "stealdeal", promo: "STEALDEAL", desc: "60% off Upto ₹120 on orders above ₹160 for all users", discountValue: 60, minOrderAmount: 160, capOfDiscountAmount: 120, isAbsolute: true, targetCustomers: "All Users" },
+      { id: "restrohero", promo: "RESTROHERO", desc: "50% off Upto ₹100 on orders above ₹150", popular: true, discountValue: 50, minOrderAmount: 150, capOfDiscountAmount: 100, isAbsolute: true, targetCustomers: "Regular Customers" },
+      { id: "trynew", promo: "TRYNEW", desc: "40% off Upto ₹80 on orders above ₹199 for new users", discountValue: 40, minOrderAmount: 199, capOfDiscountAmount: 80, isAbsolute: true, targetCustomers: "New Customers" },
+      { id: "bigbite", promo: "BIGBITE", desc: "30% off Upto ₹150 on orders above ₹350", discountValue: 30, minOrderAmount: 350, capOfDiscountAmount: 150, isAbsolute: true, targetCustomers: "All Users" },
+    ],
+    flat: [
+      { id: "flatsaver", promo: "FLATSAVER", desc: "Flat ₹50 off on orders above ₹250", discountValue: 50, minOrderAmount: 250, capOfDiscountAmount: 50, isAbsolute: false, targetCustomers: "All Users" },
+      { id: "megasave", promo: "MEGASAVE", desc: "Flat ₹100 off on orders above ₹500", popular: true, discountValue: 100, minOrderAmount: 500, capOfDiscountAmount: 100, isAbsolute: false, targetCustomers: "All Users" },
+      { id: "newuser", promo: "NEWUSER", desc: "Flat ₹75 off on your first order above ₹300", discountValue: 75, minOrderAmount: 300, capOfDiscountAmount: 75, isAbsolute: false, targetCustomers: "New Customers" },
+      { id: "weekend", promo: "WEEKEND", desc: "Flat ₹40 off on weekends above ₹200", discountValue: 40, minOrderAmount: 200, capOfDiscountAmount: 40, isAbsolute: false, targetCustomers: "All Users" },
+    ]
+  },
+  hi: {
+    percentage: [
+      { id: "stealdeal", promo: "STEALDEAL", desc: "सभी उपयोगकर्ताओं के लिए ₹160 से ऊपर के ऑर्डर पर 60% तक ₹120 की छूट", discountValue: 60, minOrderAmount: 160, capOfDiscountAmount: 120, isAbsolute: true, targetCustomers: "सभी उपयोगकर्ता" },
+      { id: "restrohero", promo: "RESTROHERO", desc: "₹150 से ऊपर के ऑर्डर पर 50% तक ₹100 की छूट", popular: true, discountValue: 50, minOrderAmount: 150, capOfDiscountAmount: 100, isAbsolute: true, targetCustomers: "नियमित ग्राहक" },
+      { id: "trynew", promo: "TRYNEW", desc: "नए उपयोगकर्ताओं के लिए ₹199 से ऊपर के ऑर्डर पर 40% तक ₹80 की छूट", discountValue: 40, minOrderAmount: 199, capOfDiscountAmount: 80, isAbsolute: true, targetCustomers: "नए ग्राहक" },
+      { id: "bigbite", promo: "BIGBITE", desc: "₹350 से ऊपर के ऑर्डर पर 30% तक ₹150 की छूट", discountValue: 30, minOrderAmount: 350, capOfDiscountAmount: 150, isAbsolute: true, targetCustomers: "सभी उपयोगकर्ता" },
+    ],
+    flat: [
+      { id: "flatsaver", promo: "FLATSAVER", desc: "₹250 से ऊपर के ऑर्डर पर ₹50 की फ्लैट छूट", discountValue: 50, minOrderAmount: 250, capOfDiscountAmount: 50, isAbsolute: false, targetCustomers: "सभी उपयोगकर्ता" },
+      { id: "megasave", promo: "MEGASAVE", desc: "₹500 से ऊपर के ऑर्डर पर ₹100 की फ्लैट छूट", popular: true, discountValue: 100, minOrderAmount: 500, capOfDiscountAmount: 100, isAbsolute: false, targetCustomers: "सभी उपयोगकर्ता" },
+      { id: "newuser", promo: "NEWUSER", desc: "₹300 से ऊपर के आपके पहले ऑर्डर पर ₹75 की फ्लैट छूट", discountValue: 75, minOrderAmount: 300, capOfDiscountAmount: 75, isAbsolute: false, targetCustomers: "नए ग्राहक" },
+      { id: "weekend", promo: "WEEKEND", desc: "सप्ताहांत में ₹200 से ऊपर के ऑर्डर पर ₹40 की फ्लैट छूट", discountValue: 40, minOrderAmount: 200, capOfDiscountAmount: 40, isAbsolute: false, targetCustomers: "सभी उपयोगकर्ता" },
+    ]
+  }
+};
+
+
 export const MOCK_ORDERS: Order[] = [
     {
         id: '#ORD-2933',

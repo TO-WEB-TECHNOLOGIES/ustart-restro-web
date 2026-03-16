@@ -1,4 +1,4 @@
-import { MOCK_OFFERS_DATA, delay } from './data/mockData';
+import { MOCK_OFFERS_DATA, MOCK_DAY_DEALS, delay } from './data/mockData';
 
 const STORAGE_SESSION_KEY = "ustart_flat_deals_data";
 
@@ -12,5 +12,11 @@ export const offersApi = {
         await delay(1500); // Simulate network latency
         sessionStorage.setItem(STORAGE_SESSION_KEY, JSON.stringify(MOCK_OFFERS_DATA));
         return MOCK_OFFERS_DATA;
+    },
+
+    getDayDeals: async (type: string, lang: string): Promise<any[]> => {
+        await delay(800); // Simulate network latency
+        const langData = MOCK_DAY_DEALS[lang] || MOCK_DAY_DEALS['en'];
+        return langData[type] || [];
     }
 };

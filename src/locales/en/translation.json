@@ -690,7 +690,41 @@
         },
         "dotd": {
           "title": "Deal of the Day",
-          "description": "Spike your orders on specific days and timeslots using high-impact limited-time discounts."
+          "description": "Spike your orders on specific days and timeslots using high-impact limited-time discounts.",
+          "configure": {
+            "title": "Configure Deal of the Day",
+            "subtitle": "Set up high-impact flash sales to boost volume.",
+            "tabs": {
+              "percentageDiscount": "Percentage Discount",
+              "flatOff": "Flat Off",
+              "itemLevelDiscount": "Item Level Discount",
+              "popular": "POPULAR"
+            },
+            "tip": "Limited-time flash deals can increase your daily order volume by up to 40%.",
+            "previewBtn": "PREVIEW",
+            "reviewModal": {
+              "title": "Review Your Campaign",
+              "promoCode": "Coupon Code",
+              "targeting": "Targeting",
+              "duration": "Campaign Duration",
+              "minOrder": "Min. Order Value",
+              "maxDiscount": "Max Discount Capping",
+              "confirmBtn": "Confirm & Start Offer",
+              "backBtn": "Back to Edit",
+              "infoText": "This campaign will be active immediately after saving. You can manage it from the Offers tab in your growth dashboard."
+            },
+            "learningCenter": {
+              "title": "Learning Center",
+              "q1": "How to choose a deal?",
+              "q2": "What times work best?",
+              "q3": "Can I have multiple deals?"
+            },
+            "help": {
+              "title": "Need help?",
+              "text": "Our partner support team is here to assist you.",
+              "chat": "Chat Support"
+            }
+          }
         },
         "itemDiscount": {
           "title": "Item Level Discount",

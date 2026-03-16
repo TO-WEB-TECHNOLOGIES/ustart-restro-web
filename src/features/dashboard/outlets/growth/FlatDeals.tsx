@@ -1,15 +1,15 @@
 import { useState, useMemo, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { 
-  Tag, 
   HelpCircle, 
   Calendar, 
   ArrowRight,
   ChevronDown,
   Loader2,
-  Check
+  Check,
+  ArrowLeft
 } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
@@ -141,9 +141,13 @@ export const FlatDeals = () => {
         <div className="flex-1 space-y-8 mb-10 lg:mb-0">
           {/* Header */}
           <div className="flex items-start gap-4">
-            <div className="size-12 rounded-xl bg-primary-blue flex items-center justify-center text-white shadow-lg">
-              <Tag className="w-6 h-6" />
-            </div>
+            <Link
+              to=".."
+              relative="path"
+              className="mt-1 p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition-colors hidden sm:block"
+            >
+              <ArrowLeft className="w-5 h-5 text-slate-500" />
+            </Link>
             <div>
               <h1 className="text-2xl font-bold text-primary-blue dark:text-white">
                 {t("dashboard.offers.customerDelightersDetails.flatDeals.title")}
@@ -424,8 +428,23 @@ export const FlatDeals = () => {
           isOpen={isReviewOpen}
           onClose={() => setIsReviewOpen(false)}
           onConfirm={handleConfirmActivation}
-          data={formData}
-          isSubmitting={isActivating}
+          deal={{
+            id: "flat-deal",
+            promo: `FLAT${formData.discountValue}`,
+            desc: "Flat Discount Offer",
+            discountValue: formData.discountValue,
+            minOrderAmount: Number(formData.movType),
+            capOfDiscountAmount: formData.discountValue,
+            isAbsolute: false,
+            targetCustomers: formData.targetCustomer === 'all' 
+              ? t("dashboard.offers.customerDelightersDetails.flatDeals.targetCustomerSelection.allCustomers")
+              : formData.targetCustomer === 'new'
+              ? t("dashboard.offers.customerDelightersDetails.flatDeals.targetCustomerSelection.newCustomers")
+              : t("dashboard.offers.customerDelightersDetails.flatDeals.targetCustomerSelection.returningCustomers")
+          }}
+          startDate={new Date(formData.startDate)}
+          endDate={new Date(formData.endDate)}
+          isLoading={isActivating}
         />
       )}
     </div>

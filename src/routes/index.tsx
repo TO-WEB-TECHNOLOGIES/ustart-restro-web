@@ -38,6 +38,11 @@ const FlatDeals = lazy(() =>
     default: module.FlatDeals,
   })),
 );
+const DealOfTheDay = lazy(() =>
+  import("@/features/dashboard/outlets/growth/DealOfTheDay").then((module) => ({
+    default: module.DealOfTheDay,
+  })),
+);
 const MenuScore = lazy(() =>
   import("@/features/dashboard/outlets/menu/MenuScore").then((module) => ({
     default: module.MenuScore,
@@ -211,6 +216,10 @@ export const router = createBrowserRouter([
                       {
                         path: "flat-deals",
                         element: withSuspense(FlatDeals),
+                      },
+                      {
+                        path: "dotd",
+                        element: withSuspense(DealOfTheDay),
                       },
                     ],
                   },

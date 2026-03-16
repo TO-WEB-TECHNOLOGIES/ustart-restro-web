@@ -1,42 +1,54 @@
-import React from "react";
 import { useTranslation } from "react-i18next";
-import { X, CheckCircle2, ShoppingCart, Calendar, Info, Tag, Users } from "lucide-react";
-import type { FlatDealsFormValues } from "../outlets/growth/validations";
+import { X, CheckCircle2, ShoppingCart, Calendar, Info, Tag, Users, Loader2 } from "lucide-react";
+
+interface Deal {
+  id: string;
+  promo: string;
+  desc: string;
+  popular?: boolean;
+  discountValue?: number;
+  minOrderAmount?: number;
+  capOfDiscountAmount?: number;
+  isAbsolute?: boolean;
+  targetCustomers?: string;
+}
 
 interface OfferReviewModalProps {
   isOpen: boolean;
   onClose: () => void;
   onConfirm: () => void;
-  data: FlatDealsFormValues;
-  isSubmitting: boolean;
+  deal: Deal | null;
+  startDate: Date;
+  endDate: Date;
+  isLoading?: boolean;
 }
 
-export const OfferReviewModal: React.FC<OfferReviewModalProps> = ({
-  isOpen,
-  onClose,
-  onConfirm,
-  data,
-  isSubmitting,
-}) => {
-  const { t } = useTranslation();
+export const OfferReviewModal = ({ 
+  isOpen, 
+  onClose, 
+  onConfirm, 
+  deal,
+  startDate,
+  endDate,
+  isLoading = false
+}: OfferReviewModalProps) => {
+  const { t, i18n } = useTranslation();
 
-  if (!isOpen) return null;
-
-  const getTargetCustomerLabel = (type: string) => {
-    switch (type) {
-      case 'all': return t("dashboard.offers.customerDelightersDetails.flatDeals.targetCustomerSelection.allCustomers");
-      case 'new': return t("dashboard.offers.customerDelightersDetails.flatDeals.targetCustomerSelection.newCustomers");
-      case 'returning': return t("dashboard.offers.customerDelightersDetails.flatDeals.targetCustomerSelection.returningCustomers");
-      default: return type;
-    }
-  };
+  if (!isOpen || !deal) return null;
 
   const calculateDuration = () => {
-    const start = new Date(data.startDate);
-    const end = new Date(data.endDate);
+    const start = new Date(startDate);
+    const end = new Date(endDate);
     const diffTime = Math.abs(end.getTime() - start.getTime());
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
     return diffDays;
+  };
+
+  const formatDate = (date: Date) => {
+    return date.toLocaleDateString(i18n.language, {
+      day: 'numeric',
+      month: 'short'
+    });
   };
 
   return (
@@ -46,7 +58,8 @@ export const OfferReviewModal: React.FC<OfferReviewModalProps> = ({
         {/* Close Button */}
         <button 
           onClick={onClose}
-          className="absolute top-6 right-6 p-2 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-full transition-colors text-slate-400 z-10"
+          disabled={isLoading}
+          className="absolute top-6 right-6 p-2 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-full transition-colors text-slate-400 z-10 disabled:opacity-50"
         >
           <X className="w-5 h-5" />
         </button>
@@ -79,17 +92,17 @@ export const OfferReviewModal: React.FC<OfferReviewModalProps> = ({
               <div className="text-center space-y-1">
                 <p className="text-[10px] font-black text-secondary-orange uppercase tracking-[0.2em]">{t("dashboard.offers.customerDelightersDetails.flatDeals.reviewDialog.offerDetails")}</p>
                 <div className="flex items-baseline justify-center gap-2">
-                  <span className="text-4xl font-black text-[#1a2b4b] dark:text-white">₹{data.discountValue}</span>
+                  <span className="text-4xl font-black text-[#1a2b4b] dark:text-white">₹{deal.discountValue}</span>
                   <span className="text-3xl font-black text-secondary-orange">{t("dashboard.offers.customerDelightersDetails.flatDeals.reviewDialog.off")}</span>
                 </div>
                 <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">{t("dashboard.offers.customerDelightersDetails.flatDeals.reviewDialog.flatDiscountHint")}</p>
               </div>
 
               <div className="flex justify-center">
-                <div className="inline-flex items-center gap-2 px-4 py-2 bg-white dark:bg-slate-800 rounded-full border border-orange-100 dark:border-orange-900/30 shadow-sm">
+                <div className="inline-flex items-center gap-2 px-4 py-2 bg-white dark:bg-slate-900 rounded-full border border-orange-100 dark:border-orange-900/30 shadow-sm">
                   <Users className="w-4 h-4 text-secondary-orange" />
                   <span className="text-xs font-bold text-[#1a2b4b] dark:text-white">
-                    {t("dashboard.offers.customerDelightersDetails.flatDeals.reviewDialog.targetCustomers")}: {getTargetCustomerLabel(data.targetCustomer)}
+                    {t("dashboard.offers.customerDelightersDetails.flatDeals.reviewDialog.targetCustomers")}: {deal.targetCustomers}
                   </span>
                 </div>
               </div>
@@ -103,18 +116,18 @@ export const OfferReviewModal: React.FC<OfferReviewModalProps> = ({
                 <ShoppingCart className="w-4 h-4 text-slate-400" />
               </div>
               <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">{t("dashboard.offers.customerDelightersDetails.flatDeals.reviewDialog.minOrder")}</p>
-              <p className="text-lg font-black text-[#1a2b4b] dark:text-white">₹{data.movType}</p>
+              <p className="text-lg font-black text-[#1a2b4b] dark:text-white">₹{deal.minOrderAmount}</p>
               <p className="text-[10px] text-slate-400 font-medium">{t("dashboard.offers.customerDelightersDetails.flatDeals.reviewDialog.cartValue")}</p>
             </div>
 
             <div className="bg-slate-50 dark:bg-slate-800/50 rounded-2xl p-4 border border-slate-100 dark:border-slate-800">
               <div className="flex justify-center mb-1">
-                <Calendar className="w-4 h-4 text-slate-400" />
+                <Calendar className="text-slate-400 w-4 h-4" />
               </div>
               <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">{t("dashboard.offers.customerDelightersDetails.flatDeals.reviewDialog.durationUppercase")}</p>
-              <p className="text-lg font-black text-[#1a2b4b] dark:text-white">{t("dashboard.offers.customerDelightersDetails.flatDeals.reviewDialog.daysCount", { count: calculateDuration() })}</p>
+              <p className="text-lg font-black text-[#1a2b4b] dark:text-white">{t("dashboard.offers.customerDelightersDetails.flatDeals.reviewDialog.daysCount", { count: calculateDuration() || 1 })}</p>
               <p className="text-[10px] text-slate-400 font-medium">
-                {new Date(data.startDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })} - {new Date(data.endDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}
+                {formatDate(startDate)} - {formatDate(endDate)}
               </p>
             </div>
           </div>
@@ -131,12 +144,12 @@ export const OfferReviewModal: React.FC<OfferReviewModalProps> = ({
           <div className="space-y-3 pt-2">
             <button 
               onClick={onConfirm}
-              disabled={isSubmitting}
+              disabled={isLoading}
               className="w-full h-14 bg-secondary-orange hover:bg-orange-500 disabled:opacity-70 text-white rounded-2xl font-bold shadow-lg shadow-secondary-orange/20 flex items-center justify-center gap-2 transition-all active:scale-[0.98]"
             >
-              {isSubmitting ? (
+              {isLoading ? (
                 <>
-                  <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                  <Loader2 className="w-5 h-5 animate-spin" />
                   {t("common.processing")}...
                 </>
               ) : (
@@ -146,13 +159,14 @@ export const OfferReviewModal: React.FC<OfferReviewModalProps> = ({
                 </>
               )}
             </button>
-            <button 
-              onClick={onClose}
-              disabled={isSubmitting}
-              className="w-full h-10 text-slate-500 dark:text-slate-400 font-bold hover:text-slate-700 dark:hover:text-slate-200 transition-colors text-sm"
-            >
-              {t("dashboard.offers.customerDelightersDetails.flatDeals.reviewDialog.cancelBtn")}
-            </button>
+            {!isLoading && (
+              <button 
+                onClick={onClose}
+                className="w-full h-10 text-slate-500 dark:text-slate-400 font-bold hover:text-slate-700 dark:hover:text-slate-200 transition-colors text-sm"
+              >
+                {t("dashboard.offers.customerDelightersDetails.flatDeals.reviewDialog.cancelBtn")}
+              </button>
+            )}
           </div>
         </div>
       </div>
