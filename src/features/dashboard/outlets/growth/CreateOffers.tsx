@@ -14,6 +14,7 @@ export const CreateOffers = () => {
       title: t("dashboard.offers.quickSetup.title"),
       description: t("dashboard.offers.quickSetup.description"),
       icon: <Zap className="w-8 h-8" />,
+      path: "quick-setup",
       hasPattern: true,
       isHighlighted: true,
       hoverStyles: {

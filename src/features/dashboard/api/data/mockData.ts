@@ -271,6 +271,70 @@ export const ALL_ADDRESSES = [
     { id: 'addr_111', label: 'Connaught Place', address: 'Inner Circle, Delhi' },
     { id: 'addr_112', label: 'Hadapsar', address: 'Magarpatta City, Pune' },
 ];
+export interface QuickSetupTierItem {
+  promo: string;
+  pct: string;
+  sub: string;
+}
+
+export interface QuickSetupTierSection {
+  labelKey: "sectionLabel" | "percentageLabel" | "eliteLabel";
+  items: QuickSetupTierItem[];
+}
+
+export interface QuickSetupTier {
+  id: "standard" | "growth" | "max";
+  recommended?: boolean;
+  sections: QuickSetupTierSection[];
+}
+
+export const MOCK_QUICK_SETUP_TIERS: QuickSetupTier[] = [
+  {
+    id: "standard",
+    sections: [
+      {
+        labelKey: "sectionLabel",
+        items: [
+          { promo: "TRYNEW", pct: "30% off", sub: "Up to ₹80 for new users" },
+          { promo: "PARTY", pct: "10% off", sub: "Orders above ₹700" },
+        ],
+      },
+    ],
+  },
+  {
+    id: "growth",
+    sections: [
+      {
+        labelKey: "percentageLabel",
+        items: [
+          { promo: "TRYNEW", pct: "50% off", sub: "Up to ₹100 for new users" },
+          { promo: "PARTY", pct: "20% off", sub: "Orders above ₹700" },
+        ],
+      },
+      {
+        labelKey: "eliteLabel",
+        items: [{ promo: "ELITE15", pct: "15% off", sub: "Exclusive for members" }],
+      },
+    ],
+  },
+  {
+    id: "max",
+    sections: [
+      {
+        labelKey: "sectionLabel",
+        items: [
+          { promo: "TRYNEW", pct: "60% off", sub: "Up to ₹120 for new users" },
+          { promo: "PARTY", pct: "25% off", sub: "Orders above ₹700" },
+        ],
+      },
+      {
+        labelKey: "eliteLabel",
+        items: [{ promo: "ELITE20", pct: "20% off", sub: "Exclusive for members" }],
+      },
+    ],
+  },
+];
+
 export const MOCK_MENU_SCORE = {
     score: 80,
     thresholdScore: 90,

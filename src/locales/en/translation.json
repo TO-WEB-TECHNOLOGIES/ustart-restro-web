@@ -596,7 +596,48 @@
       "or": "OR",
       "quickSetup": {
         "title": "Quick Setup",
-        "description": "Get superfast order growth in just 1 click. Used by 5 out of 10 partners."
+        "description": "Get superfast order growth in just 1 click. Used by 5 out of 10 partners.",
+        "validation": {
+          "targetCustomerRequired": "Please select a target customer.",
+          "startDateRequired": "Please select a start date.",
+          "endDateRequired": "Please select an end date.",
+          "endDateAfterStart": "End date must be at least 15 days after the start date."
+        },
+        "step2": {
+          "title": "Quick Setup Campaign",
+          "tiers": {
+            "sectionLabel": "Included Discounts",
+            "percentageLabel": "Percentage Discounts",
+            "eliteLabel": "Elite Exclusive",
+            "standard": {
+              "name": "Standard Boost",
+              "desc": "Balanced Discounts to Stay Competitive and Drive Daily Orders."
+            },
+            "growth": {
+              "name": "Growth Boost",
+              "desc": "Increase Visibility and Accelerate Order Growth.",
+              "recommended": "Recommended"
+            },
+            "max": {
+              "name": "Max Boost",
+              "desc": "Visibility and Volumes for High Intent Demands."
+            }
+          },
+          "tipHighlight1": "Growth Boost",
+          "tipMiddle": "see a",
+          "tipHighlight2": "25% average increase",
+          "tipSuffix": "in weekend orders.",
+          "tipPrefix": "Partners using",
+          "schedule": {
+            "title": "Schedule Campaign",
+            "startDate": "Start Date",
+            "endDate": "End Date"
+          },
+          "disclaimer": "Note: 100% of the discount value will be borne by the restaurant.",
+          "activateBtn": "Activate Campaign",
+          "activating": "Activating…",
+          "loadingPlans": "Loading available boost plans…"
+        }
       },
       "customerDelighters": {
         "title": "Customer Delighters",

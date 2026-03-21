@@ -59,6 +59,11 @@ const EliteExclusiveOffers = lazy(() =>
     }),
   ),
 );
+const QuickSetup = lazy(() =>
+  import("@/features/dashboard/outlets/growth/QuickSetup").then((module) => ({
+    default: module.QuickSetup,
+  })),
+);
 const MenuScore = lazy(() =>
   import("@/features/dashboard/outlets/menu/MenuScore").then((module) => ({
     default: module.MenuScore,
@@ -246,6 +251,10 @@ export const router = createBrowserRouter([
                   {
                     path: "percentage-discounts",
                     element: withSuspense(PercentageDiscounts),
+                  },
+                  {
+                    path: "quick-setup",
+                    element: withSuspense(QuickSetup),
                   },
                 ],
               },
