@@ -110,3 +110,32 @@ export const createEliteOffersSchema = (t: (key: string) => string) => {
 };
 
 export type EliteOffersFormValues = z.infer<ReturnType<typeof createEliteOffersSchema>>;
+
+export const createPercentageDiscountsSchema = (t: (key: string) => string) => {
+  return z.object({
+    targetCustomer: z.string().min(1, t("dashboard.offers.customerDelightersDetails.percentageDiscounts.validations.targetCustomerRequired")),
+    discountValue: z.number({ 
+      message: t("dashboard.offers.customerDelightersDetails.percentageDiscounts.validations.discountValueRequired") 
+    }).min(5, t("dashboard.offers.customerDelightersDetails.percentageDiscounts.validations.minDiscount")),
+    maxDiscountAmount: z.number().optional(),
+    movType: z.string().min(1, t("dashboard.offers.customerDelightersDetails.percentageDiscounts.validations.movRequired")),
+    startDate: z.string().refine((date) => {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      return new Date(date) >= today;
+    }, { message: t("dashboard.offers.customerDelightersDetails.percentageDiscounts.validations.startDateFuture") }),
+    endDate: z.string().min(1, t("dashboard.offers.customerDelightersDetails.percentageDiscounts.validations.endDateAfterStart"))
+  })
+  .refine((data) => {
+    const start = new Date(data.startDate);
+    const end = new Date(data.endDate);
+    const diffTime = end.getTime() - start.getTime();
+    const diffDays = diffTime / (1000 * 60 * 60 * 24);
+    return diffDays >= 15;
+  }, {
+    message: t("dashboard.offers.customerDelightersDetails.percentageDiscounts.validations.durationRange"),
+    path: ["endDate"],
+  });
+};
+
+export type PercentageDiscountsFormValues = z.infer<ReturnType<typeof createPercentageDiscountsSchema>>;

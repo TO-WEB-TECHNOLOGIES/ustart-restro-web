@@ -29,14 +29,23 @@ const CreateOffers = lazy(() =>
   })),
 );
 const CustomerDelighters = lazy(() =>
-  import("@/features/dashboard/outlets/growth/CustomerDelighters").then((module) => ({
-    default: module.CustomerDelighters,
-  })),
+  import("@/features/dashboard/outlets/growth/CustomerDelighters").then(
+    (module) => ({
+      default: module.CustomerDelighters,
+    }),
+  ),
 );
 const FlatDeals = lazy(() =>
   import("@/features/dashboard/outlets/growth/FlatDeals").then((module) => ({
     default: module.FlatDeals,
   })),
+);
+const PercentageDiscounts = lazy(() =>
+  import("@/features/dashboard/outlets/growth/PercentageDiscounts").then(
+    (module) => ({
+      default: module.PercentageDiscounts,
+    }),
+  ),
 );
 const DealOfTheDay = lazy(() =>
   import("@/features/dashboard/outlets/growth/DealOfTheDay").then((module) => ({
@@ -44,9 +53,11 @@ const DealOfTheDay = lazy(() =>
   })),
 );
 const EliteExclusiveOffers = lazy(() =>
-  import("@/features/dashboard/outlets/growth/EliteExclusiveOffers").then((module) => ({
-    default: module.EliteExclusiveOffers,
-  })),
+  import("@/features/dashboard/outlets/growth/EliteExclusiveOffers").then(
+    (module) => ({
+      default: module.EliteExclusiveOffers,
+    }),
+  ),
 );
 const MenuScore = lazy(() =>
   import("@/features/dashboard/outlets/menu/MenuScore").then((module) => ({
@@ -231,6 +242,10 @@ export const router = createBrowserRouter([
                   {
                     path: "exclusive-offers",
                     element: withSuspense(EliteExclusiveOffers),
+                  },
+                  {
+                    path: "percentage-discounts",
+                    element: withSuspense(PercentageDiscounts),
                   },
                 ],
               },

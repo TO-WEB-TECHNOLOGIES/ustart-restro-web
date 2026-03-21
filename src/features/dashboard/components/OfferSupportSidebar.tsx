@@ -26,7 +26,7 @@ export const OfferSupportSidebar = ({
   chatLabel,
 }: OfferSupportSidebarProps) => {
   return (
-    <div className="w-full lg:w-80 space-y-6 lg:sticky lg:top-10 h-fit transition-all duration-300">
+    <div className="w-full lg:w-80 space-y-6 lg:sticky lg:top-10 overflow-hidden transition-all duration-300">
       {/* Learning Center */}
       <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 shadow-sm border border-slate-100 dark:border-slate-800 space-y-6">
         <div className="flex items-center gap-2">

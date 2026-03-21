@@ -23,9 +23,10 @@ export const CreateOffers = () => {
         description: "group-hover:text-blue-100",
       },
       baseStyles: {
-        iconBg: "bg-primary-blue/5 dark:bg-slate-800 border border-slate-100 dark:border-slate-700",
+        iconBg:
+          "bg-primary-blue/5 dark:bg-slate-800 border border-slate-100 dark:border-slate-700",
         iconColor: "text-secondary-orange",
-      }
+      },
     },
     {
       id: "customer-delighters",
@@ -43,7 +44,7 @@ export const CreateOffers = () => {
       baseStyles: {
         iconBg: "bg-secondary-orange/10 dark:bg-secondary-orange/5",
         iconColor: "text-secondary-orange",
-      }
+      },
     },
     {
       id: "exclusive-offers",
@@ -60,13 +61,14 @@ export const CreateOffers = () => {
       baseStyles: {
         iconBg: "bg-primary-blue/5 dark:bg-slate-800",
         iconColor: "text-primary-blue dark:text-slate-300",
-      }
+      },
     },
     {
       id: "percentage-discounts",
       title: t("dashboard.offers.percentageDiscounts.title"),
       description: t("dashboard.offers.percentageDiscounts.description"),
       icon: <Percent className="w-8 h-8" />,
+      path: "percentage-Discounts",
       hoverStyles: {
         card: "group-hover:bg-terracotta-green group-hover:border-transparent group-hover:shadow-md group-hover:shadow-terracotta-green/20",
         icon: "group-hover:bg-white/20 group-hover:text-white",
@@ -76,8 +78,8 @@ export const CreateOffers = () => {
       baseStyles: {
         iconBg: "bg-terracotta-green/10 dark:bg-slate-800",
         iconColor: "text-terracotta-green",
-      }
-    }
+      },
+    },
   ];
 
   return (
@@ -93,14 +95,16 @@ export const CreateOffers = () => {
         <div className="w-full flex flex-col gap-4">
           {offers.map((item, index) => (
             <div key={item.id} className="w-full flex flex-col gap-6">
-              <OfferCard 
-                item={item} 
-                onClick={() => item.path && navigate(item.path)} 
+              <OfferCard
+                item={item}
+                onClick={() => item.path && navigate(item.path)}
               />
               {index === 0 && (
                 <div className="relative py-2 flex items-center">
                   <div className="flex-grow border-t border-slate-200 dark:border-slate-800"></div>
-                  <span className="flex-shrink mx-4 text-[10px] font-black text-slate-400 dark:text-slate-600 tracking-[0.2em] uppercase">{t("dashboard.offers.or")}</span>
+                  <span className="flex-shrink mx-4 text-[10px] font-black text-slate-400 dark:text-slate-600 tracking-[0.2em] uppercase">
+                    {t("dashboard.offers.or")}
+                  </span>
                   <div className="flex-grow border-t border-slate-200 dark:border-slate-800"></div>
                 </div>
               )}

@@ -53,7 +53,7 @@ export const PercentageDiscountReviewModal = ({
   const discountDisplay = deal.isAbsolute ? `${deal.discountValue}%` : `₹${deal.discountValue}`;
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-100 flex items-center justify-center p-4">
       {/* Backdrop */}
       <div 
         className="absolute inset-0 bg-[#0F2441]/40 backdrop-blur-sm animate-in fade-in duration-300"
@@ -79,7 +79,7 @@ export const PercentageDiscountReviewModal = ({
         {/* Content */}
         <div className="p-8 space-y-8">
           {/* Highlight Card */}
-          <div className="bg-[#fdfbf7] dark:bg-slate-950 rounded-2xl p-6 border border-orange-100 dark:border-orange-900/20">
+          <div className="bg-background-white dark:bg-slate-950 rounded-2xl p-6 border border-orange-100 dark:border-orange-900/20">
             <div className="flex items-start justify-between">
               <div className="space-y-6">
                 <div>

@@ -35,6 +35,8 @@ export const MOCK_OFFERS_DATA: Record<string, number[]> = {
   "999": [200, 250, 400, 500]
 };
 
+export const MOCK_PERCENTAGES: number[] = [10, 15, 20, 25, 30, 40, 50];
+
 export const MOCK_DAY_DEALS: Record<string, Record<string, any[]>> = {
   en: {
     percentage: [
