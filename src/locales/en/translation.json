@@ -11,6 +11,7 @@
     "warning": "Warning",
     "discardChanges": "Discard Changes",
     "saving": "Saving...",
+    "processing": "Processing",
     "change": "Change",
     "upload": "Upload",
     "success": "Success",
@@ -604,7 +605,93 @@
       },
       "exclusiveOffers": {
         "title": "USTART Elite Exclusive Offers",
-        "description": "Attract high-value USTART Elite customers by using exclusive discounts"
+        "description": "Attract high-value USTART Elite customers by using exclusive discounts",
+        "configure": {
+          "title": "Configure Elite Exclusive Offers",
+          "subtitle": "Set up high-impact offers for your elite customers.",
+          "tabs": {
+            "percentageDiscount": "Percentage Discount",
+            "flatOff": "Flat Off",
+            "popular": "POPULAR"
+          },
+          "tip": "Exclusive deals for Elite members can increase repeat orders by up to 60%.",
+          "previewBtn": "PREVIEW",
+          "learningCenter": {
+            "title": "Elite Learning Center",
+            "q1": "Who are Elite members?",
+            "q2": "What kind of deals work for Elite?",
+            "q3": "Can I target specific Elite tiers?"
+          },
+          "help": {
+            "title": "Need help setting up?",
+            "text": "Contact your account manager for a guided setup.",
+            "chat": "Chat Support"
+          },
+          "header": {
+            "title": "USTART Elite Offers",
+            "subtitle_prefix": "These exclusive offers will be visible",
+            "subtitle_highlight": "only to ELITE members",
+            "subtitle_suffix": "of USTART, our high-value loyal customer base."
+          },
+          "toast": {
+            "success_title": "Elite Offer Activated Successfully!",
+            "success_description": "Offer set for Elite members.",
+            "error_title": "Failed to activate offer"
+          },
+          "review": {
+            "target": "Elite Members",
+            "upto": "upto ₹{{val}}",
+            "no_limit": "no upper limit",
+            "flat_desc": "Flat ₹{{value}} Off",
+            "percentage_desc": "{{value}}% Off {{max}}"
+          },
+          "discountType": {
+            "percentage": {
+              "title": "Percentage Discount",
+              "subtitle": "X% Off on orders"
+            },
+            "flat": {
+              "title": "Flat Off",
+              "subtitle": "Flat ₹ amount off"
+            },
+            "selected": "Selected"
+          },
+          "builder": {
+            "title": "Build Your Elite Discount",
+            "subtitle": "Set specialized values for your selected elite tier.",
+            "mov": "Minimum Order Value",
+            "movHint": "Elite members prefer flat discounts on orders above ₹179 for better perceived value.",
+            "selectMovFirst": "Select MOV to see available values",
+            "selectValueFlat": "Select Discount Value (Flat ₹)",
+            "selectValuePercentage": "Select Discount Value (%)",
+            "maxDiscount": "Max Discount Amount (₹)",
+            "maxDiscountPlaceholder": "Optional (No Limit)",
+            "custom": "Custom",
+            "above": "Above",
+            "duration": "Duration",
+            "recommendedDuration": "Recommended: 15 Days",
+            "startDate": "Start Date",
+            "endDate": "End Date",
+            "activate": "Activate Elite Offer",
+            "cancel": "Cancel",
+            "popular": "Popular",
+            "pop": "Pop"
+          },
+          "validations": {
+            "discountTypeRequired": "Please select a discount type",
+            "discountValueRequired": "Discount value is required",
+            "minDiscountFlat": "Minimum discount should be ₹10",
+            "minDiscountPercentage": "Minimum percentage should be 5%",
+            "maxDiscountRequired": "Max discount amount is required",
+            "maxDiscountMin": "Max discount amount must be at least ₹10",
+            "movRequired": "Minimum order value is required",
+            "startDateFuture": "Start date must be today or in the future",
+            "endDateAfterStart": "End date is required",
+            "minMov": "Minimum MOV should be at least ₹100",
+            "ratioRange": "Discount ratio is out of recommended range",
+            "durationRange": "Minimum offer duration is 15 days"
+          }
+        }
       },
       "percentageDiscounts": {
         "title": "Percentage Discounts",
@@ -638,6 +725,7 @@
             "endDateAfterStart": "End date must be after the start date",
             "minDiscount": "Discount must be at least ₹10",
             "minMov": "Minimum order value must be at least ₹100",
+            "maxDiscountLimit": "Max discount cannot be more than Minimum Order Value",
             "ratioRange": "Discount must be between 2% and 70% of the order value",
             "durationRange": "Offer duration must be more than 15 days",
             "targetCustomerRequired": "Please select a target customer"

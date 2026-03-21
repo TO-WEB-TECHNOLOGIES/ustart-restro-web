@@ -43,6 +43,11 @@ const DealOfTheDay = lazy(() =>
     default: module.DealOfTheDay,
   })),
 );
+const EliteExclusiveOffers = lazy(() =>
+  import("@/features/dashboard/outlets/growth/EliteExclusiveOffers").then((module) => ({
+    default: module.EliteExclusiveOffers,
+  })),
+);
 const MenuScore = lazy(() =>
   import("@/features/dashboard/outlets/menu/MenuScore").then((module) => ({
     default: module.MenuScore,
@@ -222,6 +227,10 @@ export const router = createBrowserRouter([
                         element: withSuspense(DealOfTheDay),
                       },
                     ],
+                  },
+                  {
+                    path: "exclusive-offers",
+                    element: withSuspense(EliteExclusiveOffers),
                   },
                 ],
               },

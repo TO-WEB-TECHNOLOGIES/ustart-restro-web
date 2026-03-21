@@ -122,7 +122,7 @@ export const PercentageDiscountReviewModal = ({
               <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">
                 {t("dashboard.offers.customerDelightersDetails.dotd.configure.reviewModal.maxDiscount")}
               </p>
-              <p className="text-lg font-bold text-[#1a2b4b] dark:text-white">₹{deal.capOfDiscountAmount}</p>
+              <p className="text-lg font-bold text-[#1a2b4b] dark:text-white">₹{deal.capOfDiscountAmount || deal.minOrderAmount}</p>
             </div>
             <div className="col-span-2">
               <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">

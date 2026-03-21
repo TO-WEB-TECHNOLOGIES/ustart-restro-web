@@ -50,6 +50,7 @@ export const CreateOffers = () => {
       title: t("dashboard.offers.exclusiveOffers.title"),
       description: t("dashboard.offers.exclusiveOffers.description"),
       icon: <Gem className="w-8 h-8" />,
+      path: "exclusive-offers",
       hoverStyles: {
         card: "group-hover:bg-primary-blue group-hover:border-transparent group-hover:shadow-md group-hover:shadow-primary-blue/20",
         icon: "group-hover:bg-white/10 group-hover:text-white",

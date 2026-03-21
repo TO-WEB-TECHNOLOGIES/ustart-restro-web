@@ -48,7 +48,7 @@ export const MOCK_DAY_DEALS: Record<string, Record<string, any[]>> = {
       { id: "megasave", promo: "MEGASAVE", desc: "Flat ₹100 off on orders above ₹500", popular: true, discountValue: 100, minOrderAmount: 500, capOfDiscountAmount: 100, isAbsolute: false, targetCustomers: "All Users" },
       { id: "newuser", promo: "NEWUSER", desc: "Flat ₹75 off on your first order above ₹300", discountValue: 75, minOrderAmount: 300, capOfDiscountAmount: 75, isAbsolute: false, targetCustomers: "New Customers" },
       { id: "weekend", promo: "WEEKEND", desc: "Flat ₹40 off on weekends above ₹200", discountValue: 40, minOrderAmount: 200, capOfDiscountAmount: 40, isAbsolute: false, targetCustomers: "All Users" },
-    ]
+    ],
   },
   hi: {
     percentage: [
@@ -62,7 +62,7 @@ export const MOCK_DAY_DEALS: Record<string, Record<string, any[]>> = {
       { id: "megasave", promo: "MEGASAVE", desc: "₹500 से ऊपर के ऑर्डर पर ₹100 की फ्लैट छूट", popular: true, discountValue: 100, minOrderAmount: 500, capOfDiscountAmount: 100, isAbsolute: false, targetCustomers: "सभी उपयोगकर्ता" },
       { id: "newuser", promo: "NEWUSER", desc: "₹300 से ऊपर के आपके पहले ऑर्डर पर ₹75 की फ्लैट छूट", discountValue: 75, minOrderAmount: 300, capOfDiscountAmount: 75, isAbsolute: false, targetCustomers: "नए ग्राहक" },
       { id: "weekend", promo: "WEEKEND", desc: "सप्ताहांत में ₹200 से ऊपर के ऑर्डर पर ₹40 की फ्लैट छूट", discountValue: 40, minOrderAmount: 200, capOfDiscountAmount: 40, isAbsolute: false, targetCustomers: "सभी उपयोगकर्ता" },
-    ]
+    ],
   }
 };
 
