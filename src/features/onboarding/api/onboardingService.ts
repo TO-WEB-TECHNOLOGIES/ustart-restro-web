@@ -43,9 +43,11 @@ export const onboardingService = {
     /**
      * Step 3: Complete Onboarding
      * Finalizes the process and retrieves the authentication tokens.
+     * Phase 2: Creates Brand, Restaurant, POC, BankDetail, RestaurantAuth entities in DB.
+     * IMPORTANT: Must call /restaurant-onboarding/onboard-complete (NOT /brands/activate).
      */
     completeOnboarding: async (): Promise<CompleteOnboardingResponse> => {
-        const response = await api.post<CompleteOnboardingResponse>('/api/v1/brands/activate');
+        const response = await api.post<CompleteOnboardingResponse>('/api/v1/restaurant-onboarding/onboard-complete');
         return response.data;
     },
 
