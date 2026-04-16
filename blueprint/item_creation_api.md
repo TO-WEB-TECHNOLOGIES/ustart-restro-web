@@ -51,7 +51,7 @@ This document specifies the API payload and parameter requirements for creating 
 | `foodType`         | `string`   | `veg`, `non_veg`, `contains_egg` | Dietary classification.                           |
 | `serviceType`      | `string`   | `Delivery`, `Dine-In`, `Both`    | Available service modes.                          |
 | `itemType`         | `string[]` | Min 1 element                    | Types: `Solid`, `Liquid`, `Semi-Solid`, `Frozen`. |
-| `isFrosting`       | `string`   | `Fresh`, `Pre-Frosted`, `No`     | Frosting status.                                  |
+| `isFrosting`       | `string`   | `FROSTED`, `PRE`, `NO`     | Frosting status.                                  |                                                                      
 | `spiceLevel`       | `number`   | 1 (Mild) to 3 (Hot)              | Heat level of the dish.                           |
 
 ### Optional Parameters

@@ -302,12 +302,12 @@ export const ModifiedItemCard = ({
                   value={
                     current.isFrosting === "NO"
                       ? t("dashboard.menuEditor.addItem.frostingOptions.no")
-                      : current.isFrosting === "FRESH"
+                      : current.isFrosting === "FROSTED"
                         ? t(
-                            "dashboard.menuEditor.addItem.frostingOptions.fresh",
+                            "dashboard.menuEditor.addItem.frostingOptions.frosted",
                           )
                         : t(
-                            "dashboard.menuEditor.addItem.frostingOptions.preFrosted",
+                            "dashboard.menuEditor.addItem.frostingOptions.pre",
                           )
                   }
                   icon={Coffee}
@@ -475,7 +475,7 @@ export const ModifiedItemCard = ({
                   oldVal={
                     original.isFrosting === "NO"
                       ? t("dashboard.menuEditor.addItem.frostingOptions.no")
-                      : original.isFrosting === "FRESH"
+                      : original.isFrosting === "FROSTED"
                         ? t(
                             "dashboard.menuEditor.addItem.frostingOptions.fresh",
                           )
@@ -486,12 +486,12 @@ export const ModifiedItemCard = ({
                   newVal={
                     current.isFrosting === "NO"
                       ? t("dashboard.menuEditor.addItem.frostingOptions.no")
-                      : current.isFrosting === "FRESH"
+                      : current.isFrosting === "FROSTED"
                         ? t(
-                            "dashboard.menuEditor.addItem.frostingOptions.fresh",
+                            "dashboard.menuEditor.addItem.frostingOptions.frosted",
                           )
                         : t(
-                            "dashboard.menuEditor.addItem.frostingOptions.preFrosted",
+                            "dashboard.menuEditor.addItem.frostingOptions.pre",
                           )
                   }
                 />

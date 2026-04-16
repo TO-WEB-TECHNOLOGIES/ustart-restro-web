@@ -1440,8 +1440,8 @@
         },
         "frostingOptions": {
           "no": "No",
-          "fresh": "Fresh",
-          "preFrosted": "Pre-Frosted"
+          "frosted": "Frosted",
+          "pre": "Pre"
         },
         "nutrition": {
           "title": "Nutritional Information (Per serving)",

@@ -618,7 +618,7 @@ export const AddItemPage = () => {
                           ),
                         },
                         {
-                          value: "HIGH_PROTIEN",
+                          value: "HIGH_PROTEIN",
                           label: t(
                             "dashboard.menuEditor.addItem.menuTags.high_protien",
                           ),
@@ -1022,12 +1022,12 @@ export const AddItemPage = () => {
                     <option value="NO">
                       {t("dashboard.menuEditor.addItem.frostingOptions.no")}
                     </option>
-                    <option value="FRESH">
-                      {t("dashboard.menuEditor.addItem.frostingOptions.fresh")}
+                    <option value="FROSTED">
+                      {t("dashboard.menuEditor.addItem.frostingOptions.frosted")}
                     </option>
-                    <option value="PRE_FROSTED">
+                    <option value="PRE">
                       {t(
-                        "dashboard.menuEditor.addItem.frostingOptions.preFrosted",
+                        "dashboard.menuEditor.addItem.frostingOptions.pre",
                       )}
                     </option>
                   </select>

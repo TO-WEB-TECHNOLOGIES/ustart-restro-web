@@ -826,7 +826,7 @@ export const AddEditItemModal: React.FC<AddEditItemModalProps> = ({
                     {t("dashboard.menuEditor.addItem.frosting")}
                   </label>
                   <div className="flex bg-gray-50 dark:bg-slate-800 p-1 rounded-xl border border-gray-200 dark:border-slate-700">
-                    {(["FRESH", "PRE_FROSTED", "NO"] as const).map((opt) => (
+                    {(["FROSTED", "PRE", "NO"] as const).map((opt) => (
                       <button
                         key={opt}
                         onClick={() => updateField("isFrosting", opt)}
@@ -834,12 +834,12 @@ export const AddEditItemModal: React.FC<AddEditItemModalProps> = ({
                       >
                         {opt === "NO"
                           ? t("dashboard.menuEditor.addItem.frostingOptions.no")
-                          : opt === "FRESH"
+                          : opt === "FROSTED"
                             ? t(
-                                "dashboard.menuEditor.addItem.frostingOptions.fresh",
+                                "dashboard.menuEditor.addItem.frostingOptions.frosted",
                               )
                             : t(
-                                "dashboard.menuEditor.addItem.frostingOptions.preFrosted",
+                                "dashboard.menuEditor.addItem.frostingOptions.pre",
                               )}
                       </button>
                     ))}

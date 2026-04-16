@@ -46,7 +46,7 @@ export interface MenuItem {
     // --- New Fields for Detailed Editor ---
     serviceType?: 'DELIVERY' | 'DINE_IN' | 'BOTH';
     itemType?: ('SOLID' | 'LIQUID' | 'SEMI_SOLID' | 'FROZEN')[];
-    isFrosting?: 'FRESH' | 'PRE_FROSTED' | 'NO';
+    isFrosting?: 'FROSTED' | 'PRE' | 'NO';
     availability?: {
         startTime: string;
         endTime: string;
