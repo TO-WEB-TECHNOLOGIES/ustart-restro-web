@@ -96,7 +96,7 @@ export const AddItemPage = () => {
     name: "",
     description: "",
     itemPrice: undefined,
-    packagingCharges: undefined,
+    packagingCharges: 0,
     taxAmount: 5,
     foodType: "VEG",
     serviceType: "DELIVERY",
@@ -685,57 +685,30 @@ export const AddItemPage = () => {
                       </p>
                     )}
                   </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="bg-white dark:bg-slate-900 p-3 rounded-xl border border-slate-100 dark:border-slate-800 focus-within:ring-2 focus-within:ring-[var(--color-primary-blue)] transition-all">
-                      <label className="block text-xs font-bold text-slate-400 dark:text-slate-500 uppercase mb-1">
-                        {t("dashboard.menuEditor.addItem.taxes")}
-                      </label>
-                      <input
-                        name="taxAmount"
-                        value={formData.taxAmount ?? ""}
-                        onChange={(e) =>
-                          updateField(
-                            "taxAmount",
-                            e.target.value === ""
-                              ? undefined
-                              : Number(e.target.value),
-                          )
-                        }
-                        className="w-full bg-transparent border-0 p-0 text-sm font-bold text-slate-900 dark:text-white focus:ring-0 outline-none"
-                        placeholder="5%"
-                        type="number"
-                      />
-                      {errors.taxAmount && (
-                        <p className="text-red-500 text-xs mt-1">
-                          {errors.taxAmount}
-                        </p>
-                      )}
-                    </div>
-                    <div className="bg-white dark:bg-slate-900 p-3 rounded-xl border border-slate-100 dark:border-slate-800 focus-within:ring-2 focus-within:ring-[var(--color-primary-blue)] transition-all">
-                      <label className="block text-xs font-bold text-slate-400 dark:text-slate-500 uppercase mb-1">
-                        {t("dashboard.menuEditor.addItem.packaging")}
-                      </label>
-                      <input
-                        name="packagingCharges"
-                        value={formData.packagingCharges ?? ""}
-                        onChange={(e) =>
-                          updateField(
-                            "packagingCharges",
-                            e.target.value === ""
-                              ? undefined
-                              : Number(e.target.value),
-                          )
-                        }
-                        className="w-full bg-transparent border-0 p-0 text-sm font-bold text-slate-900 dark:text-white focus:ring-0 outline-none"
-                        placeholder="0.00"
-                        type="number"
-                      />
-                      {errors.packagingCharges && (
-                        <p className="text-red-500 text-xs mt-1">
-                          {errors.packagingCharges}
-                        </p>
-                      )}
-                    </div>
+                  <div className="bg-white dark:bg-slate-900 p-3 rounded-xl border border-slate-100 dark:border-slate-800 focus-within:ring-2 focus-within:ring-[var(--color-primary-blue)] transition-all">
+                    <label className="block text-xs font-bold text-slate-400 dark:text-slate-500 uppercase mb-1">
+                      {t("dashboard.menuEditor.addItem.taxes")}
+                    </label>
+                    <input
+                      name="taxAmount"
+                      value={formData.taxAmount ?? ""}
+                      onChange={(e) =>
+                        updateField(
+                          "taxAmount",
+                          e.target.value === ""
+                            ? undefined
+                            : Number(e.target.value),
+                        )
+                      }
+                      className="w-full bg-transparent border-0 p-0 text-sm font-bold text-slate-900 dark:text-white focus:ring-0 outline-none"
+                      placeholder="5%"
+                      type="number"
+                    />
+                    {errors.taxAmount && (
+                      <p className="text-red-500 text-xs mt-1">
+                        {errors.taxAmount}
+                      </p>
+                    )}
                   </div>
                 </div>
               </div>

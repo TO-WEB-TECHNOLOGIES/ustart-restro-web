@@ -712,10 +712,15 @@ export const useMenuStore = create<MenuStore>()(
                 // Generate a temporary negative ID to avoid conflicts with real IDs
                 const tempId = -Date.now();
 
+                // discountAmount/discountIsAbsolute are not in the AddItemPage form or
+                // Zod schema, so they arrive as undefined — causing NaN in price display.
+                // Nullish coalescing after the spread gives defaults without TypeScript TS2783.
                 const newItem: MenuItem = {
                     ...item,
                     id: tempId,
                     categoryId: categoryId,
+                    discountAmount: item.discountAmount ?? 0,
+                    discountIsAbsolute: item.discountIsAbsolute ?? true,
                 };
 
                 // Create an empty original to indicate this is a new item

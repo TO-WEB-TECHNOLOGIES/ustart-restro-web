@@ -556,27 +556,7 @@ export const MenuItemCard = ({ item }: MenuItemCardProps) => {
                 </div>
               </div>
 
-              {/* 3. Packaging Row */}
-              <div className="flex items-center justify-between">
-                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-tight">
-                  {t("dashboard.menuEditor.packaging")}
-                </label>
-                <div className="bg-slate-50 dark:bg-slate-800/50 px-2.5 py-1 rounded-xl border border-slate-100 dark:border-slate-700/50">
-                  <input
-                    type="number"
-                    value={item.packagingCharges}
-                    onChange={(e) =>
-                      handleUpdateField(
-                        "packagingCharges",
-                        Number(e.target.value),
-                      )
-                    }
-                    className="w-14 bg-transparent text-sm font-black text-slate-900 dark:text-white outline-none text-right"
-                  />
-                </div>
-              </div>
-
-              {/* 4. Footer: Live Total & Close Button */}
+              {/* 3. Footer: Live Total & Close Button */}
               <div className="flex items-center justify-between gap-2 mt-1 pt-2 border-t border-slate-100 dark:border-slate-800">
                 <div className="flex flex-col">
                   <span className="text-[8px] font-black text-[var(--color-primary-blue)] dark:text-[#539987] uppercase tracking-widest leading-none">
