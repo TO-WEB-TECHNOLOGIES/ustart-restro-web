@@ -4,7 +4,8 @@ import { api } from './axios';
 export type RequirementType = 
     | 'restaurant_primary_image' 
     | 'restaurant_fssai' 
-    | 'restaurant_delivery_menu';
+    | 'restaurant_delivery_menu'
+    | 'menu_item';
 
 export interface PresignedUrlRequest {
     fileNames: string[];
@@ -19,11 +20,11 @@ export interface PresignedUrlResponse {
 export const multimediaService = {
     /**
      * Get presigned URLs for uploading files.
-     * POST /api/multimedia/presigned-urls
+     * POST /api/v1/multimedia/presigned-urls
      */
     getPresignedUrls: async (payload: PresignedUrlRequest): Promise<PresignedUrlResponse[]> => {
         try {
-            const response = await api.post<PresignedUrlResponse[]>('/api/multimedia/presigned-urls', payload);
+            const response = await api.post<PresignedUrlResponse[]>('/api/v1/multimedia/presigned-urls', payload);
             return response.data;
         } catch (error) {
             console.error('Error getting presigned URLs:', error);
@@ -64,6 +65,25 @@ export const multimediaService = {
         const { presignedUrl, fileName: s3Key } = responses[0];
         await multimediaService.uploadToS3(presignedUrl, file);
         return { key: s3Key, fileName: file.name };
+    },
+
+    /**
+     * Helper to upload a menu item / add-on variant image.
+     * Returns the relative S3 Key/fileName.
+     */
+    uploadMenuItemImage: async (file: File): Promise<string> => {
+        const responses = await multimediaService.getPresignedUrls({
+            fileNames: [file.name],
+            requirementType: 'menu_item'
+        });
+        
+        if (!responses || responses.length === 0) {
+            throw new Error('Failed to get presigned URL');
+        }
+
+        const { presignedUrl, fileName: s3Key } = responses[0];
+        await multimediaService.uploadToS3(presignedUrl, file);
+        return s3Key;
     }
 };
 

@@ -9,6 +9,7 @@ interface User {
     email?: string;
     role: string;
     brandId?: string;
+    restroId?: string;
 }
 
 interface AuthContextType {
@@ -58,7 +59,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
             const userData = decoded.user ? {
                 ...decoded.user,
-                name: decoded.user.name || 'Guest'
+                name: decoded.user.name || 'Guest',
+                restroId: decoded.user.restroId || decoded.restroId
             } : null;
 
             setUser(userData);

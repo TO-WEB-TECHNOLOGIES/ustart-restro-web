@@ -18,6 +18,7 @@ import ReactSelect from "react-select";
 import { Modal } from "@/components/ui/modal";
 import { useTranslation } from "react-i18next";
 import { useMenuStore } from "../../store/useMenuStore";
+import { multimediaService } from "@/api/multimediaService";
 
 export const AddItemPage = () => {
   const { t } = useTranslation();
@@ -27,6 +28,8 @@ export const AddItemPage = () => {
   const addNewItemLocally = useMenuStore((state) => state.addNewItemLocally);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [addToStockImmediately, setAddToStockImmediately] = useState(true);
   const [scheduledDate, setScheduledDate] = useState<string>("");
@@ -163,11 +166,12 @@ export const AddItemPage = () => {
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
+      setSelectedFile(file);
       const reader = new FileReader();
       reader.onloadend = () => {
         const result = reader.result as string;
         setImagePreview(result);
-        updateField("image", result);
+        updateField("image", "pending_upload"); // set placeholder to satisfy zod isAiGeneratedImage check if active
       };
       reader.readAsDataURL(file);
     }
@@ -176,14 +180,17 @@ export const AddItemPage = () => {
   const removeImage = (e: React.MouseEvent) => {
     e.stopPropagation();
     setImagePreview(null);
+    setSelectedFile(null);
     updateField("image", undefined);
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
+
   const handleSave = async () => {
     try {
       // 1. Prepare data
       const finalData = {
         ...formData,
+        image: selectedFile ? (formData.image || "pending_upload") : (imagePreview ? formData.image : undefined),
         allergens:
           formData.allergens && formData.allergens.length > 0
             ? formData.allergens
@@ -209,20 +216,45 @@ export const AddItemPage = () => {
     }
   };
 
-  const performSave = () => {
+  const performSave = async () => {
     if (selectedCategory && validatedFormData) {
-      // Calculate scheduled date-time if scheduling is selected
-      const scheduledDateTime =
-        !addToStockImmediately && scheduledDate && scheduledTime
-          ? `${scheduledDate}T${scheduledTime}`
-          : null;
+      setIsUploading(true);
+      try {
+        let finalImageKey = "";
 
-      // Add item locally to updatedItems (no API call)
-      addNewItemLocally(selectedCategory.id, validatedFormData as MenuItem, {
-        addToStockImmediately,
-        scheduledDate: scheduledDateTime,
-      });
-      navigate(-1);
+        if (selectedFile) {
+          // Perform binary S3 upload via Multimedia service
+          finalImageKey = await multimediaService.uploadMenuItemImage(selectedFile);
+        } else if (imagePreview) {
+          // Retain existing key if any
+          finalImageKey = validatedFormData.image !== "pending_upload" ? validatedFormData.image : "";
+        }
+
+        // Calculate scheduled date-time if scheduling is selected
+        const scheduledDateTime =
+          !addToStockImmediately && scheduledDate && scheduledTime
+            ? `${scheduledDate}T${scheduledTime}`
+            : null;
+
+        const finalizedPayload = {
+          ...validatedFormData,
+          image: finalImageKey,
+        };
+
+        // Add item locally to updatedItems (no API call)
+        addNewItemLocally(selectedCategory.id, finalizedPayload as MenuItem, {
+          addToStockImmediately,
+          scheduledDate: scheduledDateTime,
+        });
+
+        setShowConfirmModal(false);
+        navigate(-1);
+      } catch (err: any) {
+        console.error("Error uploading image / saving item:", err);
+        setScheduleError(t("dashboard.menuEditor.addItem.validation.imageUploadFailed"));
+      } finally {
+        setIsUploading(false);
+      }
     }
   };
 
@@ -1090,7 +1122,7 @@ export const AddItemPage = () => {
 
       <Modal
         isOpen={showConfirmModal}
-        onClose={() => setShowConfirmModal(false)}
+        onClose={() => !isUploading && setShowConfirmModal(false)}
         title={t("dashboard.menuEditor.addItem.confirmModal.title")}
       >
         <div className="space-y-6">
@@ -1128,6 +1160,7 @@ export const AddItemPage = () => {
                   type="checkbox"
                   checked={addToStockImmediately}
                   onChange={(e) => setAddToStockImmediately(e.target.checked)}
+                  disabled={isUploading}
                 />
                 <div className="w-12 h-7 bg-orange-400 rounded-full peer peer-focus:ring-4 peer-focus:ring-green-300 dark:peer-focus:ring-green-800 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-green-500"></div>
               </label>
@@ -1154,6 +1187,7 @@ export const AddItemPage = () => {
                         setTimeout(validateSchedule, 0);
                       }}
                       min={getMinDate()}
+                      disabled={isUploading}
                       className={`w-full bg-white dark:bg-slate-900 border ${scheduleError ? "border-red-400" : "border-slate-200 dark:border-slate-700"} rounded-xl px-4 py-3 text-sm font-bold text-slate-900 dark:text-white focus:ring-2 focus:ring-[var(--color-primary-blue)]/20 focus:border-[var(--color-primary-blue)] transition-all outline-none`}
                     />
                   </div>
@@ -1168,6 +1202,7 @@ export const AddItemPage = () => {
                         setScheduledTime(e.target.value);
                         setTimeout(validateSchedule, 0);
                       }}
+                      disabled={isUploading}
                       className={`w-full bg-white dark:bg-slate-900 border ${scheduleError ? "border-red-400" : "border-slate-200 dark:border-slate-700"} rounded-xl px-4 py-3 text-sm font-bold text-slate-900 dark:text-white focus:ring-2 focus:ring-[var(--color-primary-blue)]/20 focus:border-[var(--color-primary-blue)] transition-all outline-none`}
                     />
                   </div>
@@ -1210,24 +1245,27 @@ export const AddItemPage = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-2">
             <button
               onClick={() => setShowConfirmModal(false)}
-              className="w-full py-3 px-4 rounded-xl border border-gray-200 dark:border-slate-700 text-gray-600 dark:text-gray-400 font-bold hover:bg-gray-50 dark:hover:bg-slate-800 transition-all"
+              disabled={isUploading}
+              className="w-full py-3 px-4 rounded-xl border border-gray-200 dark:border-slate-700 text-gray-600 dark:text-gray-400 font-bold hover:bg-gray-50 dark:hover:bg-slate-800 transition-all disabled:opacity-50"
             >
               {t("dashboard.menuEditor.addItem.confirmModal.goBack")}
             </button>
             <button
-              onClick={() => {
-                setShowConfirmModal(false);
-                performSave();
-              }}
+              onClick={performSave}
               disabled={
+                isUploading ||
                 !isScheduleValid() ||
                 (!addToStockImmediately && (!scheduledDate || !scheduledTime))
               }
-              className="w-full py-3 px-4 rounded-xl bg-[var(--color-primary-blue)] text-white font-bold hover:opacity-90 transition-all shadow-lg shadow-blue-500/20 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full py-3 px-4 rounded-xl bg-[var(--color-primary-blue)] text-white font-bold hover:opacity-90 transition-all shadow-lg shadow-blue-500/20 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
             >
-              {addToStockImmediately
-                ? t("dashboard.menuEditor.addItem.confirmModal.addNow")
-                : t("dashboard.menuEditor.addItem.confirmModal.schedule")}
+              {isUploading ? (
+                <span>{t("addons.uploading")}</span>
+              ) : addToStockImmediately ? (
+                t("dashboard.menuEditor.addItem.confirmModal.addNow")
+              ) : (
+                t("dashboard.menuEditor.addItem.confirmModal.schedule")
+              )}
             </button>
           </div>
         </div>

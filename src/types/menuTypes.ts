@@ -94,3 +94,63 @@ export interface Category {
     /** Status of the category */
     status?: 'active' | 'inactive';
 }
+
+/**
+ * Represents a single add-on variant item (e.g. Garlic Dip, extra toppings).
+ */
+export interface AddOnVariant {
+    variantId: number;
+    menuItemId: number | null;
+    addOnCategoryId: number;
+    variantName: string;
+    variantDescription: string | null;
+    itemImage: string | null;
+    variantType: 'ADD_ON';
+    price: number;
+    discount: number;
+    finalPrice: number;
+    packagingFees: number;
+    taxPercentage: number;
+    isActive: boolean;
+    isAvailable: boolean;
+    isBlocked: boolean;
+    blockedReason: string | null;
+    startTime: string | null;
+    endTime: string | null;
+    allDay: boolean;
+    foodType: FoodType;
+    isDeleted?: boolean; // frontend local deletion flag
+
+    // Response schema fields from addon.md
+    servCount?: number | null;
+    spiceLevel?: string | null;
+    portionSize?: string | null;
+    weight?: string | null;
+    maxQuantityPerOrder?: number | null;
+    frostingType?: string | null;
+    isPromoted?: boolean;
+    itemTypes?: string[];
+    tags?: string[];
+    allergyWarnings?: string[];
+    calories?: number | null;
+    protein?: number | null;
+    carbs?: number | null;
+    fats?: number | null;
+}
+
+/**
+ * Represents an add-on category grouping related add-ons.
+ */
+export interface AddOnCategory {
+    addOnId: number;
+    brandId: string;
+    categoryName: string;
+    minCustomizationSelection: number;
+    maxCustomizationSelection: number;
+    isMandatory: boolean;
+    isActive: boolean;
+    menuItemIds: number[];
+    variants?: AddOnVariant[];
+    isDeleted?: boolean; // frontend local deletion flag
+}
+

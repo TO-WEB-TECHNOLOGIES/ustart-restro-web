@@ -20,6 +20,7 @@ import ReactSelect from "react-select";
 import type { MenuItem, Allergen, MenuTag } from "../../../../types/menuTypes";
 import { useMenuStore } from "../../store/useMenuStore";
 import { menuItemSchema } from "../../validations/menuSchemas";
+import { multimediaService } from "@/api/multimediaService";
 
 interface AddEditItemModalProps {
   isOpen: boolean;
@@ -81,6 +82,8 @@ export const AddEditItemModal: React.FC<AddEditItemModalProps> = ({
   const [formData, setFormData] = useState<Partial<MenuItem>>(DEFAULT_ITEM);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
 
   // Scheduling State
   const [addToStockImmediately, setAddToStockImmediately] = useState(true);
@@ -158,15 +161,18 @@ export const AddEditItemModal: React.FC<AddEditItemModalProps> = ({
         setScheduledDate("");
         setScheduledTime("");
       }
+      setSelectedFile(null);
+      setIsUploading(false);
       setErrors({});
       setScheduleError(null);
       setSelectedCategoryId(categoryId);
     }
   }, [isOpen, item, categoryId]);
 
-  const handleSave = () => {
+  const handleSave = async () => {
     const finalData = {
       ...formData,
+      image: selectedFile ? (formData.image || "pending_upload") : (imagePreview ? (formData.image || "") : ""),
       categoryId: selectedCategoryId,
       hasDiscount: (formData.discountAmount || 0) > 0,
       allergens:
@@ -188,21 +194,44 @@ export const AddEditItemModal: React.FC<AddEditItemModalProps> = ({
       menuItemSchema.parse(finalData);
       setErrors({});
 
-      if (!item) {
-        const scheduledDateTime =
-          !addToStockImmediately && scheduledDate && scheduledTime
-            ? `${scheduledDate}T${scheduledTime}`
-            : null;
+      setIsUploading(true);
+      try {
+        let finalImageKey = "";
 
-        addNewItemLocally(selectedCategoryId, finalData as MenuItem, {
-          addToStockImmediately,
-          scheduledDate: scheduledDateTime,
-        });
-      } else {
-        // Handle Edit Item
-        updateMenuItem(selectedCategoryId, item.id, finalData as MenuItem);
+        if (selectedFile) {
+          // Perform binary S3 upload via Multimedia service
+          finalImageKey = await multimediaService.uploadMenuItemImage(selectedFile);
+        } else if (imagePreview) {
+          // Retain existing relative key if present and not placeholder
+          finalImageKey = finalData.image !== "pending_upload" ? finalData.image : "";
+        }
+
+        const finalizedPayload = {
+          ...finalData,
+          image: finalImageKey,
+        };
+
+        if (!item) {
+          const scheduledDateTime =
+            !addToStockImmediately && scheduledDate && scheduledTime
+              ? `${scheduledDate}T${scheduledTime}`
+              : null;
+
+          addNewItemLocally(selectedCategoryId, finalizedPayload as MenuItem, {
+            addToStockImmediately,
+            scheduledDate: scheduledDateTime,
+          });
+        } else {
+          // Handle Edit Item
+          updateMenuItem(selectedCategoryId, item.id, finalizedPayload as MenuItem);
+        }
+        onClose();
+      } catch (err: any) {
+        console.error("Error uploading image/saving menu item:", err);
+        setErrors({ image: t("dashboard.menuEditor.addItem.validation.imageUploadFailed") });
+      } finally {
+        setIsUploading(false);
       }
-      onClose();
     } catch (error) {
       if (error instanceof ZodError) {
         const newErrors: Record<string, string> = {};
@@ -265,11 +294,12 @@ export const AddEditItemModal: React.FC<AddEditItemModalProps> = ({
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
+      setSelectedFile(file);
       const reader = new FileReader();
       reader.onloadend = () => {
         const result = reader.result as string;
         setImagePreview(result);
-        updateField("image", result);
+        updateField("image", "pending_upload"); // set placeholder to satisfy zod isAiGeneratedImage check if active
       };
       reader.readAsDataURL(file);
     }
@@ -278,7 +308,9 @@ export const AddEditItemModal: React.FC<AddEditItemModalProps> = ({
   const removeImage = (e: React.MouseEvent) => {
     e.stopPropagation();
     setImagePreview(null);
+    setSelectedFile(null);
     updateField("image", undefined);
+    if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
   if (!isOpen) return null;
@@ -292,7 +324,7 @@ export const AddEditItemModal: React.FC<AddEditItemModalProps> = ({
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            onClick={onClose}
+            onClick={() => !isUploading && onClose()}
             className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[100]"
           />
 
@@ -323,8 +355,9 @@ export const AddEditItemModal: React.FC<AddEditItemModalProps> = ({
                 </p>
               </div>
               <button
-                onClick={onClose}
-                className="p-2 -mr-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                onClick={() => !isUploading && onClose()}
+                disabled={isUploading}
+                className="p-2 -mr-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors disabled:opacity-50"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -1376,12 +1409,15 @@ export const AddEditItemModal: React.FC<AddEditItemModalProps> = ({
             <div className="px-8 py-6 border-t border-gray-100 dark:border-slate-800 bg-white dark:bg-slate-900 sticky bottom-0 z-50">
               <button
                 onClick={handleSave}
-                className="w-full bg-[var(--color-primary-blue)] text-white py-4 rounded-2xl font-black text-sm shadow-xl shadow-blue-500/20 hover:bg-blue-600 transition-all flex items-center justify-center gap-2 active:scale-[0.98]"
+                disabled={isUploading}
+                className="w-full bg-[var(--color-primary-blue)] text-white py-4 rounded-2xl font-black text-sm shadow-xl shadow-blue-500/20 hover:bg-blue-600 transition-all flex items-center justify-center gap-2 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <span>
-                  {item
-                    ? t("common.edit")
-                    : t("dashboard.menuEditor.addItem.confirmModal.schedule")}
+                  {isUploading
+                    ? t("addons.uploading")
+                    : item
+                      ? t("common.edit")
+                      : t("dashboard.menuEditor.addItem.confirmModal.schedule")}
                 </span>
                 <CheckCircle className="w-5 h-5" />
               </button>

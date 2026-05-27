@@ -433,7 +433,10 @@ export const CategorySidebar = ({
 
       {/* Footer action to navigate to Add-ons section */}
       <div className="p-4 border-t border-slate-100 dark:border-slate-800">
-        <button className="w-full flex items-center justify-between text-[var(--color-primary-blue)] dark:text-blue-400 text-sm font-black py-4 px-2 hover:translate-x-1 transition-transform group">
+        <button
+          onClick={() => navigate('/dashboard/menu/addons')}
+          className="w-full flex items-center justify-between text-[var(--color-primary-blue)] dark:text-blue-400 text-sm font-black py-4 px-2 hover:translate-x-1 transition-transform group"
+        >
           {t("dashboard.menuEditor.goToAddOns")}
           <ArrowRight className="w-5 h-5 transition-transform group-hover:translate-x-1" />
         </button>

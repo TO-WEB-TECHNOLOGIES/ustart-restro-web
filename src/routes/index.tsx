@@ -122,6 +122,11 @@ const MenuEditor = lazy(() =>
     default: module.MenuEditor,
   })),
 );
+const AddonEditor = lazy(() =>
+  import("@/features/dashboard/outlets/menu/AddonEditor").then((module) => ({
+    default: module.AddonEditor,
+  })),
+);
 const ComingSoon = lazy(() =>
   import("@/features/dashboard/outlets/static/ComingSoon").then((module) => ({
     default: module.ComingSoon,
@@ -288,6 +293,10 @@ export const router = createBrowserRouter([
                   {
                     path: "review",
                     element: withSuspense(MenuEditor),
+                  },
+                  {
+                    path: "addons",
+                    element: withSuspense(AddonEditor),
                   },
                 ],
               },
