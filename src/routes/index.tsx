@@ -1,11 +1,33 @@
 import { createBrowserRouter, Navigate } from "react-router-dom";
-import { lazy, Suspense } from "react";
+import { lazy as reactLazy, Suspense } from "react";
 import {
   RequireAuth,
   RequireOnboarding,
   RequirePending,
   PublicOnlyRoute,
 } from "./ProtectedRoute";
+import { GlobalErrorBoundary } from "@/pages/GlobalErrorBoundary";
+
+// A custom wrapper for lazy loading that automatically retries once on dynamic chunk import failure (due to new deployments)
+const lazy = (componentImport: () => Promise<any>) => {
+  return reactLazy(() =>
+    componentImport().catch((error) => {
+      console.error("Dynamic import chunk load failed:", error);
+      const isRetry = sessionStorage.getItem("lazy-retry-occurred");
+      if (!isRetry) {
+        sessionStorage.setItem("lazy-retry-occurred", "true");
+        // Clear flag after 10 seconds to allow standard future dynamic loads
+        setTimeout(() => sessionStorage.removeItem("lazy-retry-occurred"), 10000);
+        console.log("Failed to load chunk. Reloading page to fetch latest bundle assets...");
+        window.location.reload();
+      } else {
+        console.error("Repeated dynamic import failure. Deferring to Error Boundary.");
+        throw error;
+      }
+      return new Promise(() => {}); // never resolves, page is reloading
+    })
+  );
+};
 
 // Lazy loading components
 const LandingPage = lazy(() =>
@@ -148,6 +170,7 @@ const withSuspense = (Component: React.ComponentType) => (
 export const router = createBrowserRouter([
   {
     element: <PublicOnlyRoute />,
+    errorElement: <GlobalErrorBoundary />,
     children: [
       {
         path: "/",
@@ -157,10 +180,12 @@ export const router = createBrowserRouter([
   },
   {
     path: "/help",
+    errorElement: <GlobalErrorBoundary />,
     element: withSuspense(HelpCenter),
   },
   {
     element: <RequireAuth />,
+    errorElement: <GlobalErrorBoundary />,
     children: [
       {
         element: <RequirePending />,
@@ -312,6 +337,7 @@ export const router = createBrowserRouter([
   },
   {
     path: "*",
+    errorElement: <GlobalErrorBoundary />,
     element: withSuspense(NotFound),
   },
 ]);

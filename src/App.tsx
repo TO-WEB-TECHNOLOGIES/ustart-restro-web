@@ -7,6 +7,7 @@ import './styles/App.css';
 
 import { AuthProvider } from './context/AuthContext';
 import { ThemeProvider } from './context/ThemeContext';
+import { ReactErrorBoundary } from './components/ReactErrorBoundary';
 
 import { Toaster } from 'sonner';
 
@@ -29,7 +30,9 @@ function App() {
       <AuthProvider>
         <ThemeProvider defaultTheme="system" storageKey="vite-ui-theme">
           <Toaster position="top-right" richColors />
-          <RouterProvider router={router} />
+          <ReactErrorBoundary>
+            <RouterProvider router={router} />
+          </ReactErrorBoundary>
         </ThemeProvider>
       </AuthProvider>
     </QueryClientProvider>
@@ -37,4 +40,3 @@ function App() {
 }
 
 export default App;
-
