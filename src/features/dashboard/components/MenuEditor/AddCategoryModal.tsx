@@ -10,13 +10,14 @@ interface AddCategoryModalProps {
     isOpen: boolean;
     onClose: () => void;
     category?: Category | null; // Added for edit mode
+    parentCategory?: Category | null; // Added for subcategory creation
 }
 
 /**
  * Modal component for creating or editing a menu category.
  * Features a custom design with an SVG illustration and theme-consistent styling.
  */
-export const AddCategoryModal: React.FC<AddCategoryModalProps> = ({ isOpen, onClose, category }) => {
+export const AddCategoryModal: React.FC<AddCategoryModalProps> = ({ isOpen, onClose, category, parentCategory }) => {
     const { t } = useTranslation();
     const { categories, addCategory, updateCategory, isSubmitting } = useMenu();
     const [name, setName] = useState('');
@@ -26,19 +27,23 @@ export const AddCategoryModal: React.FC<AddCategoryModalProps> = ({ isOpen, onCl
 
     const isEditMode = !!category;
 
-    // Sync state with category prop when editing
+    // Sync state with category/parentCategory prop when editing or creating
     useEffect(() => {
         if (category) {
             setName(category.name);
             setDescription(category.description || '');
             setParentCategoryId(category.parentCategoryId || null);
+        } else if (parentCategory) {
+            setName('');
+            setDescription('');
+            setParentCategoryId(parentCategory.id);
         } else {
             setName('');
             setDescription('');
             setParentCategoryId(null);
         }
         setErrors({});
-    }, [category, isOpen]);
+    }, [category, parentCategory, isOpen]);
 
     // Filter categories that have no parent (roots) to populate the parent dropdown
     // If editing, also filter out the category itself to prevent cycles
@@ -122,10 +127,18 @@ export const AddCategoryModal: React.FC<AddCategoryModalProps> = ({ isOpen, onCl
                 <div className="p-8">
                     <div className="text-center mb-6">
                         <h3 className="text-2xl font-black text-[var(--color-primary-blue)] dark:text-white mb-2">
-                            {isEditMode ? t('dashboard.menuEditor.editCategory') : t('dashboard.menuEditor.addCategoryModal.title')}
+                            {isEditMode 
+                                ? t('dashboard.menuEditor.editCategory') 
+                                : parentCategory 
+                                    ? t('dashboard.menuEditor.addSubcategoryModal.title', 'Add Subcategory') 
+                                    : t('dashboard.menuEditor.addCategoryModal.title')}
                         </h3>
                         <p className="text-slate-500 dark:text-slate-400 text-sm leading-relaxed font-medium">
-                            {isEditMode ? "Update the details of your menu category." : t('dashboard.menuEditor.addCategoryModal.subtitle')}
+                            {isEditMode 
+                                ? "Update the details of your menu category." 
+                                : parentCategory 
+                                    ? t('dashboard.menuEditor.addSubcategoryModal.subtitle', `Create a new subcategory under "${parentCategory.name}".`)
+                                    : t('dashboard.menuEditor.addCategoryModal.subtitle')}
                         </p>
                     </div>
 
@@ -174,24 +187,26 @@ export const AddCategoryModal: React.FC<AddCategoryModalProps> = ({ isOpen, onCl
                         </div>
 
                         {/* Parent Category Dropdown */}
-                        <div>
-                            <label className="block text-[10px] font-black text-white uppercase tracking-widest mb-2">
-                                {t('dashboard.menuEditor.addCategoryModal.parentLabel')}
-                            </label>
-                            <div className="relative">
-                                <select
-                                    className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl focus:outline-none focus:ring-4 focus:ring-[var(--color-secondary-orange)]/10 focus:border-[var(--color-secondary-orange)] text-slate-900 dark:text-white font-bold appearance-none cursor-pointer transition-all shadow-sm"
-                                    value={parentCategoryId || ''}
-                                    onChange={(e) => setParentCategoryId(e.target.value ? Number(e.target.value) : null)}
-                                >
-                                    <option value="">{t('dashboard.menuEditor.addCategoryModal.noneOption')}</option>
-                                    {rootCategories.map(cat => (
-                                        <option key={cat.id} value={cat.id}>{cat.name}</option>
-                                    ))}
-                                </select>
-                                <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+                        {!parentCategory && (
+                            <div>
+                                <label className="block text-[10px] font-black text-white uppercase tracking-widest mb-2">
+                                    {t('dashboard.menuEditor.addCategoryModal.parentLabel')}
+                                </label>
+                                <div className="relative">
+                                    <select
+                                        className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl focus:outline-none focus:ring-4 focus:ring-[var(--color-secondary-orange)]/10 focus:border-[var(--color-secondary-orange)] text-slate-900 dark:text-white font-bold appearance-none cursor-pointer transition-all shadow-sm"
+                                        value={parentCategoryId || ''}
+                                        onChange={(e) => setParentCategoryId(e.target.value ? Number(e.target.value) : null)}
+                                    >
+                                        <option value="">{t('dashboard.menuEditor.addCategoryModal.noneOption')}</option>
+                                        {rootCategories.map(cat => (
+                                            <option key={cat.id} value={cat.id}>{cat.name}</option>
+                                        ))}
+                                    </select>
+                                    <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+                                </div>
                             </div>
-                        </div>
+                        )}
 
                         {/* Submit Button */}
                         <button

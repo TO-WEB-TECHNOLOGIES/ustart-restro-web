@@ -63,7 +63,7 @@ export const AddonEditor: React.FC = () => {
                 {/* Collapsible Sidebar */}
                 <div
                     className={`
-                        fixed md:relative inset-y-0 left-0 z-40 md:z-auto
+                        fixed md:relative inset-y-0 left-0 z-40 md:z-40
                         transition-all duration-300 ease-in-out transform
                         ${isSidebarOpen ? 'translate-x-0 w-72' : '-translate-x-full md:translate-x-0 md:w-0'}
                         bg-white dark:bg-slate-900 shadow-xl md:shadow-none
@@ -77,9 +77,9 @@ export const AddonEditor: React.FC = () => {
                     {/* Collapse Sidebar Trigger Button */}
                     <button
                         onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-                        className="hidden md:flex absolute -right-3 top-1/2 -translate-y-1/2 z-50 p-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-full shadow-sm text-slate-400 hover:text-[var(--color-primary-blue)] transition-colors"
+                        className="hidden md:flex absolute -right-4 top-1/2 -translate-y-1/2 z-50 p-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-full shadow-md text-slate-400 hover:text-[var(--color-primary-blue)] transition-all transform hover:scale-105 active:scale-95"
                     >
-                        {isSidebarOpen ? <PanelLeftClose className="w-3.5 h-3.5" /> : <PanelLeftOpen className="w-3.5 h-3.5" />}
+                        {isSidebarOpen ? <PanelLeftClose className="w-5 h-5" /> : <PanelLeftOpen className="w-5 h-5" />}
                     </button>
                 </div>
 

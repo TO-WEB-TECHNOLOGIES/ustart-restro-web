@@ -241,15 +241,14 @@ export const AddonVariantList: React.FC<AddonVariantListProps> = ({ onOpenSideba
                         </div>
                     </div>
 
-                    {/* Inline Creation/Editing Form Section */}
-                    {(isAdding || editingVariant) && (
+                    {/* Inline Creation Form Section */}
+                    {isAdding && (
                         <div className="mb-6">
                             <AddEditAddonVariantForm
-                                variant={editingVariant}
+                                variant={null}
                                 categoryId={selectedCategoryId!}
                                 onClose={() => {
                                     setIsAdding(false);
-                                    setEditingVariant(null);
                                 }}
                             />
                         </div>
@@ -289,16 +288,29 @@ export const AddonVariantList: React.FC<AddonVariantListProps> = ({ onOpenSideba
                         </div>
                     ) : (
                         <div className="grid grid-cols-1 gap-4">
-                            {variants.map(v => (
-                                <AddonVariantCard
-                                    key={v.variantId}
-                                    variant={v}
-                                    onEdit={() => {
-                                        setEditingVariant(v);
-                                        setIsAdding(false);
-                                    }}
-                                />
-                            ))}
+                            {variants.map(v => {
+                                const isEditingThis = editingVariant?.variantId === v.variantId;
+                                return isEditingThis ? (
+                                    <div key={v.variantId} className="animate-in fade-in zoom-in-95 duration-200">
+                                        <AddEditAddonVariantForm
+                                            variant={v}
+                                            categoryId={selectedCategoryId!}
+                                            onClose={() => {
+                                                setEditingVariant(null);
+                                            }}
+                                        />
+                                    </div>
+                                ) : (
+                                    <AddonVariantCard
+                                        key={v.variantId}
+                                        variant={v}
+                                        onEdit={() => {
+                                            setEditingVariant(v);
+                                            setIsAdding(false);
+                                        }}
+                                    />
+                                );
+                            })}
                         </div>
                     )}
                 </div>

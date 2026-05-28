@@ -60,6 +60,7 @@ export const CategorySidebar = ({
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [isDisableModalOpen, setIsDisableModalOpen] = useState(false);
   const [activeCategory, setActiveCategory] = useState<Category | null>(null);
+  const [parentCategory, setParentCategory] = useState<Category | null>(null);
 
   /**
    * Close menu when clicking outside
@@ -108,7 +109,19 @@ export const CategorySidebar = ({
   const handleEditCategory = (cat: Category, e: React.MouseEvent) => {
     e.stopPropagation();
     setOpenMenuCategoryId(null);
+    setParentCategory(null);
     setActiveCategory(cat);
+    setIsAddModalOpen(true);
+  };
+
+  /**
+   * Handle Add Subcategory action
+   */
+  const handleAddSubcategory = (cat: Category, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setOpenMenuCategoryId(null);
+    setParentCategory(cat);
+    setActiveCategory(null);
     setIsAddModalOpen(true);
   };
 
@@ -211,7 +224,8 @@ export const CategorySidebar = ({
    */
   const renderCategory = (cat: Category, depth = 0) => {
     const isSelected = selectedCategoryId === cat.id;
-    const hasSubCategories = cat.subCategories && cat.subCategories.length > 0;
+    const isRoot = !cat.parentCategoryId;
+    const canHaveSubCategories = isRoot;
     const isExpanded = isCategoryExpanded(cat);
     const isMenuOpen = openMenuCategoryId === cat.id;
     const isInactive = cat.status === "inactive";
@@ -228,8 +242,8 @@ export const CategorySidebar = ({
           style={{ paddingLeft: `${depth * 1 + 1}rem` }}
           onClick={() => {
             setSelectedCategoryId(cat.id);
-            // Auto-expand category when selected (if it has subcategories)
-            if (hasSubCategories) {
+            // Auto-expand category when selected (if it's a root category)
+            if (canHaveSubCategories) {
               setExpandedCategories((prev) => {
                 const newSet = new Set(prev);
                 newSet.add(cat.id);
@@ -299,7 +313,7 @@ export const CategorySidebar = ({
               )}
             </div>
 
-            {hasSubCategories && (
+            {canHaveSubCategories && (
               <button
                 onClick={(e) => toggleCategoryExpansion(cat.id, e)}
                 className="p-1 hover:bg-slate-200 dark:hover:bg-slate-700 rounded transition-colors"
@@ -316,7 +330,7 @@ export const CategorySidebar = ({
         </div>
 
         {/* Render subcategories with accordion animation */}
-        {hasSubCategories && (
+        {canHaveSubCategories && (
           <div
             className={`transition-all duration-200 ease-in-out ${
               isExpanded
@@ -326,6 +340,19 @@ export const CategorySidebar = ({
           >
             <div className="bg-slate-50/50 dark:bg-slate-800/30 py-1">
               {cat.subCategories?.map((sub) => renderCategory(sub, depth + 1))}
+              {/* Add Subcategory button in the same column/indentation as subcategories */}
+              <div
+                style={{ paddingLeft: `${(depth + 1) * 1 + 1}rem` }}
+                className="py-1 px-4 flex items-center"
+              >
+                <button
+                  onClick={(e) => handleAddSubcategory(cat, e)}
+                  className="flex items-center gap-1.5 text-[var(--color-primary-blue)] dark:text-blue-400 text-xs font-black uppercase tracking-wider py-1.5 px-2.5 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-all border border-transparent hover:border-blue-100 dark:hover:border-blue-800 shrink-0"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  {t("dashboard.menuEditor.categoryMenu.addSubcategory", "Add Subcategory")}
+                </button>
+              </div>
             </div>
           </div>
         )}
@@ -395,6 +422,7 @@ export const CategorySidebar = ({
         <button
           onClick={() => {
             setActiveCategory(null);
+            setParentCategory(null);
             setIsAddModalOpen(true);
           }}
           className="flex items-center gap-1.5 text-[var(--color-primary-blue)] dark:text-blue-400 text-[10px] font-black uppercase tracking-wider py-1.5 px-2.5 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-all border border-transparent hover:border-blue-100 dark:hover:border-blue-800 shrink-0"
@@ -445,9 +473,11 @@ export const CategorySidebar = ({
       <AddCategoryModal
         isOpen={isAddModalOpen}
         category={activeCategory}
+        parentCategory={parentCategory}
         onClose={() => {
           setIsAddModalOpen(false);
           setActiveCategory(null);
+          setParentCategory(null);
         }}
       />
 
