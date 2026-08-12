@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useTranslation } from 'react-i18next';
@@ -12,11 +12,23 @@ import { Label } from '@/components/ui/label';
 import { useAuth } from '@/context/AuthContext';
 import { authService } from '@/features/auth/api/authService';
 import { CheckCircle2, Lock, MessageSquare, Loader2 } from 'lucide-react';
-import { OtpInput } from '@/components/ui/otp-input';
 import { toast } from 'sonner';
 import { DESIGNATIONS } from '@/utils/constants';
 import { Briefcase } from 'lucide-react';
 import { getErrorMessage } from '@/utils/error';
+import { EmailOtpPanel } from './common/EmailOtpPanel';
+
+// Computed once at module load - DESIGNATIONS is a static import, so there's no reason
+// to rebuild this <option> list on every PersonalInfo render.
+const DESIGNATION_OPTIONS = DESIGNATIONS.map((designation) => (
+    <option key={designation} value={designation}>
+        {designation}
+    </option>
+));
+
+// Pure, module-level (no closure, stable by construction) - used by the WhatsApp field's
+// onChange so the handler doesn't need to be rebuilt every render.
+const sanitizeWhatsapp = (raw: string) => raw.replace(/\D/g, '').slice(0, 10);
 
 /**
  * PersonalInfo Component
@@ -41,24 +53,13 @@ export const PersonalInfo = () => {
     // Verification State (Managed locally instead of store)
     const [isEmailVerified, setIsEmailVerified] = useState(false);
 
-    // OTP State
+    // OTP flow state - the OTP value/error/countdown themselves live inside
+    // EmailOtpPanel now; this only tracks what the panel needs from outside itself.
     const [showOtpInput, setShowOtpInput] = useState(false);
-    const [otp, setOtp] = useState('');
+    const [verifyingEmail, setVerifyingEmail] = useState('');
+    const [sentAt, setSentAt] = useState(0);
     const [isLoading, setIsLoading] = useState(false);
     const [isFetching, setIsFetching] = useState(false);
-    const [otpError, setOtpError] = useState('');
-    const [resendTimer, setResendTimer] = useState(0);
-
-    // Resend Timer Logic for Email OTP
-    useEffect(() => {
-        let interval: any;
-        if (resendTimer > 0) {
-            interval = setInterval(() => {
-                setResendTimer((prev) => prev - 1);
-            }, 1000);
-        }
-        return () => clearInterval(interval);
-    }, [resendTimer]);
 
     const {
         register,
@@ -107,8 +108,6 @@ export const PersonalInfo = () => {
                         }
                         if (data.aboutRestaurant) setAboutRestaurant(data.aboutRestaurant as any);
                         if (data.documents) setDocuments(data.documents as any);
-
-                        if (data.documents) setDocuments(data.documents as any);
                     }
 
                 } catch (error) {
@@ -135,8 +134,14 @@ export const PersonalInfo = () => {
         }
     }, [isSameAsMobile, mobileValue, setValue]);
 
-    // Step 1: Send OTP
-    const onSendOtp = async (data: PersonalInfoValues) => {
+    const handleWhatsappChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+        setValue('whatsapp', sanitizeWhatsapp(e.target.value), { shouldValidate: true, shouldDirty: true });
+    }, [setValue]);
+
+    // Step 1: Send OTP (also reused for Resend, via EmailOtpPanel's onResend prop).
+    // Wrapped in useCallback (all its deps are stable Zustand actions/useState setters/
+    // useNavigate) so onResend below can depend on it without a stale-closure risk.
+    const onSendOtp = useCallback(async (data: PersonalInfoValues) => {
         setPersonalInfo(data); // Save local state first
 
         setIsLoading(true);
@@ -153,8 +158,9 @@ export const PersonalInfo = () => {
 
             // If not verified, proceed to send OTP
             await authService.sendEmailOtp(data.email);
+            setVerifyingEmail(data.email);
             setShowOtpInput(true);
-            setResendTimer(120); // Start 120s timer
+            setSentAt(Date.now()); // (Re)starts EmailOtpPanel's resend countdown
         } catch (error: any) {
             console.error(error);
             const message = getErrorMessage(error, 'Failed to send OTP. Please try again.');
@@ -162,31 +168,37 @@ export const PersonalInfo = () => {
         } finally {
             setIsLoading(false);
         }
-    };
+    }, [setPersonalInfo, setCurrentStep, navigate]);
 
-    // Step 2: Verify OTP
-    const onVerifyOtp = async () => {
-        if (otp.length !== 4) return;
+    // Step 2: Verify OTP - passed down to EmailOtpPanel, returns an error message on
+    // failure (so the panel can show it inline) instead of reading/writing panel-local state.
+    const onVerifyOtp = useCallback(async (otp: string): Promise<string | undefined> => {
         setIsLoading(true);
-        setOtpError('');
-
         try {
-            const email = getValues('email');
-            await authService.verifyEmailOtp(email, otp);
+            await authService.verifyEmailOtp(verifyingEmail, otp);
 
             // Success
             setIsEmailVerified(true);
             setCurrentStep(2);
             navigate('/grow-with-ustart/restaurant-info');
+            return undefined;
         } catch (error: any) {
             console.error(error);
             const message = getErrorMessage(error, 'Invalid OTP. Please try again.');
-            setOtpError(message);
             toast.error(message);
+            return message;
         } finally {
             setIsLoading(false);
         }
-    };
+    }, [verifyingEmail, setCurrentStep, navigate]);
+
+    const onEditEmail = useCallback(() => {
+        setShowOtpInput(false);
+    }, []);
+
+    const onResend = useCallback(() => {
+        onSendOtp(getValues());
+    }, [onSendOtp, getValues]);
 
     return (
         <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500 h-full flex flex-col justify-between">
@@ -233,11 +245,7 @@ export const PersonalInfo = () => {
                                         disabled={showOtpInput}
                                     >
                                         <option value="" disabled>{t('onboarding.personal.designationPlaceholder')}</option>
-                                        {DESIGNATIONS.map((designation) => (
-                                            <option key={designation} value={designation}>
-                                                {designation}
-                                            </option>
-                                        ))}
+                                        {DESIGNATION_OPTIONS}
                                     </select>
                                     <div className="absolute right-3 top-4 pointer-events-none">
                                         <svg className="h-4 w-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -286,6 +294,17 @@ export const PersonalInfo = () => {
                                         )}
                                     </div>
                                     {errors.email && <p className="text-red-500 text-xs">{errors.email.message}</p>}
+                                    {showOtpInput && (
+                                        <EmailOtpPanel
+                                            key={sentAt}
+                                            email={verifyingEmail}
+                                            sentAt={sentAt}
+                                            isLoading={isLoading}
+                                            onVerify={onVerifyOtp}
+                                            onEditEmail={onEditEmail}
+                                            onResend={onResend}
+                                        />
+                                    )}
                                 </div>
                             </div>
 
@@ -298,17 +317,8 @@ export const PersonalInfo = () => {
                                         <div className="absolute left-10 top-3 bottom-3 w-[1px] bg-slate-200"></div>
                                         <Input
                                             id="whatsapp"
-                                            {...(() => {
-                                                const { onChange, ...rest } = register('whatsapp');
-                                                return {
-                                                    ...rest,
-                                                    onChange: (e: React.ChangeEvent<HTMLInputElement>) => {
-                                                        const value = e.target.value.replace(/\D/g, '').slice(0, 10);
-                                                        e.target.value = value;
-                                                        onChange(e);
-                                                    }
-                                                };
-                                            })()}
+                                            {...register('whatsapp')}
+                                            onChange={handleWhatsappChange}
                                             className="pl-14 h-12 bg-background-white border-slate-200"
                                             placeholder={t('onboarding.personal.whatsappPlaceholder')}
                                             readOnly={isSameAsMobile}
@@ -336,65 +346,17 @@ export const PersonalInfo = () => {
 
                         </form>
 
-                        {/* Inline OTP Section or Continue Button */}
-                        {showOtpInput ? (
-                            <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300 bg-slate-50 p-6 rounded-xl border border-slate-200">
-                                <div className="text-center mb-4">
-                                    <h3 className="text-lg font-bold text-slate-900">{t('onboarding.personal.emailValidation.title')}</h3>
-                                    <p className="text-slate-500 text-sm mt-1">
-                                        {t('onboarding.personal.emailValidation.subtitle')} <span className="font-semibold text-slate-900">{getValues('email')}</span>
-                                    </p>
-                                </div>
-
-                                <div className="flex justify-center">
-                                    <OtpInput
-                                        value={otp}
-                                        onChange={setOtp}
-                                        length={4}
-                                    />
-                                </div>
-
-                                {otpError && <p className="text-red-500 text-sm text-center font-medium">{otpError}</p>}
-
-                                <Button
-                                    onClick={onVerifyOtp}
-                                    disabled={otp.length !== 4 || isLoading}
-                                    className="w-full h-12 bg-secondary-orange hover:bg-secondary-orange/90 text-background-white font-bold rounded-xl"
-                                >
-                                    {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : t('onboarding.personal.emailValidation.verifyButton')}
-                                </Button>
-
-                                <div className="text-center flex gap-4 justify-center">
-                                    <button
-                                        type="button"
-                                        onClick={() => setShowOtpInput(false)}
-                                        className="text-sm text-slate-500 font-medium hover:text-slate-900 hover:underline"
-                                    >
-                                        Edit Email
-                                    </button>
-                                    <button
-                                        type="button"
-                                        onClick={() => onSendOtp(getValues())}
-                                        disabled={resendTimer > 0 || isLoading}
-                                        className={`text-sm font-medium hover:underline ${resendTimer > 0 ? 'text-slate-400 cursor-not-allowed no-underline' : 'text-primary-blue'}`}
-                                    >
-                                        {resendTimer > 0
-                                            ? t('auth.otp.resendTimer', { time: resendTimer })
-                                            : t('onboarding.personal.emailValidation.resend')
-                                        }
-                                    </button>
-                                </div>
-                            </div>
-                        ) : (
-                            <Button
-                                type="submit"
-                                form="personal-info-form"
-                                disabled={isLoading}
-                                className="w-full h-12 bg-secondary-orange hover:bg-secondary-orange/90 text-background-white font-bold text-lg rounded-xl shadow-lg shadow-secondary-orange/20 transition-all hover:scale-[1.01]"
-                            >
-                                {isLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : <>{t('onboarding.personal.continueButton')} →</>}
-                            </Button>
-                        )}
+                        {/* Continue always stays put - the OTP panel lives inline under the
+                            Email field above, it never takes this button's place. Disabled
+                            while verification is pending so it can't be double-submitted. */}
+                        <Button
+                            type="submit"
+                            form="personal-info-form"
+                            disabled={isLoading || showOtpInput}
+                            className="w-full h-12 bg-secondary-orange hover:bg-secondary-orange/90 text-background-white font-bold text-lg rounded-xl shadow-lg shadow-secondary-orange/20 transition-all hover:scale-[1.01]"
+                        >
+                            {isLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : <>{t('onboarding.personal.continueButton')} →</>}
+                        </Button>
                     </>
                 )}
             </div>

@@ -211,12 +211,11 @@ export const updateMenu = async (updates: Record<string, unknown>[]): Promise<{ 
         const patchPromises = updates.map(update => {
             const { itemId, restroId, ...changes } = update;
             
-            // Convert internal fields back to backend payload fields if needed
+            // itemPrice/packagingCharges/taxAmount/foodType already match the backend's
+            // MenuItemRequestDTO field names byte-for-byte (verified against
+            // ustart-backend), so the spread above already carries them through
+            // correctly - no renaming needed, just the actual status -> isActive mapping.
             const payload: any = { ...changes };
-            if (payload.itemPrice !== undefined) payload.itemPrice = payload.itemPrice;
-            if (payload.packagingCharges !== undefined) payload.packagingCharges = payload.packagingCharges;
-            if (payload.taxAmount !== undefined) payload.taxAmount = payload.taxAmount;
-            if (payload.foodType !== undefined) payload.foodType = payload.foodType;
             if (payload.status !== undefined) payload.isActive = payload.status === 'active';
             
             // Remove frontend specific fields that shouldn't go to backend

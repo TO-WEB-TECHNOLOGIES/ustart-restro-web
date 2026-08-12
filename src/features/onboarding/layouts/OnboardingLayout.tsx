@@ -264,7 +264,15 @@ export const OnboardingLayout = () => {
         <div
           className={`${isUploadMenu ? "p-0" : "p-8 flex flex-grow items-center justify-center"}`}
         >
-          <Outlet />
+          {isUploadMenu ? (
+            <Outlet />
+          ) : (
+            // Single source of truth for step-screen width - individual step
+            // components no longer declare their own max-w/mx-auto.
+            <div className="w-full max-w-4xl mx-auto">
+              <Outlet />
+            </div>
+          )}
         </div>
         {!isUploadMenu && (
           <div className="flex justify-center items-center gap-2 text-xs text-slate-400 mb-4">

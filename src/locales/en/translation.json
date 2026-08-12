@@ -196,10 +196,11 @@
       "secureText": "Your information is securely saved with us.",
       "emailValidation": {
         "title": "Verify User",
-        "subtitle": "We've sent a 6-digit code to",
+        "subtitle": "We've sent a 4-digit code to",
         "label": "Enter Email OTP",
         "placeholder": "000000",
         "verifyButton": "Verify & Continue",
+        "editEmail": "Edit Email",
         "resend": "Resend Code",
         "success": "Email verified successfully!"
       }

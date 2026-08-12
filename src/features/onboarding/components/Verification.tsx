@@ -149,7 +149,7 @@ export const Verification = () => {
     }
 
     return (
-        <div className="w-full max-w-4xl mx-auto animate-in fade-in slide-in-from-bottom-4 duration-500">
+        <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
             <div className="flex flex-col md:flex-row justify-between items-start gap-8 mb-12 relative">
                 <div className="max-w-2xl pt-4">
                     <h2 className="text-3xl md:text-5xl font-bold text-slate-900 mb-4">

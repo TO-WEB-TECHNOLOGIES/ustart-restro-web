@@ -210,7 +210,7 @@ export const CompleteSetup = () => {
 
   // --- STANDARD LIST VIEW (Reverted to Original Style) ---
   return (
-    <div className="flex flex-col w-full h-full py-8 px-4 mx-auto">
+    <div className="flex flex-col h-full py-8">
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-10">
         <div>
           <h2 className="text-3xl font-bold text-slate-900 mb-2">
