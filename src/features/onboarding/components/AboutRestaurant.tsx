@@ -319,8 +319,10 @@ export const AboutRestaurant = () => {
       } else {
         // For fresh onboarding, we always call completeOnboarding
         const response = await onboardingService.completeOnboarding();
-        // Success - Login with new tokens
-        login(response.accessToken, response.refreshToken);
+        // Success - refresh the session with the updated access token (brandId,
+        // status, etc. now populated). No refreshToken anymore - the original
+        // login's refresh-token family stays untouched and keeps working.
+        login(response.accessToken);
       }
 
       // 5. Success

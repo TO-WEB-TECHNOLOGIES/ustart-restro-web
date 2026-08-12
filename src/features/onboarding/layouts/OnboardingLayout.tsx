@@ -26,10 +26,10 @@ export const OnboardingLayout = () => {
   const { language, changeLanguage } = useLanguage();
   const navigate = useNavigate();
   const location = useLocation();
-  const { currentStep, setCurrentStep, personalInfo, reset, isEditing } =
+  const { currentStep, setCurrentStep, reset, isEditing } =
     useOnboardingStore();
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
-  const { user, status } = useAuth(); // Destructure user and status
+  const { status } = useAuth();
 
   // Redirect to verification if status is APPROVAL_PENDING
   useEffect(() => {
@@ -104,31 +104,15 @@ export const OnboardingLayout = () => {
       }
     };
   }, []);
-  // Reset onboarding if different user logs in
-  useEffect(() => {
-    if (
-      !isEditing &&
-      user?.mobile &&
-      personalInfo.mobile &&
-      user.mobile !== personalInfo.mobile
-    ) {
-      console.log("User mismatch detected, resetting store.");
-      reset();
-    }
-  }, [user, personalInfo.mobile, reset, isEditing]);
-
   const handleLogout = () => {
+    // isEditing means the onboarding store is being reused as a scratch buffer to edit an
+    // already-active restaurant's info - that draft shouldn't survive a logout. A genuine
+    // in-progress signup (isEditing false) is left alone: logout() clears every other
+    // store, but the mismatch check in AuthContext.initializeAuth is what decides whether
+    // this one gets cleared on the next login.
     if (isEditing) {
-      console.log(
-        "Logout during edit mode. Resetting store to clear temporary data.",
-      );
       reset();
     }
-    Object.keys(sessionStorage).forEach((key) => {
-      if (key.startsWith("draft_settings_")) {
-        sessionStorage.removeItem(key);
-      }
-    });
     logout();
     navigate("/", { replace: true });
   };

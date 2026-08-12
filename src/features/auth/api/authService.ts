@@ -14,11 +14,6 @@ export const authService = {
      * @throws 400 - Invalid mobile number format
      */
     sendOtp: async (mobile: string): Promise<{ message: string }> => {
-        // Special Case: Production/Mock testing line
-        if (mobile === '9818654444') {
-            return { message: 'OTP sent successfully (Bypass)' };
-        }
-
         try {
             const response = await api.post('/api/v1/auth/send-otp', {
                 mobileNumber: mobile
@@ -36,45 +31,21 @@ export const authService = {
      * @param otp 4-digit OTP received
      * @returns {Object} response
      * @returns {string} response.token - JWT Access Token
-     * @returns {string} response.refreshToken - JWT Refresh Token
      * @throws 401 - Invalid or Expired OTP
      * @throws 404 - User not found (if backend requires pre-registration)
      */
-    verifyOtp: async (mobile: string, otp: string): Promise<{ token: string; refreshToken: string }> => {
-        // Special Case: Bypass for development testing
-        if (mobile === '9818654444' && otp === '1234') {
-            const payload = {
-                user: {
-                    id: 'dev-user-123',
-                    name: 'Development Partner',
-                    mobile: '9818654444'
-                },
-                isOnboardingComplete: true,
-                status: 'ACTIVE',
-                exp: Math.floor(Date.now() / 1000) + (24 * 60 * 60)
-            };
-
-            const header = btoa(JSON.stringify({ alg: "HS256", typ: "JWT" }));
-            const encodedPayload = btoa(JSON.stringify(payload));
-            const signature = btoa("mock-signature");
-            const token = `${header}.${encodedPayload}.${signature}`;
-
-            return {
-                token,
-                refreshToken: `refresh-${token}`
-            };
-        }
-
+    verifyOtp: async (mobile: string, otp: string): Promise<{ token: string }> => {
         try {
             const response = await api.post('/api/v1/auth/verify-otp', {
                 mobileNumber: mobile,
                 otp
             });
 
-            // The backend returns accessToken and refreshToken
+            // The refresh token comes back as an httpOnly cookie now, not in
+            // this response body - see ustart-backend's
+            // docs/integration-docs/authentication.md.
             return {
-                token: response.data.accessToken,
-                refreshToken: response.data.refreshToken
+                token: response.data.accessToken
             };
         } catch (error: any) {
             console.error('Verify OTP Error:', error);
@@ -87,14 +58,10 @@ export const authService = {
      */
     sendEmailOtp: async (email: string): Promise<{ message: string }> => {
         try {
-            const refreshToken = localStorage.getItem('refreshToken');
-            const response = await api.post('/api/v1/auth/send-email-otp', {
-                email
-            }, {
-                headers: {
-                    'Authorization': `Bearer ${refreshToken}`
-                }
-            });
+            // Authenticated via the request interceptor's access token, same as
+            // every other call here - previously (incorrectly) sent the refresh
+            // token as the bearer credential instead.
+            const response = await api.post('/api/v1/auth/send-email-otp', { email });
             return response.data;
         } catch (error: any) {
             console.error('Send Email OTP Error:', error);
@@ -107,15 +74,7 @@ export const authService = {
      */
     verifyEmailOtp: async (email: string, otp: string): Promise<{ status: string; message: string }> => {
         try {
-            const refreshToken = localStorage.getItem('refreshToken');
-            const response = await api.post('/api/v1/auth/verify-email-otp', {
-                email,
-                otp
-            }, {
-                headers: {
-                    'Authorization': `Bearer ${refreshToken}`
-                }
-            });
+            const response = await api.post('/api/v1/auth/verify-email-otp', { email, otp });
             return response.data;
         } catch (error: any) {
             console.error('Verify Email OTP Error:', error);

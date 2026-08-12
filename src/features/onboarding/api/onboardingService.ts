@@ -9,7 +9,6 @@ export interface InitiateOnboardingResponse {
 
 export interface CompleteOnboardingResponse {
     accessToken: string;
-    refreshToken: string;
 }
 
 export const onboardingService = {

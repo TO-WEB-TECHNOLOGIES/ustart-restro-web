@@ -18,11 +18,7 @@ export const DashboardLayout = () => {
   useOrderService();
 
   const handleLogout = () => {
-    Object.keys(sessionStorage).forEach((key) => {
-      if (key.startsWith("draft_settings_")) {
-        sessionStorage.removeItem(key);
-      }
-    });
+    // logout() clears the draft_settings_ sessionStorage keys and every dashboard store.
     logout();
     navigate("/");
     setShowLogoutConfirm(false);

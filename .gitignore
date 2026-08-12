@@ -11,6 +11,9 @@ node_modules
 dist
 dist-ssr
 *.local
+# *.local above doesn't match this (it ends in .md, not .local) — this file is personal
+# project instructions for Claude Code, not meant to be shared/committed.
+CLAUDE.local.md
 
 # Editor directories and files
 .vscode/*

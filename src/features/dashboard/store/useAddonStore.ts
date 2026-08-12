@@ -35,7 +35,8 @@ export interface AddonStore {
     setSearchQuery: (query: string) => void;
     setFilters: (filters: Partial<AddonStore['filters']>) => void;
     clearFilters: () => void;
-    
+    reset: () => void;
+
     fetchCategories: (brandId?: string, force?: boolean) => Promise<void>;
     fetchCategoryVariants: (categoryId: number, restaurantId?: string) => Promise<void>;
     
@@ -67,21 +68,25 @@ export interface AddonStore {
     deleteVariant: (categoryId: number, variantId: number, brandId?: string) => Promise<void>;
 }
 
+const initialState = {
+    addonCategories: [],
+    selectedCategoryId: null,
+    searchQuery: '',
+    filters: {
+        stock: [] as ('in_stock' | 'out_of_stock')[]
+    },
+    updatedVariants: {},
+    isDirty: false,
+    isSubmitting: false,
+    isCategoriesLoading: false,
+    isVariantsLoading: {},
+    lastCategoriesFetch: null,
+};
+
 export const useAddonStore = create<AddonStore>()(
     persist(
         (set, get) => ({
-            addonCategories: [],
-            selectedCategoryId: null,
-            searchQuery: '',
-            filters: {
-                stock: []
-            },
-            updatedVariants: {},
-            isDirty: false,
-            isSubmitting: false,
-            isCategoriesLoading: false,
-            isVariantsLoading: {},
-            lastCategoriesFetch: null,
+            ...initialState,
 
             setAddonCategories: (addonCategories) => {
                 set({ addonCategories, isDirty: true });
@@ -112,6 +117,8 @@ export const useAddonStore = create<AddonStore>()(
                     filters: { stock: [] }
                 });
             },
+
+            reset: () => set(initialState),
 
             fetchCategories: async (brandId, force = false) => {
                 const { addonCategories, lastCategoriesFetch, isCategoriesLoading, isDirty } = get();

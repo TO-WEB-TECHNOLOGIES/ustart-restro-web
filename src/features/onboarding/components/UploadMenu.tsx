@@ -62,9 +62,11 @@ export const UploadMenu = () => {
 
       const response = await onboardingService.completeOnboarding();
 
-      // Refresh JWT tokens for the current session to reflect ACTIVE status
-      if (response.accessToken && response.refreshToken) {
-        login(response.accessToken, response.refreshToken);
+      // Refresh the access token for the current session to reflect ACTIVE
+      // status - no refreshToken anymore, the original login's refresh-token
+      // family stays untouched and keeps working.
+      if (response.accessToken) {
+        login(response.accessToken);
       }
 
       toast.success("Onboarding completed successfully!");

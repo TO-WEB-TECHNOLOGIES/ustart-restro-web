@@ -50,7 +50,9 @@ export interface MenuStore {
     setFilters: (filters: Partial<MenuStore['filters']>) => void;
     /** Clears all filters */
     clearFilters: () => void;
-    /** Updates a specific menu item */
+    /** Resets the entire store back to its initial state (used on logout) */
+    reset: () => void;
+/** Updates a specific menu item */
     updateMenuItem: (categoryId: number, itemId: number, updates: Partial<MenuItem>, addressId?: string | null) => void;
     /** Helper function to get the full category object for the selected ID */
     getSelectedCategory: () => Category | undefined;
@@ -269,6 +271,28 @@ export const useMenuStore = create<MenuStore>()(
                     get().fetchCategoryItems(id);
                 }
             },
+
+            reset: () => set({
+                categories: [],
+                updatedItems: {},
+                selectedCategoryId: null,
+                searchQuery: '',
+                filters: {
+                    stock: [],
+                    foodType: [],
+                    discounted: null,
+                },
+                isDirty: false,
+                isSubmitting: false,
+                isCategoriesLoading: false,
+                isItemsLoading: {},
+                lastCategoriesFetch: null,
+                score: 0,
+                thresholdScore: 0,
+                status: '',
+                lastUpdated: '',
+                isLoading: false,
+            }),
 
             fetchCategories: async (force = false) => {
                 const { categories, lastCategoriesFetch, isCategoriesLoading, isDirty } = get();

@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { OtpInput } from '@/components/ui/otp-input';
-import { mobileSchema, type MobileFormValues } from '@/features/auth/schemas';
+import { mobileSchema, otpSchema, type MobileFormValues } from '@/features/auth/schemas';
 import { authService } from '@/features/auth/api/authService';
 import { useAuth } from '@/context/AuthContext';
 import { useNavigate } from 'react-router-dom';
@@ -86,6 +86,10 @@ export const LoginForm = () => {
         setLoading(true);
         try {
             await authService.sendOtp(mobileNumber);
+            // The old code is no longer valid once a new one is sent - if we leave it in
+            // the input, a silent submit of the stale code would just fail confusingly.
+            setOtp('');
+            setOtpError(null);
             startResendTimer();
         } catch (error: any) {
             console.error(error);
@@ -115,7 +119,7 @@ export const LoginForm = () => {
      */
     const onVerifyOtp = async () => {
         setOtpError(null);
-        if (otp.length !== 4) {
+        if (!otpSchema.safeParse({ otp }).success) {
             setOtpError(t('auth.otp.lengthError') || "Please enter a 4-digit OTP.");
             return;
         }
@@ -125,11 +129,13 @@ export const LoginForm = () => {
             const response = await authService.verifyOtp(mobileNumber, otp);
 
             // Establish session in AuthContext
-            login(response.token, response.refreshToken);
+            login(response.token);
 
-            // Decode token to check status for redirect
+            // Decode token to check status for redirect. login() above updates
+            // AuthContext's state asynchronously, so it isn't readable yet in this same
+            // function - decoding the token directly is the only way to get a synchronous
+            // answer for where to redirect.
             const decoded = decodeToken(response.token);
-            console.log({ status: decoded.status });
             if (decoded && decoded.status === 'APPROVAL_PENDING') {
                 navigate('/grow-with-ustart/verification');
                 return;
@@ -137,7 +143,6 @@ export const LoginForm = () => {
                 navigate('/dashboard');
                 return;
             } else {
-                console.log("I am cming here")
                 navigate('/grow-with-ustart');
             }
         } catch (error: any) {
