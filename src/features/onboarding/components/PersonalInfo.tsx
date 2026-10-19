@@ -1,5 +1,5 @@
-import { useEffect, useState, useCallback } from 'react';
-import { useForm } from 'react-hook-form';
+import { useEffect, useState, useCallback, type SVGProps } from 'react';
+import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
@@ -9,6 +9,7 @@ import { personalInfoSchema, type PersonalInfoValues } from '../schemas';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Switch } from '@/components/ui/switch';
 import { useAuth } from '@/context/AuthContext';
 import { authService } from '@/features/auth/api/authService';
 import { CheckCircle2, Lock, MessageSquare, Loader2 } from 'lucide-react';
@@ -68,6 +69,7 @@ export const PersonalInfo = () => {
         setValue,
         getValues,
         reset,
+        control,
         formState: { errors }
     } = useForm<PersonalInfoValues>({
         resolver: zodResolver(personalInfoSchema),
@@ -77,6 +79,7 @@ export const PersonalInfo = () => {
 
     const isSameAsMobile = watch('isSameAsMobile');
     const mobileValue = watch('mobile');
+    const isAuthorizedSignatory = watch('isAuthorizedSignatory');
 
     /**
      * Rehydration logic: Fetches existing onboarding data when in edit mode
@@ -106,8 +109,8 @@ export const PersonalInfo = () => {
                             if (rInfo.gstNumber === null) rInfo.gstNumber = '';
                             setRestaurantInfo(rInfo);
                         }
-                        if (data.aboutRestaurant) setAboutRestaurant(data.aboutRestaurant as any);
-                        if (data.documents) setDocuments(data.documents as any);
+                        if (data.aboutRestaurant) setAboutRestaurant(data.aboutRestaurant);
+                        if (data.documents) setDocuments(data.documents);
                     }
 
                 } catch (error) {
@@ -118,7 +121,7 @@ export const PersonalInfo = () => {
             }
         };
         fetchData();
-    }, [isEditing, setPersonalInfo, setRestaurantInfo, setAboutRestaurant, setDocuments, reset]);
+    }, [isEditing, setPersonalInfo, setRestaurantInfo, setAboutRestaurant, setDocuments, setInitialData, reset]);
 
 
     // Pre-fill from Auth User (only if NOT editing and empty)
@@ -161,7 +164,7 @@ export const PersonalInfo = () => {
             setVerifyingEmail(data.email);
             setShowOtpInput(true);
             setSentAt(Date.now()); // (Re)starts EmailOtpPanel's resend countdown
-        } catch (error: any) {
+        } catch (error) {
             console.error(error);
             const message = getErrorMessage(error, 'Failed to send OTP. Please try again.');
             toast.error(message);
@@ -182,7 +185,7 @@ export const PersonalInfo = () => {
             setCurrentStep(2);
             navigate('/grow-with-ustart/restaurant-info');
             return undefined;
-        } catch (error: any) {
+        } catch (error) {
             console.error(error);
             const message = getErrorMessage(error, 'Invalid OTP. Please try again.');
             toast.error(message);
@@ -254,6 +257,81 @@ export const PersonalInfo = () => {
                                     </div>
                                 </div>
                                 {errors.designation && <p className="text-red-500 text-xs">{errors.designation.message}</p>}
+                            </div>
+
+                            {/* Authorized Signatory - drives the "Owner/Authorized Signatory"
+                                field on the partner agreement e-signed at the end of onboarding.
+                                Default assumes the form-filler is that person. */}
+                            <div className="space-y-4">
+                                <div className="flex items-center justify-between p-4 rounded-2xl bg-slate-50 border border-slate-100">
+                                    <Label className="font-semibold text-slate-700 pr-4">
+                                        {t('onboarding.personal.authorizedSignatoryQuestion')}
+                                    </Label>
+                                    <Controller
+                                        control={control}
+                                        name="isAuthorizedSignatory"
+                                        render={({ field }) => (
+                                            <Switch
+                                                checked={field.value}
+                                                onCheckedChange={field.onChange}
+                                                disabled={showOtpInput}
+                                            />
+                                        )}
+                                    />
+                                </div>
+
+                                {!isAuthorizedSignatory && (
+                                    <div className="space-y-4 p-4 rounded-2xl border border-slate-100 animate-in fade-in slide-in-from-top-2 duration-300">
+                                        <div className="space-y-2">
+                                            <Label htmlFor="authorizedSignatoryName" className="font-semibold text-slate-700">
+                                                {t('onboarding.personal.authorizedSignatoryNameLabel')}
+                                            </Label>
+                                            <Input
+                                                id="authorizedSignatoryName"
+                                                {...register('authorizedSignatoryName')}
+                                                className="h-12 bg-background-white border-slate-200"
+                                                placeholder={t('onboarding.personal.authorizedSignatoryNamePlaceholder')}
+                                                disabled={showOtpInput}
+                                            />
+                                            {errors.authorizedSignatoryName && (
+                                                <p className="text-red-500 text-xs">{errors.authorizedSignatoryName.message}</p>
+                                            )}
+                                        </div>
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                            <div className="space-y-2">
+                                                <Label htmlFor="authorizedSignatoryEmail" className="font-semibold text-slate-700">
+                                                    {t('onboarding.personal.authorizedSignatoryEmailLabel')}
+                                                </Label>
+                                                <Input
+                                                    id="authorizedSignatoryEmail"
+                                                    {...register('authorizedSignatoryEmail')}
+                                                    className="h-12 bg-background-white border-slate-200"
+                                                    placeholder={t('onboarding.personal.authorizedSignatoryEmailPlaceholder')}
+                                                    disabled={showOtpInput}
+                                                />
+                                                {errors.authorizedSignatoryEmail && (
+                                                    <p className="text-red-500 text-xs">{errors.authorizedSignatoryEmail.message}</p>
+                                                )}
+                                            </div>
+                                            <div className="space-y-2">
+                                                <Label htmlFor="authorizedSignatoryMobile" className="font-semibold text-slate-700">
+                                                    {t('onboarding.personal.authorizedSignatoryMobileLabel')}
+                                                </Label>
+                                                <Input
+                                                    id="authorizedSignatoryMobile"
+                                                    {...register('authorizedSignatoryMobile')}
+                                                    className="h-12 bg-background-white border-slate-200"
+                                                    placeholder={t('onboarding.personal.authorizedSignatoryMobilePlaceholder')}
+                                                    maxLength={10}
+                                                    disabled={showOtpInput}
+                                                />
+                                                {errors.authorizedSignatoryMobile && (
+                                                    <p className="text-red-500 text-xs">{errors.authorizedSignatoryMobile.message}</p>
+                                                )}
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
                             </div>
 
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -365,9 +443,9 @@ export const PersonalInfo = () => {
 };
 
 // Icons maintained
-const UserIcon = (props: any) => (
+const UserIcon = (props: SVGProps<SVGSVGElement>) => (
     <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" /></svg>
 )
-const MailIcon = (props: any) => (
+const MailIcon = (props: SVGProps<SVGSVGElement>) => (
     <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="20" height="16" x="2" y="4" rx="2" /><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" /></svg>
 )

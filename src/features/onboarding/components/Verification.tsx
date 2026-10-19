@@ -52,7 +52,7 @@ const ClockBox = ({ value, label }: { value: number; label: string }) => {
 export const Verification = () => {
     const { t } = useTranslation();
     const navigate = useNavigate();
-    const { updateStatus } = useAuth();
+    const { updateStatus, setIsMultipleRestro } = useAuth();
     const { setIsEditing } = useOnboardingStore();
     const [statusData, setStatusData] = useState<OnboardingStatusResponse | null>(null);
     const [isExpired, setIsExpired] = useState(false);
@@ -62,13 +62,21 @@ export const Verification = () => {
         onboardingService.getOnboardingStatus()
             .then(data => {
                 setStatusData(data);
-                updateStatus(data.restaurant.status || data.status);
+                const currentStatus = data?.status;
 
-                if (data.restaurant.status === 'APPROVED_BUT_MENU_PENDING') {
+                if (currentStatus) {
+                    updateStatus(currentStatus);
+                }
+
+                if (typeof data?.isMultipleRestro === 'boolean') {
+                    setIsMultipleRestro(data.isMultipleRestro);
+                }
+
+                if (currentStatus === 'APPROVED_BUT_MENU_PENDING' || currentStatus === 'APPROVED') {
                     navigate('/grow-with-ustart/complete', { replace: true });
                 }
 
-                if (data.submittedAt) {
+                if (data?.submittedAt) {
                     const targetDate = new Date(data.submittedAt).getTime() + 72 * 60 * 60 * 1000;
                     if (new Date().getTime() > targetDate) {
                         setIsExpired(true);
@@ -77,7 +85,7 @@ export const Verification = () => {
             })
             .catch(err => console.error("Failed to fetch status", err))
             .finally(() => setIsLoading(false));
-    }, []);
+    }, [navigate, updateStatus, setIsMultipleRestro]);
 
     const supportInfo = useMemo(() => {
         return {

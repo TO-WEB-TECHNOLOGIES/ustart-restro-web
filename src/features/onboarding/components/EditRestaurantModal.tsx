@@ -28,7 +28,8 @@ import { toast } from "sonner";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import ReactSelect from "react-select";
-import { useInfiniteQuery } from "@tanstack/react-query";
+import CreatableSelect from "react-select/creatable";
+import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
 
 import { restaurantService } from "@/api/restaurantService";
 import { masterDataService } from "../api/masterData";
@@ -130,6 +131,18 @@ export const EditRestaurantModal = ({
     }));
   }, [cuisineData]);
 
+  const { data: posProviderData } = useQuery({
+    queryKey: ["posProviders"],
+    queryFn: () => masterDataService.getPosProviders({ size: 50 }),
+  });
+
+  const posProviderOptions = useMemo(() => {
+    return (posProviderData?.content || []).map((p) => ({
+      value: p.posProviderName,
+      label: p.posProviderName,
+    }));
+  }, [posProviderData]);
+
   // Transform initialData into form values
   const initialValues = useMemo(() => {
     if (!restaurantData) return null;
@@ -148,7 +161,8 @@ export const EditRestaurantModal = ({
       restaurantName: restaurantData.restroName || "",
       restaurantAddress,
       location: restaurantData.coordinates || "",
-      googleMapsLink: restaurantData.googleMapLink || "",
+      usesPos: restaurantData.usesPos ?? false,
+      posProvider: restaurantData.posProvider || "",
       hasOwnDeliveryPartners: restaurantData.doHaveDeliveryPartners ?? false,
       deliveryBy: (restaurantData.isDeliveryViaUSTART
         ? "USTART"
@@ -325,9 +339,12 @@ export const EditRestaurantModal = ({
         payload.coordinates = data.location;
       }
 
-      // Google Maps link
-      if (dirtyFields.googleMapsLink) {
-        payload.googleMapLink = data.googleMapsLink;
+      // POS
+      if (dirtyFields.usesPos) {
+        payload.usesPos = data.usesPos;
+      }
+      if (dirtyFields.posProvider) {
+        payload.posProvider = data.usesPos ? data.posProvider : undefined;
       }
 
       // Delivery settings
@@ -609,11 +626,6 @@ export const EditRestaurantModal = ({
                           locationValue={watch("location")}
                           onLocationChange={(val) => setValue("location", val)}
                           error={errors.location?.message}
-                          googleMapsLink={watch("googleMapsLink")}
-                          onGoogleMapsLinkChange={(val) =>
-                            setValue("googleMapsLink", val)
-                          }
-                          googleMapsLinkError={errors.googleMapsLink?.message}
                         />
                       </div>
                     </div>
@@ -937,6 +949,52 @@ export const EditRestaurantModal = ({
                         {...register("gstNumber")}
                       />
                     </div>
+
+                    <div className="space-y-4">
+                      <div className="flex items-center justify-between p-4 rounded-2xl bg-white border border-slate-100 shadow-sm transition-all hover:border-slate-200">
+                        <Label className="text-base font-bold">
+                          {t("onboarding.restaurant.form.posQuestion")}
+                        </Label>
+                        <Controller
+                          control={control}
+                          name="usesPos"
+                          render={({ field }) => (
+                            <Switch
+                              checked={field.value}
+                              onCheckedChange={(checked) => {
+                                field.onChange(checked);
+                                if (!checked) setValue("posProvider", "");
+                              }}
+                            />
+                          )}
+                        />
+                      </div>
+                      {watch("usesPos") && (
+                        <div className="space-y-1 animate-in fade-in slide-in-from-top-2 duration-300">
+                          <Controller
+                            control={control}
+                            name="posProvider"
+                            render={({ field }) => (
+                              <CreatableSelect
+                                options={posProviderOptions}
+                                value={field.value ? { value: field.value, label: field.value } : null}
+                                onChange={(opt) => field.onChange(opt?.value || "")}
+                                placeholder={t("onboarding.restaurant.form.posProviderPlaceholder")}
+                                formatCreateLabel={(input) => `${t("onboarding.restaurant.form.posCreateOptionLabel")} "${input}"`}
+                                isClearable
+                                menuPortalTarget={document.body}
+                                className="react-select-container"
+                                classNamePrefix="react-select"
+                              />
+                            )}
+                          />
+                          {errors.posProvider && (
+                            <p className="text-red-500 text-xs pl-1">{errors.posProvider.message}</p>
+                          )}
+                        </div>
+                      )}
+                    </div>
+
                     <div className="space-y-4">
                       <Label className="text-sm font-bold uppercase tracking-widest pl-1">
                         {t(

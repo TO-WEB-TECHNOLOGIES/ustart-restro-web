@@ -2,21 +2,20 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import type { PersonalInfoValues, BankDetailsValues } from '../schemas';
 import type { OnboardingData } from '@/types/onboardingTypes';
-import { type AssociatedUser } from '@/types/restaurantTypes';
+import { type AssociatedUser, type RestroDay } from '@/types/restaurantTypes';
+import { createDefaultScheduleDays } from '../utils/scheduleValidation';
 
 export interface RestaurantInfoState {
-    hasCin?: boolean;
     companyName?: string;
-    brandName?: string;
     hasMultipleBranches?: boolean;
-    cinNumber?: string;
     panNumber?: string;
     gstNumber?: string | null;
     registeredAddress?: string;
     restaurantName?: string;
     restaurantAddress?: string;
     location?: string;
-    googleMapsLink?: string;
+    usesPos?: boolean;
+    posProvider?: string;
 }
 
 export interface AboutRestaurantState {
@@ -28,6 +27,12 @@ export interface AboutRestaurantState {
     cuisines: number[];
     menuImages?: (File | string)[];
     dishImage?: File | string;
+    // Backend routes these to Brand (multi-branch default) or Restaurant (single-outlet) -
+    // the frontend just collects them here alongside the rest of the "about" slice.
+    servingOptions?: ('DELIVERY' | 'DINE_IN')[];
+    operatingHours?: RestroDay[];
+    diningHours?: RestroDay[];
+    diningMenuImages?: (File | string)[];
 }
 
 export interface ManagerInfo {
@@ -83,21 +88,23 @@ const initialState = {
         mobile: '',
         whatsapp: '',
         isSameAsMobile: false,
+        isAuthorizedSignatory: true,
+        authorizedSignatoryName: '',
+        authorizedSignatoryEmail: '',
+        authorizedSignatoryMobile: '',
     },
     restaurantInfo: {
-        hasCin: undefined,
         // Initialize other fields as undefined or empty strings to avoid uncontrolled/controlled warnings if used directly
         companyName: '',
-        brandName: '',
         hasMultipleBranches: false,
-        cinNumber: '',
         panNumber: '',
         gstNumber: '',
         registeredAddress: '',
         restaurantName: '',
         restaurantAddress: '',
         location: '',
-        googleMapsLink: '',
+        usesPos: false,
+        posProvider: '',
     },
     aboutRestaurant: {
         foodTypes: {
@@ -108,9 +115,15 @@ const initialState = {
         cuisines: [],
         menuImages: [],
         dishImage: undefined,
+        servingOptions: ['DELIVERY'] as ('DELIVERY' | 'DINE_IN')[],
+        operatingHours: createDefaultScheduleDays(),
+        diningHours: createDefaultScheduleDays(),
+        diningMenuImages: [],
     },
     documents: {
         fssaiDocument: undefined,
+        fssaiNumber: '',
+        fssaiExpiryDate: '',
         accountNumber: '',
         ifscCode: '',
         accountHolderName: '',
@@ -171,6 +184,7 @@ export const useOnboardingStore = create<OnboardingState>()(
                     // Persist only URLs (strings), drop File objects
                     menuImages: (state.aboutRestaurant.menuImages || []).filter(img => typeof img === 'string'),
                     dishImage: typeof state.aboutRestaurant.dishImage === 'string' ? state.aboutRestaurant.dishImage : undefined,
+                    diningMenuImages: (state.aboutRestaurant.diningMenuImages || []).filter(img => typeof img === 'string'),
                 },
                 documents: {
                     ...state.documents,

@@ -67,6 +67,8 @@ export interface RestaurantRequestDTO {
     };
     gstNumber?: string;
     googleMapLink?: string;
+    usesPos?: boolean;
+    posProvider?: string;
     fssaiLicenseImage: string;
     panNumber: string;
 }

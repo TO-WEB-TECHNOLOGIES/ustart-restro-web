@@ -52,7 +52,7 @@ export const OnboardingLayout = () => {
       console.log("Redirecting to verification...");
       navigate("/grow-with-ustart/verification", { replace: true });
     } else if (
-      status === "APPROVED_BUT_MENU_PENDING" &&
+      (status === "APPROVED_BUT_MENU_PENDING" || status === "APPROVED") &&
       !isEditing &&
       !location.pathname.includes("/complete") &&
       !location.pathname.includes("/upload-menu")

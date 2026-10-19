@@ -16,7 +16,6 @@ export const addRestaurantSchema = z
       .string()
       .min(1, "Location is mandatory")
       .regex(/^-?\d+(\.\d+)?:-?\d+(\.\d+)?$/, "Invalid location format"),
-    googleMapsLink: z.string().optional(),
 
     // Logistics
     hasOwnDeliveryPartners: z.boolean(),
@@ -50,6 +49,10 @@ export const addRestaurantSchema = z
     panNumber: z.string().regex(/^[A-Z]{5}[0-9]{4}[A-Z]$/, "Invalid PAN format (e.g. ABCDE1234F)"),
     gstNumber: z.string().optional(),
     fssaiCertificate: z.union([z.instanceof(File), z.string()]).refine(val => !!val, "FSSAI Certificate is required"),
+
+    // POS
+    usesPos: z.boolean(),
+    posProvider: z.string().optional(),
 
 
 
@@ -110,6 +113,10 @@ export const addRestaurantSchema = z
       message: "All bank details are required",
       path: ["bankDetails.accountNumber"],
     },
-  );
+  )
+  .refine((data) => !data.usesPos || !!data.posProvider, {
+    message: "Select a POS provider",
+    path: ["posProvider"],
+  });
 
 export type AddRestaurantValues = z.infer<typeof addRestaurantSchema>;

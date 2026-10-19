@@ -5,6 +5,8 @@ export interface InitiateOnboardingResponse {
     fssaiDocument: string;
     dishImage: string;
     menuImages: string[];
+    diningMenuImages: string[];
+    agreementDocument: string;
 }
 
 export interface CompleteOnboardingResponse {

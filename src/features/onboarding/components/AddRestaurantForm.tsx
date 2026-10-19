@@ -10,7 +10,8 @@ import { FoodTypeButton } from "./common/FoodTypeSelector";
 import { LocationPicker } from "./common/LocationPicker";
 import { ManagerDetails } from "./common/ManagerDetails";
 import ReactSelect from "react-select";
-import { useInfiniteQuery } from "@tanstack/react-query";
+import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
+import CreatableSelect from "react-select/creatable";
 import {
   Loader2,
   ArrowRight,
@@ -165,6 +166,18 @@ export const AddRestaurantForm = ({
     }));
   }, [cuisineData]);
 
+  const { data: posProviderData } = useQuery({
+    queryKey: ["posProviders"],
+    queryFn: () => masterDataService.getPosProviders({ size: 50 }),
+  });
+
+  const posProviderOptions = useMemo(() => {
+    return (posProviderData?.content || []).map((p) => ({
+      value: p.posProviderName,
+      label: p.posProviderName,
+    }));
+  }, [posProviderData]);
+
   const savedData = useMemo(() => {
     if (isEditMode) return null; // Don't use session storage in edit mode
     try {
@@ -195,7 +208,8 @@ export const AddRestaurantForm = ({
       restaurantName: initialData.restroName || "",
       restaurantAddress,
       location: initialData.coordinates || "",
-      googleMapsLink: initialData.googleMapLink || "",
+      usesPos: initialData.usesPos ?? false,
+      posProvider: initialData.posProvider || "",
       hasOwnDeliveryPartners: initialData.doHaveDeliveryPartners ?? false,
       deliveryBy: initialData.isDeliveryViaUSTART ? "USTART" : "OWN",
       servingOptions:
@@ -271,7 +285,8 @@ export const AddRestaurantForm = ({
             pincode: "",
           },
           location: "",
-          googleMapsLink: "",
+          usesPos: false,
+          posProvider: "",
           bankAccountType: "BRAND",
           bankDetails: {
             accountNumber: "",
@@ -453,7 +468,8 @@ export const AddRestaurantForm = ({
               }
             : undefined,
         gstNumber: data.gstNumber,
-        googleMapLink: data.googleMapsLink,
+        usesPos: data.usesPos,
+        posProvider: data.usesPos ? data.posProvider : undefined,
         fssaiLicenseImage: fssaiKey,
         panNumber: data.panNumber,
       };
@@ -711,11 +727,6 @@ export const AddRestaurantForm = ({
                         locationValue={watch("location")}
                         onLocationChange={(val) => setValue("location", val)}
                         error={errors.location?.message}
-                        googleMapsLink={watch("googleMapsLink")}
-                        onGoogleMapsLinkChange={(val) =>
-                          setValue("googleMapsLink", val)
-                        }
-                        googleMapsLinkError={errors.googleMapsLink?.message}
                       />
                     </div>
                   </div>
@@ -1157,6 +1168,52 @@ export const AddRestaurantForm = ({
                       {...register("gstNumber")}
                     />
                   </div>
+
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between p-4 rounded-2xl bg-white border border-slate-100 shadow-sm transition-all hover:border-slate-200">
+                      <Label className="text-base font-bold">
+                        {t("onboarding.restaurant.form.posQuestion")}
+                      </Label>
+                      <Controller
+                        control={control}
+                        name="usesPos"
+                        render={({ field }) => (
+                          <Switch
+                            checked={field.value}
+                            onCheckedChange={(checked) => {
+                              field.onChange(checked);
+                              if (!checked) setValue("posProvider", "");
+                            }}
+                          />
+                        )}
+                      />
+                    </div>
+                    {watch("usesPos") && (
+                      <div className="space-y-1 animate-in fade-in slide-in-from-top-2 duration-300">
+                        <Controller
+                          control={control}
+                          name="posProvider"
+                          render={({ field }) => (
+                            <CreatableSelect
+                              options={posProviderOptions}
+                              value={field.value ? { value: field.value, label: field.value } : null}
+                              onChange={(opt) => field.onChange(opt?.value || "")}
+                              placeholder={t("onboarding.restaurant.form.posProviderPlaceholder")}
+                              formatCreateLabel={(input) => `${t("onboarding.restaurant.form.posCreateOptionLabel")} "${input}"`}
+                              isClearable
+                              menuPortalTarget={document.body}
+                              className="react-select-container"
+                              classNamePrefix="react-select"
+                            />
+                          )}
+                        />
+                        {errors.posProvider && (
+                          <p className="text-red-500 text-xs pl-1">{errors.posProvider.message}</p>
+                        )}
+                      </div>
+                    )}
+                  </div>
+
                   <div>
                     <h3 className="text-base font-semibold uppercase tracking-wide mb-3">
                       {t(

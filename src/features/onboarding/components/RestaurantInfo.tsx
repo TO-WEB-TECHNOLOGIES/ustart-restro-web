@@ -1,47 +1,116 @@
-import { useState, useEffect } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
 import { useOnboardingStore } from "../store/useOnboardingStore";
-import { restaurantInfoSchema, type RestaurantInfoValues } from "../schemas";
+import {
+  restaurantInfoSchema,
+  CITY_STATE_MAP,
+  type RestaurantInfoValues,
+  getAboutRestaurantSchema,
+  type AboutRestaurantValues,
+} from "../schemas";
 import { LocationPicker } from "./common/LocationPicker";
-import ReactSelect from "react-select";
+import { masterDataService } from "../api/masterData";
+import { type AddressSearchResult } from "../api/addressService";
+import ReactSelect, { components as SelectComponents, type SingleValueProps } from "react-select";
+import CreatableSelect from "react-select/creatable";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Check, X } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
+import { Modal } from "@/components/ui/modal";
+import { MapPicker } from "@/components/ui/map-picker";
 import { useNavigate } from "react-router-dom";
+import { toast } from "sonner";
 import { INDIAN_STATES } from "../../../utils/constants";
+import { Info, BookOpen, Image as ImageIcon, LayoutDashboard, Terminal } from "lucide-react";
+import { MenuList } from "./common/MenuList";
+import { FoodTypeButton } from "./common/FoodTypeSelector";
+import { FileDisplay } from "./common/FileDisplay";
+import { DayScheduleEditor } from "./common/DayScheduleEditor";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import { ImageCropModal } from "./common/ImageCropModal";
+import { createDefaultScheduleDays } from "../utils/scheduleValidation";
+
+const CITY_OPTIONS = Object.keys(CITY_STATE_MAP).map((city) => ({ value: city, label: city }));
+
+type AddressLike = { line1?: string; line2?: string; landmark?: string; locality?: string; state?: string; pincode?: string };
+
+const formatAddressForDisplay = (addr?: AddressLike) => {
+  if (!addr) return "";
+  return [addr.line1, addr.line2, addr.landmark, addr.locality, addr.state, addr.pincode]
+    .filter(Boolean)
+    .join(", ");
+};
+
+const parseLatLng = (value?: string) => {
+  if (!value) return undefined;
+  const [lat, lng] = value.split(":").map(Number);
+  if (Number.isNaN(lat) || Number.isNaN(lng)) return undefined;
+  return { lat, lng };
+};
+
+type SelectOption = { value: string; label: string };
+
+// Renders the selected/typed POS provider as a pill rather than plain text, so a committed
+// value reads as clearly "selected" at a glance (same rounded-pill language as elsewhere in
+// this form, e.g. the confirm modal's address chip).
+const PosProviderPill = (props: SingleValueProps<SelectOption, false>) => (
+  <SelectComponents.SingleValue {...props}>
+    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full bg-orange-50 border border-secondary-orange text-secondary-orange text-sm font-semibold">
+      {props.data.label}
+    </span>
+  </SelectComponents.SingleValue>
+);
 
 /**
  * RestaurantInfo Component
- * Handles Step 2 of the onboarding flow.
- * Manages complex business registration logic (CIN vs Non-CIN) and address collection.
+ * Step 2 of the onboarding flow, with two internal views on the same route: "info" (identity/
+ * PAN/GST - GSTIN replaces the old CIN yes/no gate - and Registered Address only) and "about"
+ * (Primary Address + map location, plus food type/cuisine/menu/dish images moved in from the
+ * old AboutRestaurant.tsx "details" view - step 3 is documents-only now). Primary Address/map
+ * are conditional on hasMultipleBranches (a multi-branch brand's individual outlets/addresses
+ * are added later via Step 5), so they live on "about" rather than crowding the mandatory
+ * fields on "info". The address-confirm modal gates leaving "about" (not "info"), since that's
+ * where the address actually being cross-checked - Primary Address, or Registered Address for
+ * multi-branch - is now collected/known.
  */
 export const RestaurantInfo = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const { restaurantInfo, setRestaurantInfo, setCurrentStep } =
-    useOnboardingStore();
-  const [hasCin, setHasCin] = useState<boolean | undefined>(
-    restaurantInfo.hasCin,
-  );
+  const { restaurantInfo, setRestaurantInfo, aboutRestaurant, setAboutRestaurant, setCurrentStep } = useOnboardingStore();
 
-  // Initialize form with stored data or defaults
-  // Note: Addresses are stored as pipe-delimited strings but managed as objects in the UI
+  const [isSameAsRegistered, setIsSameAsRegistered] = useState(false);
+  // "info" = identity/PAN/GST/address (this component's original single view), "about" = food
+  // type/cuisine/menu/dish images (moved in from AboutRestaurant.tsx's old "details" view) -
+  // both are step 2 (same route), only the "documents" (FSSAI/bank) view stays on step 3.
+  const [view, setView] = useState<"info" | "about">("info");
+  // Tracks in-progress typing in the POS provider CreatableSelect so a value typed but never
+  // explicitly submitted (no Enter, no clicking "Add") still gets committed on blur/focus
+  // change instead of silently being discarded.
+  const [posProviderInput, setPosProviderInput] = useState("");
+
   const {
     register,
     handleSubmit,
     watch,
     control,
     setValue,
-    formState: { errors: rawErrors },
+    formState: { errors },
   } = useForm<RestaurantInfoValues>({
-    // @ts-ignore - Resolver handles the union discrimination
     resolver: zodResolver(restaurantInfoSchema),
     defaultValues: {
-      ...restaurantInfo,
-      hasCin: hasCin, // Ensure hasCin matches local state
+      restaurantName: restaurantInfo.restaurantName || "",
+      panNumber: restaurantInfo.panNumber || "",
+      gstNumber: restaurantInfo.gstNumber || "",
+      isCompanySameAsRestaurantName: !restaurantInfo.companyName
+        || restaurantInfo.companyName === restaurantInfo.restaurantName,
+      companyName: restaurantInfo.companyName || "",
+      hasMultipleBranches: restaurantInfo.hasMultipleBranches ?? false,
+      usesPos: restaurantInfo.usesPos ?? false,
+      posProvider: restaurantInfo.posProvider || "",
       registeredAddress: {
         line1: restaurantInfo.registeredAddress?.split("|")[0] || "",
         line2: restaurantInfo.registeredAddress?.split("|")[1] || "",
@@ -50,6 +119,131 @@ export const RestaurantInfo = () => {
         state: restaurantInfo.registeredAddress?.split("|")[4] || "",
         pincode: restaurantInfo.registeredAddress?.split("|")[5] || "",
       },
+    },
+    mode: "onSubmit",
+  });
+
+  const gstNumber = watch("gstNumber");
+  const isCompanySame = watch("isCompanySameAsRestaurantName");
+  const hasMultipleBranches = watch("hasMultipleBranches");
+  const usesPos = watch("usesPos");
+  const restaurantNameValue = watch("restaurantName");
+  const registeredAddress = watch("registeredAddress");
+
+  // Company name is driven purely by GSTIN + "same as restaurant name" - no association
+  // with hasMultipleBranches (which only ever controls isMultipleRestro server-side).
+  const showCompanyName = !!gstNumber && isCompanySame === false;
+
+  // While GSTIN is filled and "same as restaurant name" is on, keep companyName mirrored to
+  // restaurantName - the input is disabled in that state (see JSX), so this is the only
+  // thing keeping the actual submitted value correct and in sync.
+  useEffect(() => {
+    if (!!gstNumber && isCompanySame) {
+      setValue("companyName", restaurantNameValue || "");
+    }
+  }, [gstNumber, isCompanySame, restaurantNameValue, setValue]);
+
+  const { data: posProviderData } = useQuery({
+    queryKey: ["posProviders"],
+    queryFn: () => masterDataService.getPosProviders({ size: 50 }),
+  });
+  const posProviderOptions = useMemo(
+    () => (posProviderData?.content || []).map((p) => ({ value: p.posProviderName, label: p.posProviderName })),
+    [posProviderData],
+  );
+
+  // Info view's submit - no confirm modal here anymore, since Primary Address (the thing
+  // actually being cross-checked) is no longer collected on this view. Goes straight to
+  // "about" once identity/Registered Address are valid.
+  const submitData = (data: RestaurantInfoValues) => {
+    const transformedData: any = { ...data };
+    // Safe to delete - this field is UI-only and was never part of the store's
+    // RestaurantInfoState shape to begin with, so there's no stale value to worry about.
+    delete transformedData.isCompanySameAsRestaurantName;
+
+    if (data.registeredAddress) {
+      const ra = data.registeredAddress;
+      transformedData.registeredAddress = `${ra.line1 || ""}|${ra.line2 || ""}|${ra.landmark || ""}|${ra.locality}|${ra.state}|${ra.pincode}`;
+    }
+
+    // setRestaurantInfo shallow-merges onto the existing store ({...state.restaurantInfo,
+    // ...data}) - explicitly clearing to '' instead of omitting the key ensures a stale value
+    // from a prior submission actually gets overwritten (see the "about" submit below for the
+    // full history of this bug: switching hasMultipleBranches must clear the address it hides).
+    if (!showCompanyName) {
+      transformedData.companyName = "";
+    }
+
+    if (!data.usesPos) {
+      transformedData.posProvider = "";
+    }
+
+    setRestaurantInfo(transformedData);
+    setView("about");
+  };
+
+  const handleBack = () => {
+    setCurrentStep(1);
+    navigate("/grow-with-ustart/personal-info");
+  };
+
+  // --- "About Restaurant" view (moved from AboutRestaurant.tsx's old "details" view; also
+  // now owns Primary Address + map location, moved off the "info" view above since they're
+  // conditional/optional (single-outlet only) rather than core identity fields) ---
+  const [aboutSearchQuery, setAboutSearchQuery] = useState("");
+  const [aboutDebouncedSearch, setAboutDebouncedSearch] = useState("");
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setAboutDebouncedSearch(aboutSearchQuery);
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [aboutSearchQuery]);
+
+  const {
+    data: cuisineData,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+    isLoading: isLoadingCuisines,
+  } = useInfiniteQuery({
+    queryKey: ["cuisines", aboutDebouncedSearch],
+    queryFn: ({ pageParam = 0 }) =>
+      masterDataService.getCuisines({
+        search: aboutDebouncedSearch,
+        page: pageParam as number,
+        size: 10,
+      }),
+    getNextPageParam: (lastPage) => {
+      const { number, totalPages } = lastPage.page;
+      return number + 1 < totalPages ? number + 1 : undefined;
+    },
+    initialPageParam: 0,
+  });
+
+  const cuisineOptions = useMemo(() => {
+    const allCuisines = cuisineData?.pages.flatMap((page) => page.content) || [];
+    return allCuisines.map((c) => ({ value: c.cuisineId, label: c.cuisineName }));
+  }, [cuisineData]);
+
+  // Primary Address/location's requiredness depends on hasMultipleBranches, which lives in
+  // the "info" form above, not this one - re-derive the schema whenever it changes so the
+  // resolver react-hook-form uses at the next validation reflects the current value.
+  const stepTwoSchema = useMemo(() => getAboutRestaurantSchema(hasMultipleBranches), [hasMultipleBranches]);
+
+  const {
+    register: registerAbout,
+    control: aboutControl,
+    handleSubmit: handleSubmitAbout,
+    watch: watchAbout,
+    setValue: setValueAbout,
+    setError: setErrorAbout,
+    clearErrors: clearErrorsAbout,
+    formState: { errors: aboutErrors },
+  } = useForm<AboutRestaurantValues>({
+    resolver: zodResolver(stepTwoSchema),
+    defaultValues: {
+      ...aboutRestaurant,
       restaurantAddress: {
         line1: restaurantInfo.restaurantAddress?.split("|")[0] || "",
         line2: restaurantInfo.restaurantAddress?.split("|")[1] || "",
@@ -58,495 +252,245 @@ export const RestaurantInfo = () => {
         state: restaurantInfo.restaurantAddress?.split("|")[4] || "",
         pincode: restaurantInfo.restaurantAddress?.split("|")[5] || "",
       },
+      location: restaurantInfo.location || "",
+      servingOptions: aboutRestaurant.servingOptions?.length ? aboutRestaurant.servingOptions : ["DELIVERY"],
+      operatingHours: aboutRestaurant.operatingHours?.length ? aboutRestaurant.operatingHours : createDefaultScheduleDays(),
+      diningHours: aboutRestaurant.diningHours?.length ? aboutRestaurant.diningHours : createDefaultScheduleDays(),
+      diningMenuImages: aboutRestaurant.diningMenuImages || [],
+      // UI-only, mirrors isCompanySameAsRestaurantName/isSameAsRegistered - stripped before
+      // the store write in finalizeAboutSubmit. Default checked: reduces friction for the
+      // common case (most restaurants keep the same hours/menu for dine-in and delivery).
+      isDiningHoursSameAsOperating: true,
+      isDiningMenuSameAsDelivery: true,
     } as any,
     mode: "onSubmit",
   });
 
-  const errors = rawErrors as any;
+  const restaurantAddressLocality = watchAbout("restaurantAddress.locality");
 
-  const [isSameAsRegistered, setIsSameAsRegistered] = useState(false);
-
-  // Update hasCin in form when local state changes
+  // "Same as Registered Address" copies registeredAddress (from the "info" form/view) into
+  // restaurantAddress whenever it's checked.
   useEffect(() => {
-    if (hasCin !== undefined) {
-      setValue("hasCin", hasCin);
-    }
-  }, [hasCin, setValue]);
-
-  const registeredAddress = watch("registeredAddress");
-
-  useEffect(() => {
-    if (hasCin === false && isSameAsRegistered && registeredAddress) {
-      setValue("restaurantAddress.line1" as any, registeredAddress.line1 || "");
-      setValue("restaurantAddress.line2" as any, registeredAddress.line2 || "");
-      setValue(
-        "restaurantAddress.landmark" as any,
-        registeredAddress.landmark || "",
-      );
-      setValue(
-        "restaurantAddress.locality" as any,
-        registeredAddress.locality || "",
-      );
-      setValue("restaurantAddress.state" as any, registeredAddress.state || "");
-      setValue(
-        "restaurantAddress.pincode" as any,
-        registeredAddress.pincode || "",
-      );
-    }
-  }, [hasCin, isSameAsRegistered, registeredAddress, setValue]);
-
-  /**
-   * Submission Handler: Transforms object-based addresses into pipe-delimited
-   * strings expected by the backend before saving to the store.
-   */
-  const onSubmit = (data: any) => {
-    const transformedData = { ...data };
-
-    // Transform registeredAddress to string (Common for both)
-    if (data.registeredAddress && typeof data.registeredAddress === "object") {
-      const ra = data.registeredAddress;
-      transformedData.registeredAddress = `${ra.line1}|${ra.line2}|${ra.landmark || ""}|${ra.locality}|${ra.state}|${ra.pincode}`;
-    }
-
-    if (data.hasCin) {
-      // Remove fields that belong to hasCin: false
-      delete transformedData.restaurantName;
-      delete transformedData.restaurantAddress;
-      delete transformedData.location;
-      delete transformedData.googleMapsLink;
-    } else {
-      // Transform restaurantAddress to string
-      if (
-        data.restaurantAddress &&
-        typeof data.restaurantAddress === "object"
-      ) {
-        const ra = data.restaurantAddress;
-        transformedData.restaurantAddress = `${ra.line1}|${ra.line2}|${ra.landmark || ""}|${ra.locality}|${ra.state}|${ra.pincode}`;
+    if (!hasMultipleBranches && isSameAsRegistered && registeredAddress) {
+      setValueAbout("restaurantAddress.line1", registeredAddress.line1 || "");
+      setValueAbout("restaurantAddress.line2", registeredAddress.line2 || "");
+      setValueAbout("restaurantAddress.landmark", registeredAddress.landmark || "");
+      setValueAbout("restaurantAddress.pincode", registeredAddress.pincode || "");
+      // Registered Address's locality is free text (any city/state) while Primary Address is
+      // locked to Gurugram/New Delhi - only copy it across if it's actually one of those two.
+      if (registeredAddress.locality && CITY_STATE_MAP[registeredAddress.locality]) {
+        setValueAbout("restaurantAddress.locality", registeredAddress.locality);
       }
-      // Remove fields that belong to hasCin: true
-      delete transformedData.companyName;
-      delete transformedData.brandName;
-      delete transformedData.hasMultipleBranches;
-      delete transformedData.cinNumber;
     }
+  }, [hasMultipleBranches, isSameAsRegistered, registeredAddress, setValueAbout]);
 
-    setRestaurantInfo(transformedData);
-    console.log("Restaurant Info Submitted:", transformedData);
-    // Move to next step (Documents - ID 3)
+  // Primary Address's state always follows its locality (Gurugram -> Haryana, New Delhi -> Delhi).
+  useEffect(() => {
+    if (restaurantAddressLocality && CITY_STATE_MAP[restaurantAddressLocality]) {
+      setValueAbout("restaurantAddress.state", CITY_STATE_MAP[restaurantAddressLocality]);
+    }
+  }, [restaurantAddressLocality, setValueAbout]);
+
+  // Auto-fills Primary Address from a selected search result's structured components -
+  // best-effort (Google doesn't always resolve every component), fields stay editable
+  // afterward so the user can correct anything. If the resolved city isn't one we serve
+  // (Gurugram/New Delhi), flag it immediately (toast + inline field error) rather than
+  // silently leaving locality blank and only surfacing the problem at submit time.
+  const handleAddressSelected = (result: AddressSearchResult) => {
+    const line1 = result.name || result.streetAddress;
+    if (line1) setValueAbout("restaurantAddress.line1", line1);
+    if (result.area) setValueAbout("restaurantAddress.line2", result.area);
+    if (result.pincode) setValueAbout("restaurantAddress.pincode", result.pincode);
+
+    if (result.city && CITY_STATE_MAP[result.city]) {
+      setValueAbout("restaurantAddress.locality", result.city, { shouldValidate: true });
+      clearErrorsAbout("restaurantAddress.locality");
+    } else {
+      setValueAbout("restaurantAddress.locality", "");
+      const message = t("onboarding.restaurant.form.unsupportedCity");
+      setErrorAbout("restaurantAddress.locality", { type: "manual", message });
+      toast.error(message);
+    }
+  };
+
+  const selectedCuisineIds = watchAbout("cuisines");
+  // Hoisted out of the cuisines Controller's render prop - calling useMemo inside a
+  // Controller render callback isn't a real component/hook, so it violated rules-of-hooks.
+  const selectedCuisineOptions = useMemo(() => {
+    const ids = selectedCuisineIds || [];
+    return ids.map((id: number) => cuisineOptions.find((o) => o.value === id) || { value: id, label: `Selected (ID: ${id})` });
+  }, [cuisineOptions, selectedCuisineIds]);
+
+  const menuInputRef = useRef<HTMLInputElement>(null);
+  const dishInputRef = useRef<HTMLInputElement>(null);
+
+  const menuImages = watchAbout("menuImages");
+  const dishImage = watchAbout("dishImage");
+
+  const handleMenuFiles = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files.length > 0) {
+      const newFiles = Array.from(e.target.files);
+      const currentFiles = (watchAbout("menuImages") as File[]) || [];
+      setValueAbout("menuImages", [...currentFiles, ...newFiles], { shouldValidate: true });
+    }
+  };
+
+  // Opens the crop modal instead of accepting the raw file directly - the cropped result
+  // (see handleCropped) is what actually lands in form state.
+  const [cropState, setCropState] = useState<{ file: File; imageSrc: string } | null>(null);
+
+  const handleDishFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setCropState({ file, imageSrc: URL.createObjectURL(file) });
+    }
+    // Reset so selecting the exact same file again still fires onChange.
+    e.target.value = "";
+  };
+
+  const handleCropped = (croppedFile: File) => {
+    setValueAbout("dishImage", croppedFile, { shouldValidate: true });
+    if (cropState) URL.revokeObjectURL(cropState.imageSrc);
+    setCropState(null);
+  };
+
+  const handleCropCancel = () => {
+    if (cropState) URL.revokeObjectURL(cropState.imageSrc);
+    setCropState(null);
+  };
+
+  const removeMenuFile = (index: number) => {
+    const currentFiles = (watchAbout("menuImages") as File[]) || [];
+    const updated = currentFiles.filter((_, i) => i !== index);
+    setValueAbout("menuImages", updated, { shouldValidate: true });
+  };
+
+  // --- Serving Options / Restaurant & Dining Timings / Dining Menu ---
+  const servingOptions = watchAbout("servingOptions");
+  const operatingHours = watchAbout("operatingHours");
+  const isDiningHoursSameAsOperating = watchAbout("isDiningHoursSameAsOperating");
+  const diningMenuImages = watchAbout("diningMenuImages");
+  const isDiningMenuSameAsDelivery = watchAbout("isDiningMenuSameAsDelivery");
+
+  // "Same as operating timings" / "Same as Delivery Menu" live-copy while checked - same
+  // pattern "Same as Registered Address" already uses above, so the hidden section's data is
+  // always in sync by submit time without needing to special-case the checkbox in validation.
+  useEffect(() => {
+    if (isDiningHoursSameAsOperating) {
+      setValueAbout("diningHours", operatingHours);
+    }
+  }, [isDiningHoursSameAsOperating, operatingHours, setValueAbout]);
+
+  useEffect(() => {
+    if (isDiningMenuSameAsDelivery) {
+      setValueAbout("diningMenuImages", menuImages);
+    }
+  }, [isDiningMenuSameAsDelivery, menuImages, setValueAbout]);
+
+  const diningMenuInputRef = useRef<HTMLInputElement>(null);
+
+  const handleDiningMenuFiles = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files.length > 0) {
+      const newFiles = Array.from(e.target.files);
+      const currentFiles = (watchAbout("diningMenuImages") as File[]) || [];
+      setValueAbout("diningMenuImages", [...currentFiles, ...newFiles], { shouldValidate: true });
+    }
+  };
+
+  const removeDiningMenuFile = (index: number) => {
+    const currentFiles = (watchAbout("diningMenuImages") as File[]) || [];
+    const updated = currentFiles.filter((_, i) => i !== index);
+    setValueAbout("diningMenuImages", updated, { shouldValidate: true });
+  };
+
+  // Validated "about" data waits here while the confirmation modal is open - Continue no
+  // longer submits directly, it opens a "cross-check your address" confirmation first. This
+  // now gates leaving "about" (not "info"), since Primary Address/location - the thing being
+  // cross-checked - is collected here.
+  const [pendingSubmit, setPendingSubmit] = useState<AboutRestaurantValues | null>(null);
+
+  const onAboutValidated = (data: AboutRestaurantValues) => {
+    setPendingSubmit(data);
+  };
+
+  const finalizeAboutSubmit = (data: AboutRestaurantValues) => {
+    setAboutRestaurant({
+      foodTypes: data.foodTypes,
+      cuisines: data.cuisines,
+      menuImages: data.menuImages,
+      dishImage: data.dishImage,
+      servingOptions: data.servingOptions,
+      operatingHours: data.operatingHours,
+      // Dining Timings only matter when Dine-In is offered - store a fresh all-closed default
+      // rather than whatever stale value the hidden section held, mirroring how
+      // restaurantAddress/location get explicitly cleared below rather than just omitted.
+      diningHours: data.servingOptions.includes("DINE_IN") ? data.diningHours : createDefaultScheduleDays(),
+      diningMenuImages: data.diningMenuImages,
+    });
+
+    // Same shallow-merge-clearing concern as the "info" view's submit: explicitly clear to ''
+    // rather than omitting the key, so switching to multi-branch actually overwrites whatever
+    // Primary Address/location was saved from an earlier single-outlet submission.
+    const restaurantInfoUpdate: any = {};
+    if (hasMultipleBranches) {
+      restaurantInfoUpdate.restaurantAddress = "";
+      restaurantInfoUpdate.location = "";
+    } else if (data.restaurantAddress) {
+      const ra = data.restaurantAddress;
+      restaurantInfoUpdate.restaurantAddress = `${ra.line1 || ""}|${ra.line2 || ""}|${ra.landmark || ""}|${ra.locality}|${ra.state}|${ra.pincode}`;
+      restaurantInfoUpdate.location = data.location || "";
+    }
+    setRestaurantInfo(restaurantInfoUpdate);
+
     setCurrentStep(3);
     navigate("/grow-with-ustart/documents");
   };
 
-  const handleBack = () => {
-    // Just go back to previous step, keeping CIN status if we are in form view
-    setCurrentStep(1);
-    navigate("/grow-with-ustart/personal-info");
+  const handleConfirmSubmit = () => {
+    if (pendingSubmit) {
+      finalizeAboutSubmit(pendingSubmit);
+    }
+    setPendingSubmit(null);
   };
-
-  const handleChangeCinStatus = () => {
-    setHasCin(undefined);
-  };
-
-  const handleCinSelection = (value: boolean) => {
-    setHasCin(value);
-    setValue("hasCin", value);
-  };
-
-  if (hasCin === undefined) {
-    return (
-      <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500 h-full flex flex-col justify-between">
-        <div>
-          <h2 className="text-3xl md:text-5xl font-bold text-slate-900">
-            {t("onboarding.restaurant.titleDefault")}
-          </h2>
-          <p className="md:text-2xl text-slate-500 mt-2">
-            {t("onboarding.restaurant.subtitleDefault")}
-          </p>
-        </div>
-
-        <div className="py-8 flex-grow flex flex-col justify-center items-center gap-8">
-          <h3 className="text-xl md:text-2xl font-semibold text-slate-700">
-            {t("onboarding.restaurant.cinQuestion.title")}
-          </h3>
-
-          <div className="flex gap-6 w-full max-w-lg justify-center">
-            <div
-              onClick={() => handleCinSelection(true)}
-              className="flex-1 aspect-[4/3] rounded-3xl border-2 border-slate-200 bg-background-white hover:border-slate-300 hover:scale-105 cursor-pointer transition-all duration-200 flex flex-col items-center justify-center gap-4 group"
-            >
-              <div className="w-16 h-16 rounded-full flex items-center justify-center text-slate-400 group-hover:text-secondary-orange transition-colors">
-                <Check className="w-8 h-8 stroke-[3]" />
-              </div>
-              <span className="text-xl font-bold text-slate-500 group-hover:text-secondary-orange">
-                {t("onboarding.restaurant.cinQuestion.yes")}
-              </span>
-            </div>
-
-            <div
-              onClick={() => handleCinSelection(false)}
-              className="flex-1 aspect-[4/3] rounded-3xl border-2 border-slate-200 bg-background-white hover:border-slate-300 hover:scale-105 cursor-pointer transition-all duration-200 flex flex-col items-center justify-center gap-4 group"
-            >
-              <div className="w-16 h-16 rounded-full flex items-center justify-center text-slate-400 group-hover:text-secondary-orange transition-colors">
-                <X className="w-8 h-8 stroke-[3]" />
-              </div>
-              <span className="text-xl font-bold text-slate-500 group-hover:text-secondary-orange">
-                {t("onboarding.restaurant.cinQuestion.no")}
-              </span>
-            </div>
-          </div>
-        </div>
-
-        <div className="space-y-4">
-          <Button
-            variant="link"
-            onClick={handleBack}
-            className="w-full text-slate-500 hover:text-slate-700 hover:no-underline"
-          >
-            ← {t("onboarding.restaurant.cinQuestion.back")}
-          </Button>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500 h-full flex flex-col justify-between">
       <div>
         <h2 className="text-3xl md:text-5xl font-bold text-slate-900">
-          {hasCin
-            ? t("onboarding.restaurant.titleCin")
-            : t("onboarding.restaurant.titleNoCin")}
+          {view === "info"
+            ? t("onboarding.restaurant.titleDefault")
+            : t("onboarding.restaurant.about.title")}
         </h2>
         <p className="md:text-2xl text-slate-500 mt-2">
-          {hasCin
-            ? t("onboarding.restaurant.subtitleCin")
-            : t("onboarding.restaurant.subtitleNoCin")}
+          {view === "info"
+            ? t("onboarding.restaurant.subtitleDefault")
+            : t("onboarding.restaurant.about.subtitle")}
         </p>
       </div>
 
       <div className="py-8 flex-grow overflow-y-auto px-1">
-        <form
-          id="restaurant-info-form"
-          onSubmit={handleSubmit(onSubmit as any)}
-          className="space-y-6 max-w-full"
-        >
-          {hasCin ? (
-            /* CIN = TRUE Fields */
-            <>
-              {/* Registered Company Name */}
+        {view === "info" ? (
+        <form id="restaurant-info-form" onSubmit={handleSubmit(submitData)} className="space-y-8 max-w-full">
+          {/* Section 1: Identity */}
+          <div className="space-y-6">
+            <div className="space-y-2">
+              <Label htmlFor="restaurantName" className="font-semibold text-slate-700">
+                {t("onboarding.restaurant.form.restaurantNameLabel")}
+              </Label>
+              <Input
+                id="restaurantName"
+                {...register("restaurantName")}
+                className="h-12 bg-background-white border-slate-200"
+                placeholder={t("onboarding.restaurant.form.restaurantNamePlaceholder")}
+              />
+              {errors.restaurantName && (
+                <p className="text-red-500 text-xs">{errors.restaurantName.message}</p>
+              )}
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-2">
-                <Label
-                  htmlFor="companyName"
-                  className="font-semibold text-slate-700"
-                >
-                  {t("onboarding.restaurant.form.companyNameLabel")}
-                </Label>
-                <Input
-                  id="companyName"
-                  {...register("companyName")}
-                  className="h-12 bg-background-white border-slate-200"
-                  placeholder={t(
-                    "onboarding.restaurant.form.companyNamePlaceholder",
-                  )}
-                />
-                {errors.companyName && (
-                  <p className="text-red-500 text-xs">
-                    {errors.companyName?.message}
-                  </p>
-                )}
-              </div>
-
-              {/* Brand Name & Multiple Branches */}
-              <div className="space-y-2">
-                <Label
-                  htmlFor="brandName"
-                  className="font-semibold text-slate-700"
-                >
-                  {t("onboarding.restaurant.form.brandNameLabel")}
-                </Label>
-                <div className="flex gap-4 items-center">
-                  <div className="flex-1">
-                    <Input
-                      id="brandName"
-                      {...register("brandName")}
-                      className="h-12 bg-background-white border-slate-200"
-                      placeholder={t(
-                        "onboarding.restaurant.form.brandNamePlaceholder",
-                      )}
-                    />
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <input
-                      type="checkbox"
-                      id="hasMultipleBranches"
-                      {...register("hasMultipleBranches")}
-                      className="w-5 h-5 text-secondary-orange focus:ring-secondary-orange rounded border-slate-300 accent-secondary-orange cursor-pointer"
-                    />
-                    <label
-                      htmlFor="hasMultipleBranches"
-                      className="text-sm font-medium text-slate-700 cursor-pointer"
-                    >
-                      {t("onboarding.restaurant.form.multipleBranches")}
-                    </label>
-                  </div>
-                </div>
-                {errors.brandName && (
-                  <p className="text-red-500 text-xs">
-                    {errors.brandName?.message}
-                  </p>
-                )}
-              </div>
-
-              {/* CIN & PAN */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-2">
-                  <Label
-                    htmlFor="cinNumber"
-                    className="font-semibold text-slate-700"
-                  >
-                    {t("onboarding.restaurant.form.cinLabel")}
-                  </Label>
-                  <Input
-                    id="cinNumber"
-                    {...register("cinNumber")}
-                    className="h-12 bg-background-white border-slate-200 uppercase"
-                    placeholder={t("onboarding.restaurant.form.cinPlaceholder")}
-                  />
-                  {errors.cinNumber && (
-                    <p className="text-red-500 text-xs">
-                      {errors.cinNumber?.message}
-                    </p>
-                  )}
-                </div>
-                <div className="space-y-2">
-                  <Label
-                    htmlFor="panNumber"
-                    className="font-semibold text-slate-700"
-                  >
-                    {t("onboarding.restaurant.form.panLabel")}
-                  </Label>
-                  <Input
-                    id="panNumber"
-                    {...register("panNumber")}
-                    className="h-12 bg-background-white border-slate-200 uppercase"
-                    placeholder={t("onboarding.restaurant.form.panPlaceholder")}
-                  />
-                  {errors.panNumber && (
-                    <p className="text-red-500 text-xs">
-                      {errors.panNumber?.message}
-                    </p>
-                  )}
-                </div>
-              </div>
-
-              {/* GST */}
-              <div className="space-y-2">
-                <Label
-                  htmlFor="gstNumber"
-                  className="font-semibold text-slate-700"
-                >
-                  {t("onboarding.restaurant.form.gstLabel")}
-                  {!watch("gstNumber") && (
-                    <span className="text-slate-400 font-normal text-xs ml-1">
-                      {t("onboarding.restaurant.form.optional")}
-                    </span>
-                  )}
-                </Label>
-                <Input
-                  id="gstNumber"
-                  {...register("gstNumber")}
-                  className="h-12 bg-background-white border-slate-200 uppercase"
-                  placeholder={t("onboarding.restaurant.form.gstPlaceholder")}
-                />
-                {errors.gstNumber && (
-                  <p className="text-red-500 text-xs">
-                    {errors.gstNumber?.message}
-                  </p>
-                )}
-              </div>
-
-              {/* Registered Address */}
-              <div className="space-y-4">
-                <Label className="font-semibold text-slate-700">
-                  {t("onboarding.restaurant.form.addressLabel")}
-                </Label>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-1">
-                    <Input
-                      {...register("registeredAddress.line1" as any)}
-                      placeholder={`${t("onboarding.restaurant.form.addressLabels.line1")} *`}
-                      className={`h-10 bg-background-white border-slate-200 rounded-lg ${errors.registeredAddress?.line1 ? "border-red-500" : ""}`}
-                    />
-                    {errors.registeredAddress?.line1 && (
-                      <p className="text-red-500 text-[10px] ml-1">
-                        {errors.registeredAddress.line1.message}
-                      </p>
-                    )}
-                  </div>
-                  <div className="space-y-1">
-                    <Input
-                      {...register("registeredAddress.line2" as any)}
-                      placeholder={`${t("onboarding.restaurant.form.addressLabels.line2")} *`}
-                      className={`h-10 bg-background-white border-slate-200 rounded-lg ${errors.registeredAddress?.line2 ? "border-red-500" : ""}`}
-                    />
-                    {errors.registeredAddress?.line2 && (
-                      <p className="text-red-500 text-[10px] ml-1">
-                        {errors.registeredAddress.line2.message}
-                      </p>
-                    )}
-                  </div>
-                  <div className="space-y-1">
-                    <Input
-                      {...register("registeredAddress.landmark" as any)}
-                      placeholder={t(
-                        "onboarding.restaurant.form.addressLabels.landmark",
-                      )}
-                      className="h-10 bg-background-white border-slate-200 rounded-lg"
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <Input
-                      {...register("registeredAddress.locality" as any)}
-                      placeholder={`${t("onboarding.restaurant.form.addressLabels.locality")} *`}
-                      className={`h-10 bg-background-white border-slate-200 rounded-lg ${errors.registeredAddress?.locality ? "border-red-500" : ""}`}
-                    />
-                    {errors.registeredAddress?.locality && (
-                      <p className="text-red-500 text-[10px] ml-1">
-                        {errors.registeredAddress.locality.message}
-                      </p>
-                    )}
-                  </div>
-                  <div className="space-y-1">
-                    <Controller
-                      name={"registeredAddress.state" as any}
-                      control={control}
-                      render={({ field }) => (
-                        <ReactSelect
-                          options={INDIAN_STATES.map((state) => ({
-                            value: state,
-                            label: state,
-                          }))}
-                          value={
-                            field.value
-                              ? { value: field.value, label: field.value }
-                              : null
-                          }
-                          onChange={(opt: any) =>
-                            field.onChange(opt?.value || "")
-                          }
-                          placeholder={`${t("onboarding.restaurant.form.addressLabels.state")} *`}
-                          isSearchable={true}
-                          menuPortalTarget={document.body}
-                          className="react-select-container"
-                          classNamePrefix="react-select"
-                          styles={{
-                            control: (base, state) => ({
-                              ...base,
-                              borderRadius: "0.5rem",
-                              borderColor: errors.registeredAddress?.state
-                                ? "#ef4444"
-                                : state.isFocused
-                                  ? "#f97316"
-                                  : "#e2e8f0",
-                              boxShadow: state.isFocused
-                                ? "0 0 0 1px #f97316"
-                                : "none",
-                              "&:hover": {
-                                borderColor: errors.registeredAddress?.state
-                                  ? "#ef4444"
-                                  : "#f97316",
-                              },
-                              minHeight: "40px",
-                              fontSize: "0.75rem",
-                            }),
-                            option: (base, state) => ({
-                              ...base,
-                              backgroundColor: state.isSelected
-                                ? "#f97316"
-                                : state.isFocused
-                                  ? "#fff7ed"
-                                  : "white",
-                              color: state.isSelected ? "white" : "#334155",
-                              fontSize: "0.75rem",
-                              "&:hover": {
-                                backgroundColor: state.isSelected
-                                  ? "#f97316"
-                                  : "#fff7ed",
-                              },
-                            }),
-                            valueContainer: (base) => ({
-                              ...base,
-                              padding: "0 8px",
-                            }),
-                            input: (base) => ({
-                              ...base,
-                              margin: "0",
-                              padding: "0",
-                            }),
-                          }}
-                        />
-                      )}
-                    />
-                    {errors.registeredAddress?.state && (
-                      <p className="text-red-500 text-[10px] ml-1">
-                        {errors.registeredAddress.state.message}
-                      </p>
-                    )}
-                  </div>
-                  <div className="space-y-1">
-                    <Input
-                      {...register("registeredAddress.pincode" as any)}
-                      placeholder={`${t("onboarding.restaurant.form.addressLabels.pincode")} *`}
-                      maxLength={6}
-                      className={`h-10 bg-background-white border-slate-200 rounded-lg ${errors.registeredAddress?.pincode ? "border-red-500" : ""}`}
-                    />
-                    {errors.registeredAddress?.pincode && (
-                      <p className="text-red-500 text-[10px] ml-1">
-                        {errors.registeredAddress.pincode.message}
-                      </p>
-                    )}
-                  </div>
-                </div>
-                {errors.registeredAddress && (
-                  <p className="text-red-500 text-xs mt-1">
-                    {errors.registeredAddress?.message}
-                  </p>
-                )}
-              </div>
-            </>
-          ) : (
-            /* CIN = FALSE Fields */
-            <>
-              {/* Restaurant Name */}
-              <div className="space-y-2">
-                <Label
-                  htmlFor="restaurantName"
-                  className="font-semibold text-slate-700"
-                >
-                  {t("onboarding.restaurant.form.restaurantNameLabel")}
-                </Label>
-                <Input
-                  id="restaurantName"
-                  {...register("restaurantName")}
-                  className="h-12 bg-background-white border-slate-200"
-                  placeholder={t(
-                    "onboarding.restaurant.form.restaurantNamePlaceholder",
-                  )}
-                />
-                {errors.restaurantName && (
-                  <p className="text-red-500 text-xs">
-                    {errors.restaurantName?.message}
-                  </p>
-                )}
-              </div>
-
-              {/* PAN Number */}
-              <div className="space-y-2">
-                <Label
-                  htmlFor="panNumber"
-                  className="font-semibold text-slate-700"
-                >
+                <Label htmlFor="panNumber" className="font-semibold text-slate-700">
                   {t("onboarding.restaurant.form.panLabel")}
                 </Label>
                 <Input
@@ -555,27 +499,14 @@ export const RestaurantInfo = () => {
                   className="h-12 bg-background-white border-slate-200 uppercase"
                   placeholder={t("onboarding.restaurant.form.panPlaceholder")}
                 />
-                <p className="text-[10px] text-slate-500 flex items-center gap-1">
-                  <span className="w-3 h-3 rounded-full border border-slate-400 flex items-center justify-center text-[8px] font-bold">
-                    i
-                  </span>
-                  {t("onboarding.restaurant.form.panHint")}
-                </p>
                 {errors.panNumber && (
-                  <p className="text-red-500 text-xs">
-                    {errors.panNumber?.message}
-                  </p>
+                  <p className="text-red-500 text-xs">{errors.panNumber.message}</p>
                 )}
               </div>
-
-              {/* GST Number */}
               <div className="space-y-2">
-                <Label
-                  htmlFor="gstNumber"
-                  className="font-semibold text-slate-700"
-                >
+                <Label htmlFor="gstNumber" className="font-semibold text-slate-700">
                   {t("onboarding.restaurant.form.gstLabel")}
-                  {!watch("gstNumber") && (
+                  {!gstNumber && (
                     <span className="text-slate-400 font-normal text-xs ml-1">
                       {t("onboarding.restaurant.form.optional")}
                     </span>
@@ -587,168 +518,258 @@ export const RestaurantInfo = () => {
                   className="h-12 bg-background-white border-slate-200 uppercase"
                   placeholder={t("onboarding.restaurant.form.gstPlaceholder")}
                 />
-                <p className="text-[10px] text-slate-500">
-                  {t("onboarding.restaurant.form.gstHint")}
-                </p>
                 {errors.gstNumber && (
-                  <p className="text-red-500 text-xs">
-                    {errors.gstNumber?.message}
-                  </p>
+                  <p className="text-red-500 text-xs">{errors.gstNumber.message}</p>
                 )}
               </div>
+            </div>
 
-              {/* Registered Address */}
-              <div className="space-y-4">
-                <Label className="font-semibold text-slate-700">
-                  {t("onboarding.restaurant.form.addressLabel")}
+            {!!gstNumber && (
+              // GSTIN filled: company name field and the "same as restaurant name" toggle
+              // sit in one row - the field itself is always visible once GSTIN is filled,
+              // just disabled+mirrored to restaurantName while "same" is on. No association
+              // with hasMultipleBranches - that only controls isMultipleRestro server-side.
+              <div className="space-y-2 animate-in fade-in slide-in-from-top-2 duration-300">
+                <Label htmlFor="companyName" className="font-semibold text-slate-700">
+                  {t("onboarding.restaurant.form.companyNameLabel")}
                 </Label>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-1">
+                <div className="flex gap-4 items-center">
+                  <div className="flex-1">
                     <Input
-                      {...register("registeredAddress.line1" as any)}
-                      placeholder={`${t("onboarding.restaurant.form.addressLabels.line1")} *`}
-                      className={`h-10 bg-background-white border-slate-200 rounded-lg ${errors.registeredAddress?.line1 ? "border-red-500" : ""}`}
-                    />
-                    {errors.registeredAddress?.line1 && (
-                      <p className="text-red-500 text-[10px] ml-1">
-                        {errors.registeredAddress.line1.message}
-                      </p>
-                    )}
-                  </div>
-                  <div className="space-y-1">
-                    <Input
-                      {...register("registeredAddress.line2" as any)}
-                      placeholder={`${t("onboarding.restaurant.form.addressLabels.line2")} *`}
-                      className={`h-10 bg-background-white border-slate-200 rounded-lg ${errors.registeredAddress?.line2 ? "border-red-500" : ""}`}
-                    />
-                    {errors.registeredAddress?.line2 && (
-                      <p className="text-red-500 text-[10px] ml-1">
-                        {errors.registeredAddress.line2.message}
-                      </p>
-                    )}
-                  </div>
-                  <div className="space-y-1">
-                    <Input
-                      {...register("registeredAddress.landmark" as any)}
-                      placeholder={t(
-                        "onboarding.restaurant.form.addressLabels.landmark",
-                      )}
-                      className="h-10 bg-background-white border-slate-200 rounded-lg"
+                      id="companyName"
+                      {...register("companyName")}
+                      disabled={isCompanySame}
+                      className={`h-12 bg-background-white border-slate-200 ${isCompanySame ? "bg-slate-100 text-slate-500" : ""}`}
+                      placeholder={t("onboarding.restaurant.form.companyNamePlaceholder")}
                     />
                   </div>
-                  <div className="space-y-1">
-                    <Input
-                      {...register("registeredAddress.locality" as any)}
-                      placeholder={`${t("onboarding.restaurant.form.addressLabels.locality")} *`}
-                      className={`h-10 bg-background-white border-slate-200 rounded-lg ${errors.registeredAddress?.locality ? "border-red-500" : ""}`}
-                    />
-                    {errors.registeredAddress?.locality && (
-                      <p className="text-red-500 text-[10px] ml-1">
-                        {errors.registeredAddress.locality.message}
-                      </p>
-                    )}
-                  </div>
-                  <div className="space-y-1">
+                  <div className="flex items-center gap-2 shrink-0">
                     <Controller
-                      name={"registeredAddress.state" as any}
                       control={control}
+                      name="isCompanySameAsRestaurantName"
                       render={({ field }) => (
-                        <ReactSelect
-                          options={INDIAN_STATES.map((state) => ({
-                            value: state,
-                            label: state,
-                          }))}
-                          value={
-                            field.value
-                              ? { value: field.value, label: field.value }
-                              : null
-                          }
-                          onChange={(opt: any) =>
-                            field.onChange(opt?.value || "")
-                          }
-                          placeholder={`${t("onboarding.restaurant.form.addressLabels.state")} *`}
-                          isSearchable={true}
-                          menuPortalTarget={document.body}
-                          className="react-select-container"
-                          classNamePrefix="react-select"
-                          styles={{
-                            control: (base, state) => ({
-                              ...base,
-                              borderRadius: "0.5rem",
-                              borderColor: errors.registeredAddress?.state
-                                ? "#ef4444"
-                                : state.isFocused
-                                  ? "#f97316"
-                                  : "#e2e8f0",
-                              boxShadow: state.isFocused
-                                ? "0 0 0 1px #f97316"
-                                : "none",
-                              "&:hover": {
-                                borderColor: errors.registeredAddress?.state
-                                  ? "#ef4444"
-                                  : "#f97316",
-                              },
-                              minHeight: "40px",
-                              fontSize: "0.75rem",
-                            }),
-                            option: (base, state) => ({
-                              ...base,
-                              backgroundColor: state.isSelected
-                                ? "#f97316"
-                                : state.isFocused
-                                  ? "#fff7ed"
-                                  : "white",
-                              color: state.isSelected ? "white" : "#334155",
-                              fontSize: "0.75rem",
-                              "&:hover": {
-                                backgroundColor: state.isSelected
-                                  ? "#f97316"
-                                  : "#fff7ed",
-                              },
-                            }),
-                            valueContainer: (base) => ({
-                              ...base,
-                              padding: "0 8px",
-                            }),
-                            input: (base) => ({
-                              ...base,
-                              margin: "0",
-                              padding: "0",
-                            }),
-                          }}
-                        />
+                        <Switch checked={field.value} onCheckedChange={field.onChange} />
                       )}
                     />
-                    {errors.registeredAddress?.state && (
-                      <p className="text-red-500 text-[10px] ml-1">
-                        {errors.registeredAddress.state.message}
-                      </p>
-                    )}
-                  </div>
-                  <div className="space-y-1">
-                    <Input
-                      {...register("registeredAddress.pincode" as any)}
-                      placeholder={`${t("onboarding.restaurant.form.addressLabels.pincode")} *`}
-                      maxLength={6}
-                      className={`h-10 bg-background-white border-slate-200 rounded-lg ${errors.registeredAddress?.pincode ? "border-red-500" : ""}`}
-                    />
-                    {errors.registeredAddress?.pincode && (
-                      <p className="text-red-500 text-[10px] ml-1">
-                        {errors.registeredAddress.pincode.message}
-                      </p>
-                    )}
+                    <label className="text-sm font-medium text-slate-700 cursor-pointer whitespace-nowrap">
+                      {t("onboarding.restaurant.form.companySameQuestion")}
+                    </label>
                   </div>
                 </div>
-                {errors.registeredAddress && (
-                  <p className="text-red-500 text-xs mt-1">
-                    {errors.registeredAddress?.message}
-                  </p>
+                {errors.companyName && (
+                  <p className="text-red-500 text-xs">{errors.companyName.message}</p>
                 )}
               </div>
+            )}
 
-              {/* Restaurant Address */}
-              {/* Restaurant Address */}
+            <div className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                id="hasMultipleBranches"
+                {...register("hasMultipleBranches")}
+                className="w-5 h-5 text-secondary-orange focus:ring-secondary-orange rounded border-slate-300 accent-secondary-orange cursor-pointer"
+              />
+              <label htmlFor="hasMultipleBranches" className="text-sm font-medium text-slate-700 cursor-pointer">
+                {t("onboarding.restaurant.form.multipleBranches")}
+              </label>
+            </div>
+
+            <div className="space-y-3">
+              <Label className="font-semibold text-slate-700">
+                {t("onboarding.restaurant.form.posQuestion")}
+              </Label>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setValue("usesPos", false);
+                    setValue("posProvider", "");
+                  }}
+                  className={`text-left p-5 rounded-2xl border-2 transition-all ${
+                    !usesPos
+                      ? "bg-[#0F2441] border-[#0F2441] text-white shadow-md shadow-[#0F2441]/20"
+                      : "bg-white border-slate-200 hover:border-slate-300"
+                  }`}
+                >
+                  <LayoutDashboard className={`w-8 h-8 mb-3 ${!usesPos ? "text-white" : "text-slate-400"}`} />
+                  <p className="font-bold text-base">
+                    {t("onboarding.restaurant.form.posOptionDashboardLabel")}
+                  </p>
+                  <p className={`text-xs mt-1 ${!usesPos ? "text-slate-200" : "text-slate-500"}`}>
+                    {t("onboarding.restaurant.form.posOptionDashboardSubtext")}
+                  </p>
+                </button>
+
+                <div
+                  role="button"
+                  tabIndex={0}
+                  onClick={() => setValue("usesPos", true)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") setValue("usesPos", true);
+                  }}
+                  className={`text-left p-5 rounded-2xl border-2 transition-all cursor-pointer ${
+                    usesPos
+                      ? "bg-[#0F2441] border-[#0F2441] text-white shadow-md shadow-[#0F2441]/20"
+                      : "bg-white border-slate-200 hover:border-slate-300"
+                  }`}
+                >
+                  <Terminal className={`w-8 h-8 mb-3 ${usesPos ? "text-white" : "text-slate-400"}`} />
+                  <p className="font-bold text-base">
+                    {t("onboarding.restaurant.form.posOptionPosLabel")}
+                  </p>
+                  <p className={`text-xs mt-1 ${usesPos ? "text-slate-200" : "text-slate-500"}`}>
+                    {t("onboarding.restaurant.form.posOptionPosSubtext")}
+                  </p>
+
+                  {usesPos && (
+                    <div
+                      className="mt-4 space-y-1 animate-in fade-in slide-in-from-top-2 duration-300"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <Controller
+                        control={control}
+                        name="posProvider"
+                        render={({ field }) => (
+                          <CreatableSelect
+                            options={posProviderOptions}
+                            value={field.value ? { value: field.value, label: field.value } : null}
+                            inputValue={posProviderInput}
+                            onInputChange={(newValue, { action }) => {
+                              if (action === "input-change") setPosProviderInput(newValue);
+                            }}
+                            onChange={(opt) => {
+                              field.onChange(opt?.value || "");
+                              setPosProviderInput("");
+                            }}
+                            onBlur={() => {
+                              // Enter/clicking "Add" already commits via onChange - this
+                              // covers the case where the user types then clicks/tabs away
+                              // without either, so a typed value is never silently dropped.
+                              const trimmed = posProviderInput.trim();
+                              if (trimmed && trimmed !== field.value) {
+                                field.onChange(trimmed);
+                              }
+                              setPosProviderInput("");
+                            }}
+                            placeholder={t("onboarding.restaurant.form.posProviderPlaceholder")}
+                            noOptionsMessage={() => t("onboarding.restaurant.form.posProviderNoOptions")}
+                            formatCreateLabel={(input) => `${t("onboarding.restaurant.form.posCreateOptionLabel")} "${input}"`}
+                            components={{ SingleValue: PosProviderPill }}
+                            isClearable
+                            menuPortalTarget={document.body}
+                            className="react-select-container"
+                            classNamePrefix="react-select"
+                          />
+                        )}
+                      />
+                      {/* CreatableSelect looks like a plain dropdown at a glance - this makes
+                          the "or type your own" affordance explicit rather than relying on
+                          the user to discover it by typing. */}
+                      <p className="text-sm font-medium text-secondary-orange pl-1">
+                        {t("onboarding.restaurant.form.posProviderHint")}
+                      </p>
+                      {errors.posProvider && (
+                        <p className="text-red-300 text-xs pl-1">{errors.posProvider.message}</p>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Section 2: Address(es) */}
+          <div className="space-y-4">
+            <Label className="font-semibold text-slate-700">
+              {t("onboarding.restaurant.form.addressLabel")}
+            </Label>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-1">
+                <Input
+                  {...register("registeredAddress.line1")}
+                  placeholder={t("onboarding.restaurant.form.addressLabels.line1")}
+                  className="h-10 bg-background-white border-slate-200 rounded-lg"
+                />
+              </div>
+              <div className="space-y-1">
+                <Input
+                  {...register("registeredAddress.line2")}
+                  placeholder={t("onboarding.restaurant.form.addressLabels.sector")}
+                  className="h-10 bg-background-white border-slate-200 rounded-lg"
+                />
+              </div>
+              <div className="space-y-1">
+                <Input
+                  {...register("registeredAddress.landmark")}
+                  placeholder={t("onboarding.restaurant.form.addressLabels.landmark")}
+                  className="h-10 bg-background-white border-slate-200 rounded-lg"
+                />
+              </div>
+              <div className="space-y-1">
+                <Input
+                  {...register("registeredAddress.locality")}
+                  placeholder={`${t("onboarding.restaurant.form.addressLabels.locality")} *`}
+                  className={`h-10 bg-background-white border-slate-200 rounded-lg ${errors.registeredAddress?.locality ? "border-red-500" : ""}`}
+                />
+                {errors.registeredAddress?.locality && (
+                  <p className="text-red-500 text-[10px] ml-1">{errors.registeredAddress.locality.message}</p>
+                )}
+              </div>
+              <div className="space-y-1">
+                <Controller
+                  name="registeredAddress.state"
+                  control={control}
+                  render={({ field }) => (
+                    <ReactSelect
+                      options={INDIAN_STATES.map((state) => ({ value: state, label: state }))}
+                      value={field.value ? { value: field.value, label: field.value } : null}
+                      onChange={(opt: any) => field.onChange(opt?.value || "")}
+                      placeholder={`${t("onboarding.restaurant.form.addressLabels.state")} *`}
+                      isSearchable
+                      menuPortalTarget={document.body}
+                      className="react-select-container"
+                      classNamePrefix="react-select"
+                      styles={{
+                        control: (base, state) => ({
+                          ...base,
+                          borderRadius: "0.5rem",
+                          borderColor: errors.registeredAddress?.state ? "#ef4444" : state.isFocused ? "#f97316" : "#e2e8f0",
+                          boxShadow: state.isFocused ? "0 0 0 1px #f97316" : "none",
+                          minHeight: "40px",
+                          fontSize: "0.75rem",
+                        }),
+                      }}
+                    />
+                  )}
+                />
+                {errors.registeredAddress?.state && (
+                  <p className="text-red-500 text-[10px] ml-1">{errors.registeredAddress.state.message}</p>
+                )}
+              </div>
+              <div className="space-y-1">
+                <Input
+                  {...register("registeredAddress.pincode")}
+                  placeholder={`${t("onboarding.restaurant.form.addressLabels.pincode")} *`}
+                  maxLength={6}
+                  className={`h-10 bg-background-white border-slate-200 rounded-lg ${errors.registeredAddress?.pincode ? "border-red-500" : ""}`}
+                />
+                {errors.registeredAddress?.pincode && (
+                  <p className="text-red-500 text-[10px] ml-1">{errors.registeredAddress.pincode.message}</p>
+                )}
+              </div>
+            </div>
+          </div>
+
+        </form>
+        ) : (
+        <form
+          id="about-restaurant-form"
+          onSubmit={handleSubmitAbout(onAboutValidated)}
+          className="space-y-8 animate-in fade-in slide-in-from-right-8 duration-300"
+        >
+          {!hasMultipleBranches && (
+            <div className="space-y-6">
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
                   <Label className="font-semibold text-slate-700">
@@ -762,10 +783,7 @@ export const RestaurantInfo = () => {
                       onChange={(e) => setIsSameAsRegistered(e.target.checked)}
                       className="w-4 h-4 text-secondary-orange focus:ring-secondary-orange rounded border-slate-300 accent-secondary-orange cursor-pointer"
                     />
-                    <label
-                      htmlFor="sameAsRegistered"
-                      className="text-sm text-slate-600 cursor-pointer select-none"
-                    >
+                    <label htmlFor="sameAsRegistered" className="text-sm text-slate-600 cursor-pointer select-none">
                       {t("onboarding.restaurant.form.sameAsRegistered")}
                     </label>
                   </div>
@@ -774,55 +792,37 @@ export const RestaurantInfo = () => {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-1">
                     <Input
-                      {...register("restaurantAddress.line1" as any)}
-                      placeholder={`${t("onboarding.restaurant.form.addressLabels.line1")} *`}
+                      {...registerAbout("restaurantAddress.line1")}
+                      placeholder={t("onboarding.restaurant.form.addressLabels.line1")}
                       disabled={isSameAsRegistered}
-                      className={`h-10 bg-background-white border-slate-200 rounded-lg ${errors.restaurantAddress?.line1 ? "border-red-500" : ""} ${isSameAsRegistered ? "bg-slate-100" : ""}`}
+                      className={`h-10 bg-background-white border-slate-200 rounded-lg ${isSameAsRegistered ? "bg-slate-100" : ""}`}
                     />
-                    {errors.restaurantAddress?.line1 && (
-                      <p className="text-red-500 text-[10px] ml-1">
-                        {errors.restaurantAddress.line1.message}
-                      </p>
-                    )}
                   </div>
                   <div className="space-y-1">
                     <Input
-                      {...register("restaurantAddress.line2" as any)}
-                      placeholder={`${t("onboarding.restaurant.form.addressLabels.line2")} *`}
+                      {...registerAbout("restaurantAddress.line2")}
+                      placeholder={t("onboarding.restaurant.form.addressLabels.sector")}
                       disabled={isSameAsRegistered}
-                      className={`h-10 bg-background-white border-slate-200 rounded-lg ${errors.restaurantAddress?.line2 ? "border-red-500" : ""} ${isSameAsRegistered ? "bg-slate-100" : ""}`}
+                      className={`h-10 bg-background-white border-slate-200 rounded-lg ${isSameAsRegistered ? "bg-slate-100" : ""}`}
                     />
-                    {errors.restaurantAddress?.line2 && (
-                      <p className="text-red-500 text-[10px] ml-1">
-                        {errors.restaurantAddress.line2.message}
-                      </p>
-                    )}
                   </div>
                   <div className="space-y-1">
                     <Input
-                      {...register("restaurantAddress.landmark" as any)}
-                      placeholder={t(
-                        "onboarding.restaurant.form.addressLabels.landmark",
-                      )}
+                      {...registerAbout("restaurantAddress.landmark")}
+                      placeholder={t("onboarding.restaurant.form.addressLabels.landmark")}
                       disabled={isSameAsRegistered}
                       className={`h-10 bg-background-white border-slate-200 rounded-lg ${isSameAsRegistered ? "bg-slate-100" : ""}`}
                     />
                   </div>
                   <div className="space-y-1">
                     <Controller
-                      name={"restaurantAddress.locality" as any}
-                      control={control}
+                      name="restaurantAddress.locality"
+                      control={aboutControl}
                       render={({ field }) => (
                         <ReactSelect
-                          options={[{ value: "Gurugram", label: "Gurugram" }]}
-                          value={
-                            field.value
-                              ? { value: field.value, label: field.value }
-                              : null
-                          }
-                          onChange={(opt: any) =>
-                            field.onChange(opt?.value || "")
-                          }
+                          options={CITY_OPTIONS}
+                          value={field.value ? { value: field.value, label: field.value } : null}
+                          onChange={(opt: any) => field.onChange(opt?.value || "")}
                           placeholder={`${t("onboarding.restaurant.form.addressLabels.locality")} *`}
                           isDisabled={isSameAsRegistered}
                           isSearchable={false}
@@ -833,150 +833,589 @@ export const RestaurantInfo = () => {
                             control: (base, state) => ({
                               ...base,
                               borderRadius: "0.5rem",
-                              borderColor: errors.restaurantAddress?.locality
-                                ? "#ef4444"
-                                : state.isFocused
-                                  ? "#f97316"
-                                  : "#e2e8f0",
-                              backgroundColor: isSameAsRegistered
-                                ? "#f1f5f9"
-                                : "white",
-                              boxShadow: state.isFocused
-                                ? "0 0 0 1px #f97316"
-                                : "none",
-                              "&:hover": {
-                                borderColor: errors.restaurantAddress?.locality
-                                  ? "#ef4444"
-                                  : "#f97316",
-                              },
+                              borderColor: aboutErrors.restaurantAddress?.locality ? "#ef4444" : state.isFocused ? "#f97316" : "#e2e8f0",
+                              backgroundColor: isSameAsRegistered ? "#f1f5f9" : "white",
                               minHeight: "40px",
                               fontSize: "0.75rem",
                             }),
-                            // ... keeping other styles similar or default
                           }}
                         />
                       )}
                     />
-                    {errors.restaurantAddress?.locality && (
-                      <p className="text-red-500 text-[10px] ml-1">
-                        {errors.restaurantAddress.locality.message}
-                      </p>
-                    )}
-                  </div>
-                  <div className="space-y-1">
-                    <Controller
-                      name={"restaurantAddress.state" as any}
-                      control={control}
-                      defaultValue="Haryana"
-                      render={({ field }) => {
-                        // Enforce Haryana
-                        if (field.value !== "Haryana")
-                          field.onChange("Haryana");
-
-                        return (
-                          <ReactSelect
-                            options={[{ value: "Haryana", label: "Haryana" }]}
-                            value={{ value: "Haryana", label: "Haryana" }}
-                            onChange={() => {}} // Read-only effectively
-                            placeholder={`${t("onboarding.restaurant.form.addressLabels.state")} *`}
-                            isDisabled={true} // Always disabled/fixed as per requirement
-                            menuPortalTarget={document.body}
-                            className="react-select-container"
-                            classNamePrefix="react-select"
-                            styles={{
-                              control: (base) => ({
-                                ...base,
-                                borderRadius: "0.5rem",
-                                borderColor: "#e2e8f0",
-                                backgroundColor: "#f1f5f9", // Visual indicator of disabled state
-                                minHeight: "40px",
-                                fontSize: "0.75rem",
-                              }),
-                              singleValue: (base) => ({
-                                ...base,
-                                color: "#64748b",
-                              }),
-                            }}
-                          />
-                        );
-                      }}
-                    />
-                    {errors.restaurantAddress?.state && (
-                      <p className="text-red-500 text-[10px] ml-1">
-                        {errors.restaurantAddress.state.message}
-                      </p>
+                    {aboutErrors.restaurantAddress?.locality && (
+                      <p className="text-red-500 text-[10px] ml-1">{aboutErrors.restaurantAddress.locality.message}</p>
                     )}
                   </div>
                   <div className="space-y-1">
                     <Input
-                      {...register("restaurantAddress.pincode" as any)}
+                      value={CITY_STATE_MAP[restaurantAddressLocality || ""] || ""}
+                      readOnly
+                      placeholder={`${t("onboarding.restaurant.form.addressLabels.state")} *`}
+                      className="h-10 bg-slate-100 border-slate-200 rounded-lg text-slate-500 cursor-not-allowed"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <Input
+                      {...registerAbout("restaurantAddress.pincode")}
                       placeholder={`${t("onboarding.restaurant.form.addressLabels.pincode")} *`}
                       maxLength={6}
-                      className={`h-10 bg-background-white border-slate-200 rounded-lg ${errors.restaurantAddress?.pincode ? "border-red-500" : ""}`}
+                      disabled={isSameAsRegistered}
+                      className={`h-10 bg-background-white border-slate-200 rounded-lg ${aboutErrors.restaurantAddress?.pincode ? "border-red-500" : ""} ${isSameAsRegistered ? "bg-slate-100" : ""}`}
                     />
-                    {errors.restaurantAddress?.pincode && (
-                      <p className="text-red-500 text-[10px] ml-1">
-                        {errors.restaurantAddress.pincode.message}
-                      </p>
+                    {aboutErrors.restaurantAddress?.pincode && (
+                      <p className="text-red-500 text-[10px] ml-1">{aboutErrors.restaurantAddress.pincode.message}</p>
                     )}
                   </div>
                 </div>
-                {errors.restaurantAddress && (
-                  <p className="text-red-500 text-xs mt-1">
-                    {errors.restaurantAddress?.message}
-                  </p>
-                )}
               </div>
 
-              {/* Google Location & Link */}
-              <div className="space-y-6">
-                <LocationPicker
-                  locationValue={watch("location")}
-                  onLocationChange={(val) => setValue("location", val)}
-                  error={errors.location?.message}
-                  googleMapsLink={watch("googleMapsLink")}
-                  onGoogleMapsLinkChange={(val) =>
-                    setValue("googleMapsLink", val)
-                  }
-                  googleMapsLinkError={errors.googleMapsLink?.message}
-                  label={t("onboarding.restaurant.form.locationLabel")}
-                />
-              </div>
-            </>
+              <LocationPicker
+                locationValue={watchAbout("location")}
+                onLocationChange={(val) => setValueAbout("location", val)}
+                onAddressSelected={handleAddressSelected}
+                error={aboutErrors.location?.message}
+                label={t("onboarding.restaurant.form.locationLabel")}
+              />
+            </div>
           )}
-        </form>
-      </div>
-      <div className="flex flex-col justify-start">
-        <Button
-          type="button"
-          variant="link"
-          onClick={handleChangeCinStatus}
-          className="w-full text-slate-900 w-fit flex items-end"
-        >
-          {hasCin
-            ? t("onboarding.restaurant.form.dontHaveCin")
-            : t("onboarding.restaurant.form.hasCin")}
-          <span className="px-2 text-blue-600">
-            {t("onboarding.restaurant.form.changeCinStatus")}
-          </span>
-        </Button>
-        <Button
-          type="submit"
-          form="restaurant-info-form"
-          className="w-full h-12 bg-secondary-orange hover:bg-secondary-orange/90 text-background-white font-bold text-lg rounded-xl shadow-lg shadow-secondary-orange/20 transition-all hover:scale-[1.01]"
-        >
-          {t("onboarding.restaurant.form.continue")} →
-        </Button>
 
-        <Button
-          type="button"
-          variant="link"
-          onClick={handleBack}
-          className="w-full text-slate-600 text-sm"
-        >
-          ← {t("onboarding.restaurant.form.goBack")}
-        </Button>
+          {/* Serving Options + Food Type - one flex row instead of two stacked blocks */}
+          <div className="flex flex-col sm:flex-row gap-6">
+            <div className="flex-1 space-y-2">
+              <Label className="font-semibold text-slate-700">
+                {t("onboarding.restaurant.about.servingOptionsLabel")}
+              </Label>
+              <Controller
+                control={aboutControl}
+                name="servingOptions"
+                render={({ field }) => (
+                  <div className="flex gap-3 flex-wrap">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const current = field.value || [];
+                        field.onChange(
+                          current.includes("DELIVERY")
+                            ? current.filter((o) => o !== "DELIVERY")
+                            : [...current, "DELIVERY"],
+                        );
+                      }}
+                      className={`px-5 py-2.5 rounded-xl text-base font-bold transition-all border ${
+                        field.value?.includes("DELIVERY")
+                          ? "bg-[#0F2441] text-white border-[#0F2441] shadow-md shadow-[#0F2441]/20"
+                          : "bg-white border-slate-200 hover:border-slate-300"
+                      }`}
+                    >
+                      {t("onboarding.restaurant.about.servingDelivery")}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const current = field.value || [];
+                        field.onChange(
+                          current.includes("DINE_IN")
+                            ? current.filter((o) => o !== "DINE_IN")
+                            : [...current, "DINE_IN"],
+                        );
+                      }}
+                      className={`px-5 py-2.5 rounded-xl text-base font-bold transition-all border ${
+                        field.value?.includes("DINE_IN")
+                          ? "bg-[#0F2441] text-white border-[#0F2441] shadow-md shadow-[#0F2441]/20"
+                          : "bg-white border-slate-200 hover:border-slate-300"
+                      }`}
+                    >
+                      {t("onboarding.restaurant.about.servingDineIn")}
+                    </button>
+                  </div>
+                )}
+              />
+              {aboutErrors.servingOptions && (
+                <p className="text-red-500 text-xs mt-1">{aboutErrors.servingOptions.message}</p>
+              )}
+            </div>
+
+            <div className="flex-1 space-y-2">
+              <Label className="font-semibold text-slate-700">
+                {t("onboarding.restaurant.about.foodTypeLabel")}
+              </Label>
+              <Controller
+                control={aboutControl}
+                name="foodTypes"
+                render={({ field }) => (
+                  <div className="flex gap-4 flex-wrap">
+                    <FoodTypeButton
+                      label={t("onboarding.restaurant.about.veg")}
+                      colorClass="bg-green-500"
+                      isSelected={field.value.isVegAvailable}
+                      onClick={() =>
+                        field.onChange({
+                          ...field.value,
+                          isVegAvailable: !field.value.isVegAvailable,
+                        })
+                      }
+                    />
+                    <FoodTypeButton
+                      label={t("onboarding.restaurant.about.nonVeg")}
+                      colorClass="bg-red-500"
+                      isSelected={field.value.isNonVegAvailable}
+                      onClick={() =>
+                        field.onChange({
+                          ...field.value,
+                          isNonVegAvailable: !field.value.isNonVegAvailable,
+                        })
+                      }
+                    />
+                    <FoodTypeButton
+                      label={t("onboarding.restaurant.about.egg")}
+                      colorClass="bg-yellow-500"
+                      isSelected={field.value.isEggAvailable}
+                      onClick={() =>
+                        field.onChange({
+                          ...field.value,
+                          isEggAvailable: !field.value.isEggAvailable,
+                        })
+                      }
+                    />
+                  </div>
+                )}
+              />
+              {aboutErrors.foodTypes?.root && (
+                <p className="text-red-500 text-xs">
+                  {aboutErrors.foodTypes.root.message}
+                </p>
+              )}
+            </div>
+          </div>
+
+          {/* Restaurant Timings - collapsible, day-pill layout (like Food Type's buttons).
+              Defaults open (defaultValue) - collapsible so it can still be tucked away once set. */}
+          <Accordion type="single" collapsible defaultValue="operating-hours" className="border border-slate-200 rounded-xl px-4">
+            <AccordionItem value="operating-hours" className="border-b-0">
+              <AccordionTrigger className="hover:no-underline">
+                <Label className="font-semibold text-slate-700 cursor-pointer">
+                  {t("onboarding.restaurant.about.operatingHoursLabel")}
+                </Label>
+              </AccordionTrigger>
+              <AccordionContent>
+                <Controller
+                  control={aboutControl}
+                  name="operatingHours"
+                  render={({ field }) => (
+                    <DayScheduleEditor days={field.value} onChange={field.onChange} layout="cards" />
+                  )}
+                />
+                {aboutErrors.operatingHours && (
+                  <p className="text-red-500 text-xs mt-2">{aboutErrors.operatingHours.message as string}</p>
+                )}
+              </AccordionContent>
+            </AccordionItem>
+          </Accordion>
+
+          {/* Dining Timings - only relevant when Dine-In is actually offered */}
+          {servingOptions?.includes("DINE_IN") && (
+            <Accordion type="single" collapsible defaultValue="dining-hours" className="border border-slate-200 rounded-xl px-4">
+              <AccordionItem value="dining-hours" className="border-b-0">
+                <AccordionTrigger className="hover:no-underline">
+                  <Label className="font-semibold text-slate-700 cursor-pointer">
+                    {t("onboarding.restaurant.about.diningHoursLabel")}
+                  </Label>
+                </AccordionTrigger>
+                <AccordionContent className="space-y-3">
+                  <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
+                    <input
+                      type="checkbox"
+                      id="sameAsOperatingHours"
+                      {...registerAbout("isDiningHoursSameAsOperating")}
+                      className="w-4 h-4 text-secondary-orange focus:ring-secondary-orange rounded border-slate-300 accent-secondary-orange cursor-pointer"
+                    />
+                    <label htmlFor="sameAsOperatingHours" className="text-sm text-slate-600 cursor-pointer select-none">
+                      {t("onboarding.restaurant.about.sameAsOperatingHours")}
+                    </label>
+                  </div>
+                  {!isDiningHoursSameAsOperating && (
+                    <Controller
+                      control={aboutControl}
+                      name="diningHours"
+                      render={({ field }) => (
+                        <DayScheduleEditor days={field.value} onChange={field.onChange} layout="cards" />
+                      )}
+                    />
+                  )}
+                  {aboutErrors.diningHours && (
+                    <p className="text-red-500 text-xs">{aboutErrors.diningHours.message as string}</p>
+                  )}
+                </AccordionContent>
+              </AccordionItem>
+            </Accordion>
+          )}
+
+          {/* Cuisine Type - ReactSelect with Infinite Scroll & Search */}
+          <div className="space-y-2">
+            <Label className="font-semibold text-slate-700">
+              {t("onboarding.restaurant.about.cuisineLabel")}
+            </Label>
+
+            <Controller
+              control={aboutControl}
+              name="cuisines"
+              render={({ field }) => {
+                return (
+                  <ReactSelect
+                    isMulti
+                    isLoading={isLoadingCuisines}
+                    options={cuisineOptions}
+                    value={selectedCuisineOptions}
+                    components={{ MenuList }}
+                    {...({
+                      hasNextPage,
+                      isFetchingNextPage,
+                      fetchNextPage,
+                      t,
+                    } as any)}
+                    inputValue={aboutSearchQuery}
+                    onInputChange={(newValue, { action }) => {
+                      if (action === "input-change") setAboutSearchQuery(newValue);
+                    }}
+                    onChange={(newValue: any) => {
+                      field.onChange(
+                        newValue ? newValue.map((v: any) => v.value) : [],
+                      );
+                      setAboutSearchQuery("");
+                    }}
+                    closeMenuOnSelect={false}
+                    placeholder={t("onboarding.restaurant.about.cuisinePlaceholder")}
+                    className="react-select-container"
+                    classNamePrefix="react-select"
+                    filterOption={() => true}
+                    styles={{
+                      control: (base, state) => ({
+                        ...base,
+                        borderRadius: "0.75rem",
+                        borderColor: state.isFocused ? "#f97316" : "#e2e8f0",
+                        boxShadow: state.isFocused ? "0 0 0 1px #f97316" : "none",
+                        "&:hover": {
+                          borderColor: "#f97316",
+                        },
+                        padding: "2px",
+                        minHeight: "48px",
+                      }),
+                      multiValue: (base) => ({
+                        ...base,
+                        backgroundColor: "#f1f5f9",
+                        borderRadius: "0.5rem",
+                      }),
+                      multiValueLabel: (base) => ({
+                        ...base,
+                        color: "#334155",
+                        fontWeight: 500,
+                      }),
+                      multiValueRemove: (base) => ({
+                        ...base,
+                        color: "#64748b",
+                        ":hover": {
+                          backgroundColor: "#e2e8f0",
+                          color: "#ef4444",
+                        },
+                      }),
+                    }}
+                  />
+                );
+              }}
+            />
+            {aboutErrors.cuisines && (
+              <p className="text-red-500 text-xs mt-1">
+                {aboutErrors.cuisines.message}
+              </p>
+            )}
+          </div>
+
+          {/* Upload Sections */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Delivery Menu */}
+            <div className="space-y-2">
+              <Label className="font-semibold text-slate-700">
+                {t("onboarding.restaurant.about.menuLabel")}
+              </Label>
+              <div
+                onClick={() => menuInputRef.current?.click()}
+                className={`border-2 border-dashed rounded-2xl p-8 flex flex-col items-center justify-center text-center hover:bg-slate-50 transition-colors cursor-pointer min-h-[160px] ${aboutErrors.menuImages ? "border-red-300 bg-red-50" : "border-slate-200"}`}
+              >
+                <input
+                  type="file"
+                  multiple
+                  className="hidden"
+                  ref={menuInputRef}
+                  accept="image/*"
+                  onChange={handleMenuFiles}
+                />
+                <div className="w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center mb-3 text-secondary-orange">
+                  <BookOpen className="w-6 h-6" />
+                </div>
+                <p className="text-sm font-medium text-secondary-orange">
+                  {t("onboarding.restaurant.about.menuUploadText")}
+                </p>
+                <p className="text-xs text-slate-400 mt-1">
+                  {t("onboarding.restaurant.about.menuUploadSubtext")}
+                </p>
+              </div>
+              {menuImages &&
+                Array.isArray(menuImages) &&
+                menuImages.length > 0 && (
+                  <div className="flex flex-wrap gap-2 mt-2">
+                    {menuImages.map((file: any, idx: number) => (
+                      <FileDisplay
+                        key={idx}
+                        file={file}
+                        onRemove={() => removeMenuFile(idx)}
+                      />
+                    ))}
+                  </div>
+                )}
+              {aboutErrors.menuImages && (
+                <p className="text-red-500 text-xs">
+                  {aboutErrors.menuImages.message as string}
+                </p>
+              )}
+            </div>
+
+            {/* Dining Menu */}
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <Label className="font-semibold text-slate-700">
+                  {t("onboarding.restaurant.about.diningMenuLabel")}
+                </Label>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    id="sameAsDeliveryMenu"
+                    {...registerAbout("isDiningMenuSameAsDelivery")}
+                    className="w-4 h-4 text-secondary-orange focus:ring-secondary-orange rounded border-slate-300 accent-secondary-orange cursor-pointer"
+                  />
+                  <label htmlFor="sameAsDeliveryMenu" className="text-xs text-slate-600 cursor-pointer select-none">
+                    {t("onboarding.restaurant.about.sameAsDeliveryMenu")}
+                  </label>
+                </div>
+              </div>
+              {!isDiningMenuSameAsDelivery && (
+                <>
+                  <div
+                    onClick={() => diningMenuInputRef.current?.click()}
+                    className={`border-2 border-dashed rounded-2xl p-8 flex flex-col items-center justify-center text-center hover:bg-slate-50 transition-colors cursor-pointer min-h-[160px] ${aboutErrors.diningMenuImages ? "border-red-300 bg-red-50" : "border-slate-200"}`}
+                  >
+                    <input
+                      type="file"
+                      multiple
+                      className="hidden"
+                      ref={diningMenuInputRef}
+                      accept="image/*"
+                      onChange={handleDiningMenuFiles}
+                    />
+                    <div className="w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center mb-3 text-secondary-orange">
+                      <BookOpen className="w-6 h-6" />
+                    </div>
+                    <p className="text-sm font-medium text-secondary-orange">
+                      {t("onboarding.restaurant.about.menuUploadText")}
+                    </p>
+                    <p className="text-xs text-slate-400 mt-1">
+                      {t("onboarding.restaurant.about.menuUploadSubtext")}
+                    </p>
+                  </div>
+                  {diningMenuImages &&
+                    Array.isArray(diningMenuImages) &&
+                    diningMenuImages.length > 0 && (
+                      <div className="flex flex-wrap gap-2 mt-2">
+                        {diningMenuImages.map((file: any, idx: number) => (
+                          <FileDisplay
+                            key={idx}
+                            file={file}
+                            onRemove={() => removeDiningMenuFile(idx)}
+                          />
+                        ))}
+                      </div>
+                    )}
+                </>
+              )}
+              {aboutErrors.diningMenuImages && (
+                <p className="text-red-500 text-xs">
+                  {aboutErrors.diningMenuImages.message as string}
+                </p>
+              )}
+            </div>
+          </div>
+
+          {/* Restaurant / Brand Image */}
+          <div className="space-y-2">
+            <Label className="font-semibold text-slate-700">
+              {hasMultipleBranches
+                ? t("onboarding.restaurant.about.brandLogoLabel")
+                : t("onboarding.restaurant.about.dishLabel")}
+            </Label>
+            <div
+              onClick={() => dishInputRef.current?.click()}
+              className={`border-2 border-dashed rounded-2xl p-8 flex flex-col items-center justify-center text-center hover:bg-slate-50 transition-colors cursor-pointer min-h-[160px] ${aboutErrors.dishImage ? "border-red-300 bg-red-50" : "border-slate-200"}`}
+            >
+              <input
+                type="file"
+                className="hidden"
+                ref={dishInputRef}
+                accept="image/*"
+                onChange={handleDishFile}
+              />
+              <div className="w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center mb-3 text-secondary-orange">
+                <ImageIcon className="w-6 h-6" />
+              </div>
+              {dishImage ? (
+                <div className="flex flex-col items-center">
+                  <p className="text-sm font-medium text-green-600 mb-1">
+                    {t("onboarding.restaurant.about.imageSelected")}
+                  </p>
+                  <FileDisplay file={dishImage} />
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setValueAbout("dishImage", undefined as any);
+                    }}
+                    className="text-xs text-red-500 mt-2 hover:underline font-medium"
+                  >
+                    {t("onboarding.restaurant.about.changeImage")}
+                  </button>
+                </div>
+              ) : (
+                <>
+                  <p className="text-sm font-medium text-secondary-orange">
+                    {hasMultipleBranches
+                      ? t("onboarding.restaurant.about.brandLogoUploadText")
+                      : t("onboarding.restaurant.about.dishUploadText")}
+                  </p>
+                  <p className="text-xs text-slate-400 mt-1">
+                    {hasMultipleBranches
+                      ? t("onboarding.restaurant.about.brandLogoUploadSubtext")
+                      : t("onboarding.restaurant.about.dishUploadSubtext")}
+                  </p>
+                </>
+              )}
+            </div>
+            {aboutErrors.dishImage && (
+              <p className="text-red-500 text-xs">
+                {aboutErrors.dishImage.message as string}
+              </p>
+            )}
+          </div>
+
+          {/* Info Alert */}
+          <div className="bg-blue-50 border border-blue-100 rounded-xl p-4 flex gap-3">
+            <Info className="w-5 h-5 text-blue-500 flex-shrink-0" />
+            <div>
+              <p className="text-sm font-bold text-blue-700 mb-1">
+                {t("onboarding.restaurant.about.imageSpecTitle")}
+              </p>
+              <p className="text-xs text-blue-600 leading-relaxed">
+                {hasMultipleBranches
+                  ? t("onboarding.restaurant.about.brandLogoSpecText")
+                  : t("onboarding.restaurant.about.imageSpecText")}
+              </p>
+            </div>
+          </div>
+        </form>
+        )}
       </div>
+
+      <div className="flex flex-col justify-start">
+        {view === "info" ? (
+          <>
+            <Button
+              type="submit"
+              form="restaurant-info-form"
+              className="w-full h-12 bg-secondary-orange hover:bg-secondary-orange/90 text-background-white font-bold text-lg rounded-xl shadow-lg shadow-secondary-orange/20 transition-all hover:scale-[1.01]"
+            >
+              {t("onboarding.restaurant.form.continue")} →
+            </Button>
+
+            <Button type="button" variant="link" onClick={handleBack} className="w-full text-slate-600 text-sm">
+              ← {t("onboarding.restaurant.form.goBack")}
+            </Button>
+          </>
+        ) : (
+          <>
+            <Button
+              type="submit"
+              form="about-restaurant-form"
+              className="w-full h-12 bg-secondary-orange hover:bg-secondary-orange/90 text-background-white font-bold text-lg rounded-xl shadow-lg shadow-secondary-orange/20 transition-all hover:scale-[1.01]"
+            >
+              {t("Continue")} →
+            </Button>
+
+            <Button
+              type="button"
+              variant="link"
+              onClick={() => setView("info")}
+              className="w-full text-slate-600 text-sm"
+            >
+              ← {t("onboarding.restaurant.documents.backToDetails")}
+            </Button>
+          </>
+        )}
+      </div>
+
+      <Modal
+        isOpen={!!pendingSubmit}
+        onClose={() => setPendingSubmit(null)}
+        title={t("onboarding.restaurant.form.confirmTitle")}
+      >
+        <div className="space-y-4">
+          <p className="text-sm text-slate-500 dark:text-slate-400">
+            {t("onboarding.restaurant.form.confirmSubtitle")}
+          </p>
+          <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-700">
+            <p className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1">
+              {hasMultipleBranches
+                ? t("onboarding.restaurant.form.addressLabel")
+                : t("onboarding.restaurant.form.restaurantAddressLabel")}
+            </p>
+            <p className="text-sm text-slate-800 dark:text-slate-200">
+              {formatAddressForDisplay(
+                hasMultipleBranches ? registeredAddress : pendingSubmit?.restaurantAddress
+              )}
+            </p>
+          </div>
+          {!hasMultipleBranches && pendingSubmit?.location && (
+            <MapPicker
+              initialLocation={parseLatLng(pendingSubmit.location)}
+              readOnly
+            />
+          )}
+          <div className="flex gap-3 pt-2">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setPendingSubmit(null)}
+              className="flex-1"
+            >
+              {t("onboarding.restaurant.form.confirmEdit")}
+            </Button>
+            <Button
+              type="button"
+              onClick={handleConfirmSubmit}
+              className="flex-1 bg-secondary-orange hover:bg-secondary-orange/90 text-background-white font-bold"
+            >
+              {t("onboarding.restaurant.form.confirmProceed")}
+            </Button>
+          </div>
+        </div>
+      </Modal>
+
+      {cropState && (
+        <ImageCropModal
+          isOpen
+          imageSrc={cropState.imageSrc}
+          fileName={cropState.file.name}
+          fileType={cropState.file.type}
+          aspect={16 / 9}
+          onCancel={handleCropCancel}
+          onCropped={handleCropped}
+        />
+      )}
     </div>
   );
 };
