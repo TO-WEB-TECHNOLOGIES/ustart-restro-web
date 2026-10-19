@@ -52,7 +52,7 @@ const ClockBox = ({ value, label }: { value: number; label: string }) => {
 export const Verification = () => {
     const { t } = useTranslation();
     const navigate = useNavigate();
-    const { updateStatus, setIsMultipleRestro } = useAuth();
+    const { updateStatus, setIsMultipleRestro, refreshSession } = useAuth();
     const { setIsEditing } = useOnboardingStore();
     const [statusData, setStatusData] = useState<OnboardingStatusResponse | null>(null);
     const [isExpired, setIsExpired] = useState(false);
@@ -64,16 +64,45 @@ export const Verification = () => {
                 setStatusData(data);
                 const currentStatus = data?.status;
 
+                // ACTIVE is included because the admin panel approves with status ACTIVE, which
+                // sets onboarding_mappings.status = ACTIVE but brands.status =
+                // APPROVED_BUT_MENU_PENDING (AdminOnboardingServiceImpl) - pushing the mapping's
+                // ACTIVE into AuthContext sent partners straight to /dashboard, skipping setup.
+                // The refreshed token carries the brand's status: APPROVED_BUT_MENU_PENDING →
+                // OnboardingLayout redirects to /complete; ACTIVE → RequirePending to /dashboard.
+                if (currentStatus === 'APPROVED_BUT_MENU_PENDING' || currentStatus === 'APPROVED' || currentStatus === 'ACTIVE') {
+                    // 2026-10-19: the current token was issued while the brand was pending
+                    // approval, so it has no brandId/restroId and every brand-scoped call on the
+                    // next screen would fail (the "no restaurant data after approval" bug).
+                    //
+                    // The refreshed token - not this endpoint - decides where we go: this
+                    // endpoint reports onboarding_mappings.status, while the token (and every
+                    // brand-scoped API) uses brands.status. If those disagree, pushing this
+                    // status into AuthContext and navigating caused an infinite loop
+                    // (OnboardingLayout bounced the token's APPROVAL_PENDING back here, which
+                    // refreshed and navigated again). So we only refresh: refreshSession() sets
+                    // AuthContext.status from the new token, and OnboardingLayout's existing
+                    // redirect moves to /complete only once the token itself is approved.
+                    refreshSession()
+                        .then(tokenStatus => {
+                            if (tokenStatus !== 'APPROVED_BUT_MENU_PENDING' && tokenStatus !== 'APPROVED' && tokenStatus !== 'ACTIVE') {
+                                // Backend data mismatch (mapping approved, brand not) - stay here
+                                // instead of looping; needs a backend/admin-side fix.
+                                console.warn(
+                                    `Onboarding status is ${currentStatus} but session status is ${tokenStatus}; staying on verification.`,
+                                );
+                            }
+                        })
+                        .catch(err => console.error("Failed to refresh session after approval", err));
+                    return;
+                }
+
                 if (currentStatus) {
                     updateStatus(currentStatus);
                 }
 
                 if (typeof data?.isMultipleRestro === 'boolean') {
                     setIsMultipleRestro(data.isMultipleRestro);
-                }
-
-                if (currentStatus === 'APPROVED_BUT_MENU_PENDING' || currentStatus === 'APPROVED') {
-                    navigate('/grow-with-ustart/complete', { replace: true });
                 }
 
                 if (data?.submittedAt) {
@@ -85,6 +114,9 @@ export const Verification = () => {
             })
             .catch(err => console.error("Failed to fetch status", err))
             .finally(() => setIsLoading(false));
+    // refreshSession is recreated on every AuthProvider render; it's deliberately left out so
+    // this one-shot status fetch doesn't re-run on each auth state change.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [navigate, updateStatus, setIsMultipleRestro]);
 
     const supportInfo = useMemo(() => {

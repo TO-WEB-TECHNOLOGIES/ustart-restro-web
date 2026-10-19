@@ -31,6 +31,7 @@ interface AuthContextType {
     logout: () => void;
     updateStatus: (status: string) => void;
     setIsMultipleRestro: (value: boolean) => void;
+    refreshSession: () => Promise<string | null>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -152,6 +153,21 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         initializeAuth(newToken);
     };
 
+    // 2026-10-19: on-demand token refresh for when server-side state that the JWT claims
+    // depend on has just changed - e.g. admin approval (the token issued while
+    // APPROVAL_PENDING carries no brandId/restroId, so brand-scoped APIs reject it), or the
+    // brand switching single <-> multiple restaurants (the isMultipleRestro claim). Note that
+    // restroId encodes access level, not single/multi: it's present only for outlet-level
+    // users; brand owners never get it. The backend rebuilds claims from the DB on refresh, so this
+    // is all it takes; reuses the same refreshAccessToken + initializeAuth path as boot.
+    // Resolves to the refreshed token's `status` claim so callers can act on what the backend
+    // actually authorizes, rather than on a status read from another endpoint.
+    const refreshSession = async (): Promise<string | null> => {
+        const newToken = await refreshAccessToken();
+        initializeAuth(newToken);
+        return decodeToken(newToken)?.status ?? null;
+    };
+
     const logout = () => {
         // Best-effort server-side revocation - only ends this session, other
         // concurrent sessions for the same account are untouched. Attach the
@@ -208,6 +224,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             logout,
             updateStatus: setStatus,
             setIsMultipleRestro,
+            refreshSession,
         }}>
             {children}
         </AuthContext.Provider>

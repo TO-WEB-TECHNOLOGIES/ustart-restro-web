@@ -192,9 +192,11 @@ export const RestaurantCard = ({
       // Only send fields that actually changed
       const payload: any = {};
 
+      // Never sent for the setup-locked registration restaurant (backend would reject it).
       if (
+        !restaurant.isSetupLocked &&
         JSON.stringify(draftSettings.servingOptions) !==
-        JSON.stringify(initialSettings.servingOptions)
+          JSON.stringify(initialSettings.servingOptions)
       ) {
         payload.servingOptions = draftSettings.servingOptions;
       }
@@ -366,8 +368,13 @@ export const RestaurantCard = ({
 
                   {/* View/Modify & Delete Action Buttons (Moved out of expanded area) */}
                   <div className="flex flex-wrap items-center gap-3 mt-4">
+                    {/* 2026-10-19: also shown for APPROVED_BUT_MENU_PENDING - that's the
+                        post-approval setup step, where partners add/complete restaurant data.
+                        Previously the button vanished on approval, so the restaurant created
+                        during registration couldn't be viewed or completed at all. */}
                     {(restaurant.status === "APPROVAL_PENDING" ||
-                      restaurant.status === "ACTION_REQUIRED") && (
+                      restaurant.status === "ACTION_REQUIRED" ||
+                      restaurant.status === "APPROVED_BUT_MENU_PENDING") && (
                       <button
                         type="button"
                         onClick={(e) => {
@@ -386,8 +393,12 @@ export const RestaurantCard = ({
                       </button>
                     )}
 
-                    {/* Delete button for APPROVAL_PENDING only */}
-                    {restaurant.status === "APPROVAL_PENDING" && (
+                    {/* Delete: outlets not yet live (APPROVAL_PENDING, or APPROVED_BUT_MENU_PENDING
+                        outlets added during setup). Never the registration restaurant
+                        (isSetupLocked) - mirrors RestaurantServiceImpl.deleteRestaurant. */}
+                    {!restaurant.isSetupLocked &&
+                      (restaurant.status === "APPROVAL_PENDING" ||
+                        restaurant.status === "APPROVED_BUT_MENU_PENDING") && (
                       <button
                         type="button"
                         onClick={(e) => {
@@ -505,30 +516,39 @@ export const RestaurantCard = ({
                           "onboarding.restaurant.complete.setupForm.servingOptions",
                         )}
                       </Label>
-                      <p className="text-[10px] text-slate-500 pl-1">
-                        {t("onboarding.restaurant.complete.card.diningHint")}
+                      <p className="text-[10px] text-slate-500 dark:text-zinc-400 pl-1">
+                        {restaurant.isSetupLocked
+                          ? t("onboarding.restaurant.complete.card.lockedHint")
+                          : t("onboarding.restaurant.complete.card.diningHint")}
                       </p>
                     </div>
+                    {/* 2026-10-19: serving options of the registration restaurant were
+                        submitted during registration - shown, but not toggleable (the backend
+                        rejects the change too). Disabled buttons keep the same visual. */}
                     <div className="flex gap-3 flex-wrap">
                       <button
+                        type="button"
+                        disabled={restaurant.isSetupLocked}
                         onClick={() =>
                           toggleServingOption(
                             "DELIVERY",
                             !draftSettings.servingOptions?.includes("DELIVERY"),
                           )
                         }
-                        className={`px-5 py-2.5 rounded-xl text-sm font-bold transition-all border ${draftSettings.servingOptions?.includes("DELIVERY") ? "bg-[#0F2441] text-white border-[#0F2441] shadow-md shadow-[#0F2441]/20" : "bg-white text-slate-500 border-slate-200 hover:border-slate-300"}`}
+                        className={`px-5 py-2.5 rounded-xl text-sm font-bold transition-all border disabled:cursor-not-allowed disabled:opacity-70 ${draftSettings.servingOptions?.includes("DELIVERY") ? "bg-[#0F2441] text-white border-[#0F2441] shadow-md shadow-[#0F2441]/20" : "bg-white dark:bg-zinc-900 text-slate-500 dark:text-zinc-400 border-slate-200 dark:border-zinc-700 hover:border-slate-300"}`}
                       >
                         {t("onboarding.restaurant.complete.card.deliveryLabel")}
                       </button>
                       <button
+                        type="button"
+                        disabled={restaurant.isSetupLocked}
                         onClick={() =>
                           toggleServingOption(
                             "DINE_IN",
                             !draftSettings.servingOptions?.includes("DINE_IN"),
                           )
                         }
-                        className={`px-5 py-2.5 rounded-xl text-sm font-bold transition-all border ${draftSettings.servingOptions?.includes("DINE_IN") ? "bg-[#0F2441] text-white border-[#0F2441] shadow-md shadow-[#0F2441]/20" : "bg-white text-slate-500 border-slate-200 hover:border-slate-300"}`}
+                        className={`px-5 py-2.5 rounded-xl text-sm font-bold transition-all border disabled:cursor-not-allowed disabled:opacity-70 ${draftSettings.servingOptions?.includes("DINE_IN") ? "bg-[#0F2441] text-white border-[#0F2441] shadow-md shadow-[#0F2441]/20" : "bg-white dark:bg-zinc-900 text-slate-500 dark:text-zinc-400 border-slate-200 dark:border-zinc-700 hover:border-slate-300"}`}
                       >
                         {t("onboarding.restaurant.complete.card.dineInLabel")}
                       </button>

@@ -6,6 +6,7 @@ import {
 } from "../validations/outletSchema";
 import { useOutletStore } from "../store/useOutletStore";
 import { MenuList } from "./common/MenuList";
+import { MenuImagesPicker } from "./common/MenuImagesPicker";
 import { FoodTypeButton } from "./common/FoodTypeSelector";
 import { LocationPicker } from "./common/LocationPicker";
 import { ManagerDetails } from "./common/ManagerDetails";
@@ -84,7 +85,6 @@ export const AddRestaurantForm = ({
 }: AddRestaurantFormProps) => {
   const { t } = useTranslation();
   const { user } = useAuth();
-  const { setIsMultipleRestro } = useAuth();
   const {
     isSaving,
     setIsSaving,
@@ -240,12 +240,15 @@ export const AddRestaurantForm = ({
         bankBranch: "",
         ifscCode: "",
       },
-      fssaiLicenseNumber: "", // Not returned by normal API
+      // 2026-10-19: FSSAI number/expiry and dining menu are now returned by the detail API.
+      fssaiNumber: initialData.fssaiNumber || "",
+      fssaiExpiryDate: initialData.fssaiExpiryDate || "",
       panNumber: initialData.panNumber || "",
       gstNumber: initialData.gstNumber || "",
       fssaiCertificate: initialData.fssaiLicenseImage,
       primaryImage: initialData.primaryImage,
       menuImages: initialData.deliveryMenuImages || [],
+      diningMenuImages: initialData.diningMenuImages || [],
     };
   };
 
@@ -287,6 +290,9 @@ export const AddRestaurantForm = ({
           location: "",
           usesPos: false,
           posProvider: "",
+          fssaiNumber: "",
+          fssaiExpiryDate: "",
+          diningMenuImages: [],
           bankAccountType: "BRAND",
           bankDetails: {
             accountNumber: "",
@@ -310,7 +316,7 @@ export const AddRestaurantForm = ({
     if (isEditMode) return; // Do not persist to session storage in edit mode
     const subscription = watch((value) => {
       // Exclude file objects and other non-serializable data
-      const { primaryImage, menuImages, fssaiCertificate, ...rest } = value;
+      const { primaryImage, menuImages, fssaiCertificate, diningMenuImages, ...rest } = value;
       sessionStorage.setItem(STORAGE_KEY, JSON.stringify(rest));
     });
     return () => subscription.unsubscribe();
@@ -413,6 +419,23 @@ export const AddRestaurantForm = ({
         }
       }
 
+      // 2026-10-19: dining menu photos - only uploaded/sent for dine-in outlets.
+      const offersDineIn = data.servingOptions.includes("DINE_IN");
+      const diningMenuImageKeys: string[] = [];
+      if (offersDineIn) {
+        for (const img of data.diningMenuImages || []) {
+          if (img instanceof File) {
+            const result = await multimediaService.uploadRestaurantDoc(
+              img,
+              "restaurant_dining_menu",
+            );
+            diningMenuImageKeys.push(result.key);
+          } else {
+            diningMenuImageKeys.push(img);
+          }
+        }
+      }
+
       let fssaiResult: any = "";
       if (data.fssaiCertificate instanceof File) {
         fssaiResult = await multimediaService.uploadRestaurantDoc(
@@ -448,6 +471,7 @@ export const AddRestaurantForm = ({
         cuisineIds: data.cuisines,
         primaryImage: primaryImageKey,
         deliveryMenuImages: menuImageKeys,
+        diningMenuImages: offersDineIn ? diningMenuImageKeys : undefined,
         isUserManaging: data.isUserManaging,
         managerId: !data.isUserManaging ? data.managerId : undefined,
         managerName: !data.isUserManaging ? data.managerName : undefined,
@@ -471,6 +495,8 @@ export const AddRestaurantForm = ({
         usesPos: data.usesPos,
         posProvider: data.usesPos ? data.posProvider : undefined,
         fssaiLicenseImage: fssaiKey,
+        fssaiNumber: data.fssaiNumber,
+        fssaiExpiryDate: data.fssaiExpiryDate,
         panNumber: data.panNumber,
       };
 
@@ -502,8 +528,15 @@ export const AddRestaurantForm = ({
         managerMobile: payload.managerMobile,
         managerEmail: payload.managerEmail,
         managerWhatsapp: payload.managerWhatsapp,
+        // New outlets are never the onboarding restaurant, so never setup-locked.
+        isSetupLocked: false,
       };
 
+      // 2026-10-19: no longer forces the auth context's isMultipleRestro to true here - that
+      // flipped a single-branch partner into "multiple restaurants" mode after adding just one
+      // outlet, which then blocked "Move to Menu". The backend now only switches the brand to
+      // multi once it actually has 2+ restaurants; CompleteSetup refreshes the session after a
+      // successful add to pick that up.
       onSuccess(newRestro);
       if (!isEditMode) {
         sessionStorage.removeItem(STORAGE_KEY);
@@ -516,7 +549,6 @@ export const AddRestaurantForm = ({
             )
           : t("onboarding.restaurant.complete.saveSuccess"),
       );
-      setIsMultipleRestro(true);
     } catch (error: any) {
       const errorMsg =
         error.response?.data?.message ||
@@ -1134,6 +1166,26 @@ export const AddRestaurantForm = ({
                       </div>
                     </div>
                   </div>
+
+                  {/* 2026-10-19: dining menu - collected (and required) only for dine-in outlets */}
+                  {watch("servingOptions")?.includes("DINE_IN") && (
+                    <div className="pt-2">
+                      <h3 className="text-base font-semibold uppercase tracking-wide mb-3 dark:text-zinc-100">
+                        {t("onboarding.restaurant.complete.setupForm.diningMenu")}
+                      </h3>
+                      <Controller
+                        control={control}
+                        name="diningMenuImages"
+                        render={({ field }) => (
+                          <MenuImagesPicker
+                            images={field.value || []}
+                            onChange={field.onChange}
+                            error={errors.diningMenuImages?.message}
+                          />
+                        )}
+                      />
+                    </div>
+                  )}
                 </div>
               </AccordionContent>
             </AccordionItem>
@@ -1166,6 +1218,25 @@ export const AddRestaurantForm = ({
                         "onboarding.restaurant.complete.setupForm.gstNumber",
                       )}
                       {...register("gstNumber")}
+                      error={errors.gstNumber?.message}
+                    />
+                    {/* 2026-10-19: each outlet's own FSSAI licence number + expiry */}
+                    <FloatingInput
+                      label={t(
+                        "onboarding.restaurant.complete.setupForm.fssaiNumber",
+                      )}
+                      {...register("fssaiNumber")}
+                      error={errors.fssaiNumber?.message}
+                      inputMode="numeric"
+                      maxLength={14}
+                    />
+                    <FloatingInput
+                      label={t(
+                        "onboarding.restaurant.complete.setupForm.fssaiExpiryDate",
+                      )}
+                      type="date"
+                      {...register("fssaiExpiryDate")}
+                      error={errors.fssaiExpiryDate?.message}
                     />
                   </div>
 

@@ -50,7 +50,10 @@ export const UploadMenu = () => {
 
   /**
    * Handles the final step of the onboarding menu setup.
-   * Persists any pending menu changes and then completes the onboarding step via the service.
+   * Persists any pending menu changes, then takes the brand live via POST /brands/activate.
+   * 2026-10-19: previously called onboardingService.completeOnboarding() (the one-time
+   * registration endpoint), which the backend rejects once an application exists - so this
+   * button could never succeed after approval.
    */
   const handleFinalSubmit = async () => {
     setIsCompleting(true);
@@ -60,7 +63,7 @@ export const UploadMenu = () => {
         await submitChanges();
       }
 
-      const response = await onboardingService.completeOnboarding();
+      const response = await onboardingService.activateBrand();
 
       // Refresh the access token for the current session to reflect ACTIVE
       // status - no refreshToken anymore, the original login's refresh-token
@@ -69,10 +72,12 @@ export const UploadMenu = () => {
         login(response.accessToken);
       }
 
-      toast.success("Onboarding completed successfully!");
-      navigate("/grow-with-ustart/verification");
+      toast.success(t("onboarding.steps.upload.activated"));
+      // The brand is ACTIVE now - go straight to the dashboard (RequirePending would redirect
+      // an ACTIVE session there anyway; navigating to /verification just bounced through it).
+      navigate("/dashboard", { replace: true });
     } catch (error) {
-      toast.error(getErrorMessage(error, "Failed to complete onboarding"));
+      toast.error(getErrorMessage(error, t("onboarding.steps.upload.activateFailed")));
     } finally {
       setIsCompleting(false);
     }

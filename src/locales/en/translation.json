@@ -170,7 +170,9 @@
       "upload": {
         "title": "Upload Menu",
         "subtitle": "Digitalize catalog",
-        "completing": "Finalizing Onboarding..."
+        "completing": "Finalizing Onboarding...",
+        "activated": "Your restaurant is now live!",
+        "activateFailed": "Failed to complete onboarding"
       }
     },
     "header": {
@@ -240,7 +242,7 @@
         "locationError": "Unable to retrieve your location",
         "addressSearchPlaceholder": "Search for an address...",
         "recentAddresses": "Recent",
-        "unsupportedCity": "We currently only operate in Gurugram and New Delhi. Please select a supported city or choose a different address.",
+        "unsupportedCity": "We currently only operate in Gurugram and Delhi. Please select a supported city or choose a different address.",
         "optional": "(Optional)",
         "posQuestion": "Select the device type you will use for online ordering",
         "posProviderLabel": "POS Provider",
@@ -383,10 +385,13 @@
         "saveSuccess": "Onboarding completed successfully!",
         "saveError": "Failed to complete onboarding",
         "moveToMenu": "Move to Menu",
+        "loadingRestaurants": "Fetching your restaurants...",
         "error": {
           "noRestaurants": "Please add at least one restaurant to proceed",
           "singleAsMulti": "You have selected 'Multiple Restaurants' but only added one. Please switch to 'Single Restaurant' or add more outlets.",
-          "multiAsSingle": "You have added multiple restaurants but selected 'Single Restaurant'. Please switch to 'Multiple Restaurants'."
+          "multiAsSingle": "You have added multiple restaurants but selected 'Single Restaurant'. Please switch to 'Multiple Restaurants'.",
+          "fetchFailed": "Failed to load your restaurants. Please refresh the page.",
+          "completeFailed": "Failed to complete setup. Please try again."
         },
         "setupForm": {
           "restaurantDetails": "Restaurant Details",
@@ -405,6 +410,10 @@
           "imgSpecs": "JPG, PNG (Max 5MB)",
           "deliveryMenu": "Delivery Menu",
           "addPage": "Add Page",
+          "diningMenu": "Dining Menu",
+          "fssaiNumber": "FSSAI Number",
+          "fssaiExpiryDate": "FSSAI Expiry Date",
+          "fileTooLarge": "{{name}} exceeds the {{size}}MB limit",
           "governmentDetails": "Government Details",
           "panNumber": "PAN Number",
           "gstNumber": "GST Number (Optional)",
@@ -472,7 +481,9 @@
           "manager": "Manager",
           "viewModifyDetails": "View/ Modify Other Details",
           "discardWarning": "Are you sure you want to close? Any unsaved changes will be lost.",
-          "deleteConfirm": "Are you sure you want to delete this restaurant? This action cannot be undone."
+          "deleteConfirm": "Are you sure you want to delete this restaurant? This action cannot be undone.",
+          "lockedHint": "Submitted during registration",
+          "lockedNotice": "Details you submitted during registration (name, address, location, cuisines, food types, photos, menus, serving options, FSSAI and POS) can't be changed here. You can still update PAN, GST and bank details."
         },
         "schedule": {
           "title": "Opening Schedule",
@@ -492,6 +503,7 @@
           "verifiedTitle": "Schedules Verified!",
           "verifiedSubtitle": "All restaurants have their opening hours configured.",
           "fixButton": "Fix & Verify Schedules",
+          "lockedHint": "These timings were submitted during registration and can't be changed here.",
           "error": {
             "timeOrder": "Close time must be after Open time",
             "atLeastOneDay": "At least one day must be open",

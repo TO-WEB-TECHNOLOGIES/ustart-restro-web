@@ -41,8 +41,39 @@ import {
 } from "../validations/outletSchema";
 
 import { MenuList } from "./common/MenuList";
+import { MenuImagesPicker } from "./common/MenuImagesPicker";
 import { FoodTypeButton } from "./common/FoodTypeSelector";
 import { LocationPicker } from "./common/LocationPicker";
+import { cn } from "@/lib/utils";
+
+/**
+ * 2026-10-19: wraps form sections holding registration-time data of the setup-locked
+ * restaurant (see Restaurant.isSetupLocked). A disabled <fieldset> natively disables every
+ * input/button inside (keyboard included); pointer-events-none additionally blocks the
+ * click-to-upload <div>s and react-select controls, which aren't form elements. The backend
+ * rejects changes to these fields regardless - this is the matching UI.
+ */
+const LockedSection = ({
+  locked,
+  children,
+  className,
+}: {
+  locked: boolean;
+  children: React.ReactNode;
+  className?: string;
+}) => (
+  <fieldset
+    disabled={locked}
+    aria-disabled={locked}
+    className={cn(
+      "min-w-0 border-0 p-0 m-0",
+      locked && "pointer-events-none select-none opacity-60",
+      className,
+    )}
+  >
+    {children}
+  </fieldset>
+);
 
 interface EditRestaurantModalProps {
   isOpen: boolean;
@@ -74,6 +105,8 @@ export const EditRestaurantModal = ({
   const { t } = useTranslation();
   const [isSaving, setIsSaving] = useState(false);
   const [showDiscardWarning, setShowDiscardWarning] = useState(false);
+  // Registration restaurant during setup: its registration data is read-only (see LockedSection).
+  const isLocked = !!restaurantData?.isSetupLocked;
 
   const primaryInputRef = useRef<HTMLInputElement>(null);
   const menuInputRef = useRef<HTMLInputElement>(null);
@@ -190,8 +223,15 @@ export const EditRestaurantModal = ({
       panNumber: restaurantData.panNumber || "",
       gstNumber: restaurantData.gstNumber || "",
       fssaiCertificate: restaurantData.fssaiLicenseImage || "",
+      // 2026-10-19: per-outlet FSSAI number/expiry and dining menu
+      fssaiNumber: restaurantData.fssaiNumber || "",
+      fssaiExpiryDate: restaurantData.fssaiExpiryDate || "",
       primaryImage: restaurantData.primaryImage || "",
       menuImages: (restaurantData.deliveryMenuImages || []) as (
+        | string
+        | File
+      )[],
+      diningMenuImages: (restaurantData.diningMenuImages || []) as (
         | string
         | File
       )[],
@@ -232,6 +272,9 @@ export const EditRestaurantModal = ({
       bankAccountType: "BRAND",
       primaryImage: "",
       fssaiCertificate: "",
+      fssaiNumber: "",
+      fssaiExpiryDate: "",
+      diningMenuImages: [],
       panNumber: "",
     },
   });
@@ -317,13 +360,18 @@ export const EditRestaurantModal = ({
     try {
       const payload: Record<string, any> = {};
 
+      // 2026-10-19: registration-time fields are sent only when the restaurant isn't
+      // setup-locked - the backend rejects a locked restaurant's PATCH that carries any of
+      // them, so they're skipped even if the form somehow marked them dirty.
+      const changedEditable = (dirty: unknown) => !isLocked && !!dirty;
+
       // Restaurant name
-      if (dirtyFields.restaurantName) {
+      if (changedEditable(dirtyFields.restaurantName)) {
         payload.restroName = data.restaurantName;
       }
 
       // Address (any sub-field dirty means we send the full address)
-      if (dirtyFields.restaurantAddress) {
+      if (changedEditable(dirtyFields.restaurantAddress)) {
         payload.address = [
           data.restaurantAddress.line1,
           data.restaurantAddress.line2,
@@ -335,15 +383,15 @@ export const EditRestaurantModal = ({
       }
 
       // Coordinates
-      if (dirtyFields.location) {
+      if (changedEditable(dirtyFields.location)) {
         payload.coordinates = data.location;
       }
 
       // POS
-      if (dirtyFields.usesPos) {
+      if (changedEditable(dirtyFields.usesPos)) {
         payload.usesPos = data.usesPos;
       }
-      if (dirtyFields.posProvider) {
+      if (changedEditable(dirtyFields.posProvider)) {
         payload.posProvider = data.usesPos ? data.posProvider : undefined;
       }
 
@@ -356,23 +404,31 @@ export const EditRestaurantModal = ({
       }
 
       // Food types
-      if (dirtyFields.foodTypes) {
+      if (changedEditable(dirtyFields.foodTypes)) {
         payload.isVegAvailable = data.foodTypes.isVegAvailable;
         payload.isEggAvailable = data.foodTypes.isEggAvailable;
         payload.isNonVegAvailable = data.foodTypes.isNonVegAvailable;
       }
 
       // Serving options
-      if (dirtyFields.servingOptions) {
+      if (changedEditable(dirtyFields.servingOptions)) {
         payload.servingOptions = data.servingOptions;
       }
 
       // Cuisines
-      if (dirtyFields.cuisines) {
+      if (changedEditable(dirtyFields.cuisines)) {
         payload.cuisineIds = data.cuisines;
       }
 
-      // PAN & GST
+      // FSSAI number/expiry (2026-10-19)
+      if (changedEditable(dirtyFields.fssaiNumber)) {
+        payload.fssaiNumber = data.fssaiNumber;
+      }
+      if (changedEditable(dirtyFields.fssaiExpiryDate)) {
+        payload.fssaiExpiryDate = data.fssaiExpiryDate;
+      }
+
+      // PAN & GST - collected in the setup step, so editable even when locked
       if (dirtyFields.panNumber) {
         payload.panNumber = data.panNumber;
       }
@@ -386,7 +442,7 @@ export const EditRestaurantModal = ({
       }
 
       // Primary image (only upload if changed)
-      if (dirtyFields.primaryImage) {
+      if (changedEditable(dirtyFields.primaryImage)) {
         let primaryImageKey = data.primaryImage;
         if (data.primaryImage instanceof File) {
           const result = await multimediaService.uploadRestaurantDoc(
@@ -399,7 +455,7 @@ export const EditRestaurantModal = ({
       }
 
       // FSSAI certificate (only upload if changed)
-      if (dirtyFields.fssaiCertificate) {
+      if (changedEditable(dirtyFields.fssaiCertificate)) {
         let fssaiKey = data.fssaiCertificate;
         if (data.fssaiCertificate instanceof File) {
           const result = await multimediaService.uploadRestaurantDoc(
@@ -412,7 +468,7 @@ export const EditRestaurantModal = ({
       }
 
       // Menu images (only process if changed)
-      if (dirtyFields.menuImages) {
+      if (changedEditable(dirtyFields.menuImages)) {
         const menuImageKeys: string[] = [];
         const menuImages = data.menuImages || [];
         for (const img of menuImages) {
@@ -427,6 +483,23 @@ export const EditRestaurantModal = ({
           }
         }
         payload.deliveryMenuImages = menuImageKeys;
+      }
+
+      // Dining menu images (2026-10-19) - same upload-new/keep-existing handling as above.
+      if (changedEditable(dirtyFields.diningMenuImages)) {
+        const diningMenuImageKeys: string[] = [];
+        for (const img of data.diningMenuImages || []) {
+          if (img instanceof File) {
+            const result = await multimediaService.uploadRestaurantDoc(
+              img,
+              "restaurant_dining_menu",
+            );
+            diningMenuImageKeys.push(result.key);
+          } else {
+            diningMenuImageKeys.push(img);
+          }
+        }
+        payload.diningMenuImages = diningMenuImageKeys;
       }
 
       // Bank details (only if user clicked Change and filled new details)
@@ -475,6 +548,11 @@ export const EditRestaurantModal = ({
               onSubmit={handleSubmit(onSubmit)}
               className="space-y-8"
             >
+              {isLocked && (
+                <div className="p-4 rounded-2xl border border-amber-200 dark:border-amber-900 bg-amber-50 dark:bg-amber-950/30 text-sm font-medium text-amber-800 dark:text-amber-200">
+                  {t("onboarding.restaurant.complete.card.lockedNotice")}
+                </div>
+              )}
               <Accordion
                 type="multiple"
                 defaultValue={["details", "government", "management", "bank"]}
@@ -494,6 +572,7 @@ export const EditRestaurantModal = ({
                     </h2>
                   </AccordionTrigger>
                   <AccordionContent className="p-6 space-y-8">
+                    <LockedSection locked={isLocked}>
                     <div className="grid grid-cols-1 gap-6">
                       <FloatingInput
                         label={t(
@@ -503,7 +582,9 @@ export const EditRestaurantModal = ({
                         error={errors.restaurantName?.message}
                       />
                     </div>
+                    </LockedSection>
 
+                    <LockedSection locked={isLocked}>
                     <div className="grid grid-cols-1 md:grid-cols-[1fr,350px] gap-8">
                       <div className="space-y-6">
                         <Label className="text-sm font-bold uppercase tracking-wide text-slate-500">
@@ -629,6 +710,7 @@ export const EditRestaurantModal = ({
                         />
                       </div>
                     </div>
+                    </LockedSection>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8 pt-4 border-t border-slate-50">
                       <div className="space-y-6">
@@ -689,7 +771,7 @@ export const EditRestaurantModal = ({
                         )}
                       </div>
 
-                      <div className="space-y-4">
+                      <LockedSection locked={isLocked} className="space-y-4">
                         <Label className="text-sm font-bold uppercase tracking-widest pl-1">
                           {t(
                             "onboarding.restaurant.complete.setupForm.servingOptions",
@@ -730,9 +812,10 @@ export const EditRestaurantModal = ({
                             {errors.servingOptions.message}
                           </p>
                         )}
-                      </div>
+                      </LockedSection>
                     </div>
 
+                    <LockedSection locked={isLocked}>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8 pt-4 border-t border-slate-50">
                       <div className="space-y-4">
                         <Label className="text-sm font-bold uppercase tracking-widest pl-1">
@@ -830,7 +913,9 @@ export const EditRestaurantModal = ({
                         />
                       </div>
                     </div>
+                    </LockedSection>
 
+                    <LockedSection locked={isLocked}>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8 pt-4 border-t border-slate-50">
                       <div>
                         <Label className="text-sm font-bold uppercase tracking-widest pl-1 mb-3 block">
@@ -917,6 +1002,28 @@ export const EditRestaurantModal = ({
                         </div>
                       </div>
                     </div>
+
+                    {/* 2026-10-19: dining menu - shown and required only for dine-in outlets */}
+                    {watch("servingOptions")?.includes("DINE_IN") && (
+                      <div className="pt-4 border-t border-slate-50 dark:border-zinc-800">
+                        <Label className="text-sm font-bold uppercase tracking-widest pl-1 mb-3 block">
+                          {t("onboarding.restaurant.complete.setupForm.diningMenu")}
+                        </Label>
+                        <Controller
+                          control={control}
+                          name="diningMenuImages"
+                          render={({ field }) => (
+                            <MenuImagesPicker
+                              images={field.value || []}
+                              onChange={(imgs) => field.onChange(imgs)}
+                              error={errors.diningMenuImages?.message}
+                              disabled={isLocked}
+                            />
+                          )}
+                        />
+                      </div>
+                    )}
+                    </LockedSection>
                   </AccordionContent>
                 </AccordionItem>
 
@@ -947,6 +1054,29 @@ export const EditRestaurantModal = ({
                           "onboarding.restaurant.complete.setupForm.gstNumber",
                         )}
                         {...register("gstNumber")}
+                        error={errors.gstNumber?.message}
+                      />
+                    </div>
+
+                    <LockedSection locked={isLocked} className="space-y-6">
+                    {/* 2026-10-19: per-outlet FSSAI number + expiry */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                      <FloatingInput
+                        label={t(
+                          "onboarding.restaurant.complete.setupForm.fssaiNumber",
+                        )}
+                        {...register("fssaiNumber")}
+                        error={errors.fssaiNumber?.message}
+                        inputMode="numeric"
+                        maxLength={14}
+                      />
+                      <FloatingInput
+                        label={t(
+                          "onboarding.restaurant.complete.setupForm.fssaiExpiryDate",
+                        )}
+                        type="date"
+                        {...register("fssaiExpiryDate")}
+                        error={errors.fssaiExpiryDate?.message}
                       />
                     </div>
 
@@ -1042,6 +1172,7 @@ export const EditRestaurantModal = ({
                         </Button>
                       </div>
                     </div>
+                    </LockedSection>
                   </AccordionContent>
                 </AccordionItem>
 

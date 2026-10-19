@@ -5,6 +5,7 @@ export type RequirementType =
     | 'restaurant_primary_image' 
     | 'restaurant_fssai' 
     | 'restaurant_delivery_menu'
+    | 'restaurant_dining_menu' // 2026-10-19: outlet dining menu photos
     | 'menu_item';
 
 export interface PresignedUrlRequest {

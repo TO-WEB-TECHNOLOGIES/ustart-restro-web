@@ -42,6 +42,8 @@ export const useAddons = () => {
     // 1. Resolve role and access permissions
     // Brand users have no restroId in JWT claims or have brandId and full CRUD rights.
     // Outlet users have restroId present, limiting them to Price and Stock updates.
+    // (2026-10-19: the backend now guarantees this - brand owners of single- AND
+    // multi-restaurant brands get brandId only; restroId is issued only to outlet-level users.)
     const isOutletUser = !!user?.restroId;
     const canManageMetadata = !isOutletUser; // Can CRUD category and variant definitions globally
 

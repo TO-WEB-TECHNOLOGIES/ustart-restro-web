@@ -36,6 +36,11 @@ export interface Restaurant {
     doHaveDeliveryPartners?: boolean;
     isAssociated?: boolean;
     associatedUserId?: string;
+    // 2026-10-19: true for the restaurant created during single-branch registration while the
+    // brand is still in setup - its registration data (name, address, location, cuisines, food
+    // types, images, menus, serving options, FSSAI, POS, timings) is read-only; the backend
+    // rejects PATCHes/schedule edits that touch it.
+    isSetupLocked?: boolean;
 }
 
 export interface RestaurantRequestDTO {
@@ -51,6 +56,8 @@ export interface RestaurantRequestDTO {
     cuisineIds: number[];
     primaryImage: string;
     deliveryMenuImages?: string[];
+    // Required by the backend when servingOptions includes DINE_IN.
+    diningMenuImages?: string[];
     isUserManaging: boolean;
     managerId?: string;
     managerName?: string;
@@ -65,11 +72,14 @@ export interface RestaurantRequestDTO {
         bankName: string;
         branchName: string;
     };
+    // 2026-10-19: googleMapLink removed - no longer collected for outlets. Per-outlet FSSAI
+    // number (unique) + expiry added; PAN required but may be shared, GST optional.
     gstNumber?: string;
-    googleMapLink?: string;
     usesPos?: boolean;
     posProvider?: string;
     fssaiLicenseImage: string;
+    fssaiNumber: string;
+    fssaiExpiryDate: string; // yyyy-MM-dd
     panNumber: string;
 }
 

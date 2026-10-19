@@ -45,10 +45,26 @@ export const onboardingService = {
      * Step 3: Complete Onboarding
      * Finalizes the process and retrieves the authentication tokens.
      * Phase 2: Creates Brand, Restaurant, POC, BankDetail, RestaurantAuth entities in DB.
-     * IMPORTANT: Must call /restaurant-onboarding/onboard-complete (NOT /brands/activate).
+     * IMPORTANT: this is the ONE-TIME registration submit - use it (not /brands/activate) only
+     * right after initiateOnboarding + uploads. Any later call is rejected by the backend.
+     * Going live after the menu step is activateBrand() below.
      */
     completeOnboarding: async (): Promise<CompleteOnboardingResponse> => {
         const response = await api.post<CompleteOnboardingResponse>('/api/v1/restaurant-onboarding/onboard-complete');
+        return response.data;
+    },
+
+    /**
+     * Go live: moves the approved brand (APPROVED_BUT_MENU_PENDING) and its outlets to ACTIVE,
+     * once the menu is set up. POST /api/v1/brands/activate.
+     * 2026-10-19: added for the menu step's "Finish & Complete", which wrongly called
+     * completeOnboarding() above - that's the one-time registration step and is rejected once
+     * an application exists ("Onboarding has already been completed for this account").
+     * Backend requires >=1 active menu category and active dishes on every outlet; returns a
+     * fresh access token with status ACTIVE.
+     */
+    activateBrand: async (): Promise<CompleteOnboardingResponse> => {
+        const response = await api.post<CompleteOnboardingResponse>('/api/v1/brands/activate');
         return response.data;
     },
 

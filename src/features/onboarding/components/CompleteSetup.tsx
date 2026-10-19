@@ -19,7 +19,8 @@ import { type RestroDay } from "@/types/restaurantTypes";
 
 export const CompleteSetup = () => {
   const { t } = useTranslation();
-  const { isMultipleRestro, setIsMultipleRestro, user } = useAuth();
+  const { isMultipleRestro, setIsMultipleRestro, user, refreshSession } =
+    useAuth();
   const [initialIsMultipleRestro] = useState(isMultipleRestro);
   const navigate = useNavigate();
 
@@ -44,12 +45,17 @@ export const CompleteSetup = () => {
       return restroDays.some((d) => !d.isClosed);
     });
 
-  // Fetch Restaurants and Associated Users
+  // Fetch Restaurants and Associated Users.
+  // 2026-10-19: the two requests are now independent (Promise.allSettled) - previously they
+  // shared one Promise.all, so a failure of the secondary associated-users call (e.g. a token
+  // without brand scope right after approval) threw away the restaurant list too and left the
+  // screen empty. Only a failed restaurant fetch is surfaced to the user; the manager list just
+  // stays empty.
   useEffect(() => {
     const fetchInitialData = async () => {
       setIsLoadingRestros(true);
       try {
-        const [restaurantsRes, usersRes] = await Promise.all([
+        const [restaurantsResult, usersResult] = await Promise.allSettled([
           restaurantService.getRestaurants(),
           // Only fetch users if not already cached
           associatedUsers.length > 0
@@ -57,16 +63,23 @@ export const CompleteSetup = () => {
             : restaurantService.getAssociatedUsers(),
         ]);
 
-        const restaurants = restaurantsRes.content;
-        setRestaurants(restaurants);
-
-        if (associatedUsers.length === 0 && Array.isArray(usersRes)) {
-          // Filter out the current user
-          const filteredUsers = usersRes.filter(
-            (u: { userId: string }) => u.userId !== user?.id,
-          );
-          setAssociatedUsers(filteredUsers);
+        if (usersResult.status === "fulfilled") {
+          if (associatedUsers.length === 0 && Array.isArray(usersResult.value)) {
+            // Filter out the current user
+            const filteredUsers = usersResult.value.filter(
+              (u: { userId: string }) => u.userId !== user?.id,
+            );
+            setAssociatedUsers(filteredUsers);
+          }
+        } else {
+          console.error("Failed to fetch associated users", usersResult.reason);
         }
+
+        if (restaurantsResult.status === "rejected") {
+          throw restaurantsResult.reason;
+        }
+        const restaurants = restaurantsResult.value.content;
+        setRestaurants(restaurants);
 
         // Fetch schedules for all restaurants
         const schedulePromises = restaurants.map((r) =>
@@ -96,7 +109,12 @@ export const CompleteSetup = () => {
         setExpandedIds(initialExpanded);
       } catch (error) {
         console.error("Failed to fetch initial data", error);
-        toast.error("Failed to fetch data");
+        toast.error(
+          t(
+            "onboarding.restaurant.complete.error.fetchFailed",
+            "Failed to load your restaurants. Please refresh the page.",
+          ),
+        );
       } finally {
         setIsLoadingRestros(false);
       }
@@ -108,7 +126,16 @@ export const CompleteSetup = () => {
   const onAddSuccess = (newRestro: Restaurant) => {
     setRestaurants((prev) => [...prev, newRestro]);
     setExpandedIds((prev) => ({ ...prev, [newRestro.restroId]: true }));
+    // A new outlet has no schedule yet - track it as empty so the "verify schedules" banner
+    // asks for it instead of treating the missing entry as unknown.
+    setSchedules((prev) => ({ ...prev, [newRestro.restroId]: [] }));
     setView("list");
+    // 2026-10-19: adding a 2nd outlet switches the brand to multi-restaurant server-side
+    // (isMultipleRestro claim). Refresh so the claims match; keep the user's current tab.
+    const selectedMulti = isMultipleRestro;
+    refreshSession()
+      .then(() => setIsMultipleRestro(selectedMulti))
+      .catch((err) => console.error("Failed to refresh session after adding restaurant", err));
   };
 
   // Prevent tab close if there are unsaved drafts
@@ -189,11 +216,19 @@ export const CompleteSetup = () => {
       // Sync isMultipleRestro flag if it has changed
       if (isMultipleRestro !== initialIsMultipleRestro) {
         await restaurantService.updateBrand({ isMultipleRestro });
+        // 2026-10-19: refresh so the isMultipleRestro claim matches before the menu step.
+        await refreshSession();
       }
       navigate("/grow-with-ustart/upload-menu");
-    } catch (error) {
+    } catch (error: any) {
       console.error(error);
-      toast.error("Failed to complete setup. Please try again.");
+      toast.error(
+        error?.response?.data?.message ||
+          t(
+            "onboarding.restaurant.complete.error.completeFailed",
+            "Failed to complete setup. Please try again.",
+          ),
+      );
     } finally {
       setIsSaving(false);
     }
@@ -339,8 +374,11 @@ export const CompleteSetup = () => {
           {isLoadingRestros ? (
             <div className="flex flex-col items-center justify-center py-20 gap-4">
               <Loader2 className="w-8 h-8 animate-spin text-primary-blue" />
-              <p className="text-slate-400 font-medium">
-                Fetching your restaurants...
+              <p className="text-slate-400 dark:text-zinc-500 font-medium">
+                {t(
+                  "onboarding.restaurant.complete.loadingRestaurants",
+                  "Fetching your restaurants...",
+                )}
               </p>
             </div>
           ) : (

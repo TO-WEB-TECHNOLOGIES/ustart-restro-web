@@ -36,9 +36,54 @@ export type PersonalInfoValues = z.infer<typeof personalInfoSchema>;
 // hasCin branching, single form for every business shape. companyName is driven purely by
 // gstNumber + isCompanySameAsRestaurantName (see RestaurantInfo.tsx) - deliberately no
 // association with hasMultipleBranches, which only ever controls isMultipleRestro.
+// City -> state for served cities. Keys MUST equal ustart-backend's `city.name` values exactly:
+// the backend resolves the restaurant's city from address segment 4 by name
+// (AddressUtils.resolveCityFromAddress, case-insensitive). 2026-10-19: the DB stores Delhi as
+// city "Delhi" / state "New Delhi", so this was changed from 'New Delhi': 'Delhi', which made
+// every Delhi onboarding fail with "City identification failed" (product decision: align the
+// frontend to the DB rather than renaming the city row).
 export const CITY_STATE_MAP: Record<string, string> = {
     Gurugram: 'Haryana',
-    'New Delhi': 'Delhi',
+    Delhi: 'New Delhi',
+};
+
+// 2026-10-19: alternate spellings of a served city -> its CITY_STATE_MAP key. Only unambiguous
+// ones belong here: Gurgaon was officially renamed Gurugram, and "New Delhi" is what Google
+// address search returns (and what partners commonly type) for the city stored as "Delhi".
+const CITY_ALIASES: Record<string, string> = {
+    gurgaon: 'Gurugram',
+    'new delhi': 'Delhi',
+};
+
+// 2026-10-19: Registered Address states that by themselves identify a served city. Only Delhi
+// qualifies (the whole territory is served as city "Delhi"); both spellings are accepted since
+// the state list has used both. Haryana is deliberately absent - it doesn't imply Gurugram
+// (e.g. Faridabad isn't served), so a Haryana address must name Gurugram in its locality.
+const STATE_TO_SERVED_CITY: Record<string, string> = {
+    delhi: 'Delhi',
+    'new delhi': 'Delhi',
+};
+
+// Accepts null too: Google address-search results report an unresolved city as null.
+const normalizePlace = (raw?: string | null) => (raw ?? '').trim().replace(/\s+/g, ' ').toLowerCase();
+
+/**
+ * Maps a free-text address to the matching CITY_STATE_MAP key, or null if it isn't in a city we
+ * serve. Added 2026-10-19 for "Same as Registered Address", whose Registered Address
+ * "Locality/ City" is free text: it previously required an exact key match, leaving the Primary
+ * Address city - and the state derived from it - blank.
+ * 1. `locality` matched case/space-insensitively, plus known renames ("Gurgaon").
+ * 2. Otherwise `state`, when it alone identifies a served city (Delhi) - partners usually type an
+ *    actual locality there (e.g. "Saket") and pick Delhi only as the state.
+ */
+export const resolveServedCity = (locality?: string | null, state?: string | null): string | null => {
+    const normalizedLocality = normalizePlace(locality);
+    if (normalizedLocality) {
+        const direct = Object.keys(CITY_STATE_MAP).find((city) => city.toLowerCase() === normalizedLocality);
+        const fromLocality = direct ?? CITY_ALIASES[normalizedLocality];
+        if (fromLocality) return fromLocality;
+    }
+    return STATE_TO_SERVED_CITY[normalizePlace(state)] ?? null;
 };
 
 export const restaurantInfoSchema = z.object({
@@ -137,8 +182,10 @@ export const getAboutRestaurantSchema = (hasMultipleBranches: boolean) =>
     aboutRestaurantBaseSchema.superRefine((data, ctx) => {
         if (!hasMultipleBranches) {
             const ra = data.restaurantAddress;
-            if (!ra?.locality || !Object.keys(CITY_STATE_MAP).includes(ra.locality)) {
-                ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Select Gurugram or New Delhi', path: ['restaurantAddress', 'locality'] });
+            // 2026-10-19: case/space-insensitive (+ "Gurgaon"), via resolveServedCity - the
+            // submit path sends the canonical city name, so lenient matching here is safe.
+            if (!resolveServedCity(ra?.locality)) {
+                ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Select Gurugram or Delhi', path: ['restaurantAddress', 'locality'] });
             }
             if (!ra?.pincode || !/^\d{6}$/.test(ra.pincode)) {
                 ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Pincode must be exactly 6 digits', path: ['restaurantAddress', 'pincode'] });

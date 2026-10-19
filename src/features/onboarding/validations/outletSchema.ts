@@ -44,11 +44,36 @@ export const addRestaurantSchema = z
     // Images
     primaryImage: z.union([z.instanceof(File), z.string()]).refine(val => !!val, "Primary image is required"),
     menuImages: z.array(z.union([z.instanceof(File), z.string()])).optional(),
+    // 2026-10-19: dining menu photos - required only for dine-in outlets (refine below),
+    // mirroring the backend rule.
+    diningMenuImages: z.array(z.union([z.instanceof(File), z.string()])).optional(),
 
     // Government
+    // PAN is mandatory per outlet but may be the same as another outlet's/the brand's.
     panNumber: z.string().regex(/^[A-Z]{5}[0-9]{4}[A-Z]$/, "Invalid PAN format (e.g. ABCDE1234F)"),
-    gstNumber: z.string().optional(),
+    // GSTIN is optional (and may be shared); format-checked only when filled - same regex as
+    // the backend's RestaurantRequestDTO.GST_REGEX.
+    gstNumber: z
+      .string()
+      .regex(/^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z][1-9A-Z]Z[0-9A-Z]$/, "Invalid GSTIN format")
+      .optional()
+      .or(z.literal("")),
     fssaiCertificate: z.union([z.instanceof(File), z.string()]).refine(val => !!val, "FSSAI Certificate is required"),
+    // 2026-10-19: every outlet needs its own (unique) 14-digit FSSAI number and a future expiry.
+    fssaiNumber: z.string().regex(/^\d{14}$/, "FSSAI number must be 14 digits"),
+    fssaiExpiryDate: z
+      .string()
+      .min(1, "FSSAI expiry date is required")
+      // Compared as yyyy-MM-dd strings (the native date input's value format) against the
+      // user's LOCAL date (not UTC - toISOString alone would be a day behind in IST before
+      // 05:30), so "today" itself is rejected, matching the backend's @Future.
+      .refine((val) => {
+        const now = new Date();
+        const localToday = new Date(now.getTime() - now.getTimezoneOffset() * 60_000)
+          .toISOString()
+          .slice(0, 10);
+        return val > localToday;
+      }, "FSSAI expiry date must be in the future"),
 
     // POS
     usesPos: z.boolean(),
@@ -117,6 +142,15 @@ export const addRestaurantSchema = z
   .refine((data) => !data.usesPos || !!data.posProvider, {
     message: "Select a POS provider",
     path: ["posProvider"],
-  });
+  })
+  .refine(
+    (data) =>
+      !data.servingOptions.includes("DINE_IN") ||
+      (data.diningMenuImages?.length ?? 0) > 0,
+    {
+      message: "Add at least one dining menu photo for dine-in",
+      path: ["diningMenuImages"],
+    },
+  );
 
 export type AddRestaurantValues = z.infer<typeof addRestaurantSchema>;

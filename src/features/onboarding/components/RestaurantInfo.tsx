@@ -7,6 +7,7 @@ import { useOnboardingStore } from "../store/useOnboardingStore";
 import {
   restaurantInfoSchema,
   CITY_STATE_MAP,
+  resolveServedCity,
   type RestaurantInfoValues,
   getAboutRestaurantSchema,
   type AboutRestaurantValues,
@@ -269,32 +270,56 @@ export const RestaurantInfo = () => {
   const restaurantAddressLocality = watchAbout("restaurantAddress.locality");
 
   // "Same as Registered Address" copies registeredAddress (from the "info" form/view) into
-  // restaurantAddress whenever it's checked.
+  // restaurantAddress whenever it's checked. The effect depends on the individual strings, not
+  // the watched object: it can set form errors (re-render), and an object dependency whose
+  // reference changes per render would re-fire it in a loop.
+  const regLine1 = registeredAddress?.line1;
+  const regLine2 = registeredAddress?.line2;
+  const regLandmark = registeredAddress?.landmark;
+  const regLocality = registeredAddress?.locality;
+  const regState = registeredAddress?.state;
+  const regPincode = registeredAddress?.pincode;
   useEffect(() => {
-    if (!hasMultipleBranches && isSameAsRegistered && registeredAddress) {
-      setValueAbout("restaurantAddress.line1", registeredAddress.line1 || "");
-      setValueAbout("restaurantAddress.line2", registeredAddress.line2 || "");
-      setValueAbout("restaurantAddress.landmark", registeredAddress.landmark || "");
-      setValueAbout("restaurantAddress.pincode", registeredAddress.pincode || "");
+    if (!hasMultipleBranches && isSameAsRegistered) {
+      setValueAbout("restaurantAddress.line1", regLine1 || "");
+      setValueAbout("restaurantAddress.line2", regLine2 || "");
+      setValueAbout("restaurantAddress.landmark", regLandmark || "");
+      setValueAbout("restaurantAddress.pincode", regPincode || "");
       // Registered Address's locality is free text (any city/state) while Primary Address is
-      // locked to Gurugram/New Delhi - only copy it across if it's actually one of those two.
-      if (registeredAddress.locality && CITY_STATE_MAP[registeredAddress.locality]) {
-        setValueAbout("restaurantAddress.locality", registeredAddress.locality);
+      // locked to Gurugram/Delhi. 2026-10-19: matched via resolveServedCity (case/space-
+      // insensitive + known renames) instead of an exact key lookup, which silently skipped
+      // "gurugram"/"Gurgaon" etc., and falls back to the registered state (Delhi), since
+      // "Locality/ City" usually holds an actual locality like "Saket". State then follows from
+      // the locality (effect below). If the registered address isn't in a served city, say so -
+      // same feedback as the address-search path - rather than leaving city/state blank.
+      const servedCity = resolveServedCity(regLocality, regState);
+      if (servedCity) {
+        setValueAbout("restaurantAddress.locality", servedCity, { shouldValidate: true });
+        clearErrorsAbout("restaurantAddress.locality");
+      } else if (regLocality?.trim() || regState?.trim()) {
+        setValueAbout("restaurantAddress.locality", "");
+        setErrorAbout("restaurantAddress.locality", {
+          type: "manual",
+          message: t("onboarding.restaurant.form.unsupportedCity"),
+        });
       }
     }
-  }, [hasMultipleBranches, isSameAsRegistered, registeredAddress, setValueAbout]);
+  }, [hasMultipleBranches, isSameAsRegistered, regLine1, regLine2, regLandmark, regLocality, regState, regPincode, setValueAbout, clearErrorsAbout, setErrorAbout, t]);
 
-  // Primary Address's state always follows its locality (Gurugram -> Haryana, New Delhi -> Delhi).
+  // Primary Address's state always follows its locality (Gurugram -> Haryana, Delhi -> New Delhi,
+  // matching the backend's city table - see CITY_STATE_MAP).
+  // 2026-10-19: case-insensitive via resolveServedCity (e.g. a resumed draft holding "gurugram").
+  const restaurantAddressCity = resolveServedCity(restaurantAddressLocality);
   useEffect(() => {
-    if (restaurantAddressLocality && CITY_STATE_MAP[restaurantAddressLocality]) {
-      setValueAbout("restaurantAddress.state", CITY_STATE_MAP[restaurantAddressLocality]);
+    if (restaurantAddressCity) {
+      setValueAbout("restaurantAddress.state", CITY_STATE_MAP[restaurantAddressCity]);
     }
-  }, [restaurantAddressLocality, setValueAbout]);
+  }, [restaurantAddressCity, setValueAbout]);
 
   // Auto-fills Primary Address from a selected search result's structured components -
   // best-effort (Google doesn't always resolve every component), fields stay editable
   // afterward so the user can correct anything. If the resolved city isn't one we serve
-  // (Gurugram/New Delhi), flag it immediately (toast + inline field error) rather than
+  // (Gurugram/Delhi), flag it immediately (toast + inline field error) rather than
   // silently leaving locality blank and only surfacing the problem at submit time.
   const handleAddressSelected = (result: AddressSearchResult) => {
     const line1 = result.name || result.streetAddress;
@@ -302,8 +327,10 @@ export const RestaurantInfo = () => {
     if (result.area) setValueAbout("restaurantAddress.line2", result.area);
     if (result.pincode) setValueAbout("restaurantAddress.pincode", result.pincode);
 
-    if (result.city && CITY_STATE_MAP[result.city]) {
-      setValueAbout("restaurantAddress.locality", result.city, { shouldValidate: true });
+    // 2026-10-19: case-insensitive (+ "Gurgaon") match, storing the canonical city name.
+    const searchedCity = resolveServedCity(result.city);
+    if (searchedCity) {
+      setValueAbout("restaurantAddress.locality", searchedCity, { shouldValidate: true });
       clearErrorsAbout("restaurantAddress.locality");
     } else {
       setValueAbout("restaurantAddress.locality", "");
@@ -437,7 +464,11 @@ export const RestaurantInfo = () => {
       restaurantInfoUpdate.location = "";
     } else if (data.restaurantAddress) {
       const ra = data.restaurantAddress;
-      restaurantInfoUpdate.restaurantAddress = `${ra.line1 || ""}|${ra.line2 || ""}|${ra.landmark || ""}|${ra.locality}|${ra.state}|${ra.pincode}`;
+      // 2026-10-19: city/state sent in canonical form (validation accepts any case/"Gurgaon").
+      // Validation guarantees a served city here; the fallbacks only keep the types honest.
+      const city = resolveServedCity(ra.locality) ?? ra.locality ?? "";
+      const state = (city && CITY_STATE_MAP[city]) || ra.state;
+      restaurantInfoUpdate.restaurantAddress = `${ra.line1 || ""}|${ra.line2 || ""}|${ra.landmark || ""}|${city}|${state}|${ra.pincode}`;
       restaurantInfoUpdate.location = data.location || "";
     }
     setRestaurantInfo(restaurantInfoUpdate);
@@ -848,7 +879,7 @@ export const RestaurantInfo = () => {
                   </div>
                   <div className="space-y-1">
                     <Input
-                      value={CITY_STATE_MAP[restaurantAddressLocality || ""] || ""}
+                      value={restaurantAddressCity ? CITY_STATE_MAP[restaurantAddressCity] : ""}
                       readOnly
                       placeholder={`${t("onboarding.restaurant.form.addressLabels.state")} *`}
                       className="h-10 bg-slate-100 border-slate-200 rounded-lg text-slate-500 cursor-not-allowed"

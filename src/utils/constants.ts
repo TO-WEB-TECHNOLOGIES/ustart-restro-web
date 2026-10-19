@@ -30,7 +30,7 @@ export const INDIAN_STATES = [
     "Andaman and Nicobar Islands",
     "Chandigarh",
     "Dadra and Nagar Haveli and Daman and Diu",
-    "Delhi",
+    "New Delhi",
     "Jammu and Kashmir",
     "Ladakh",
     "Lakshadweep",

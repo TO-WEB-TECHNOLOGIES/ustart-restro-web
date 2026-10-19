@@ -84,6 +84,10 @@ export const BulkScheduleModal = ({
   >({});
   const [isSaving, setIsSaving] = useState(false);
   const [verifiedIds, setVerifiedIds] = useState<Record<string, boolean>>({});
+  // 2026-10-19: the registration restaurant's timings were submitted during registration and
+  // are read-only during setup (the schedule API rejects edits) - it's shown but never
+  // validated/saved here. Only these restaurants go through validate/save.
+  const editableRestaurants = restaurants.filter((r) => !r.isSetupLocked);
 
   useEffect(() => {
     if (isOpen) {
@@ -120,7 +124,7 @@ export const BulkScheduleModal = ({
   };
 
   const validateAll = () => {
-    for (const restro of restaurants) {
+    for (const restro of editableRestaurants) {
       const days = localSchedules[restro.restroId];
       if (!days) continue;
 
@@ -158,7 +162,7 @@ export const BulkScheduleModal = ({
 
     setIsSaving(true);
     try {
-      const updatePromises = restaurants.map(async (restro) => {
+      const updatePromises = editableRestaurants.map(async (restro) => {
         const days = localSchedules[restro.restroId];
         const originalDays = initialSchedules[restro.restroId] || [];
 
@@ -241,14 +245,20 @@ export const BulkScheduleModal = ({
                 </div>
               </AccordionTrigger>
               <AccordionContent className="pt-2 pb-6">
-                <DayScheduleEditor
-                  days={localSchedules[restro.restroId] || []}
-                  onChange={(days) =>
-                    handleUpdateRestroSchedule(restro.restroId, days)
-                  }
-                  restaurants={restaurants}
-                  restroId={restro.restroId}
-                />
+                {restro.isSetupLocked ? (
+                  <p className="text-sm text-slate-500 dark:text-zinc-400">
+                    {t("onboarding.restaurant.complete.schedule.lockedHint")}
+                  </p>
+                ) : (
+                  <DayScheduleEditor
+                    days={localSchedules[restro.restroId] || []}
+                    onChange={(days) =>
+                      handleUpdateRestroSchedule(restro.restroId, days)
+                    }
+                    restaurants={restaurants}
+                    restroId={restro.restroId}
+                  />
+                )}
               </AccordionContent>
             </AccordionItem>
           ))}
