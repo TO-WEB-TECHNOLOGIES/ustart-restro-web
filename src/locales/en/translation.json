@@ -1228,6 +1228,7 @@
       "filterNonVeg": "Non-Veg",
       "actions": "Actions",
       "filters": "Filters",
+      "submitFailed": "Couldn't save your menu changes. Please try again.",
       "submitChanges": "Submit Changes",
       "revertAll": "Revert All Changes",
       "edited": "Edited",

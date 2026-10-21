@@ -58,9 +58,11 @@ export const UploadMenu = () => {
   const handleFinalSubmit = async () => {
     setIsCompleting(true);
     try {
-      // First submit any pending menu changes if dirty
-      if (isDirty) {
-        await submitChanges();
+      // First submit any pending menu changes if dirty. 2026-10-21: stop here if that failed -
+      // submitChanges already showed the reason; activating anyway took the brand live with an
+      // unsaved menu.
+      if (isDirty && !(await submitChanges())) {
+        return;
       }
 
       const response = await onboardingService.activateBrand();
@@ -167,7 +169,7 @@ export const UploadMenu = () => {
                 </div>
 
                 <button
-                  onClick={submitChanges}
+                  onClick={() => submitChanges()}
                   disabled={isSubmitting}
                   className="px-6 py-2.5 bg-[var(--color-primary-blue)] hover:bg-[#1a3a5f] text-white rounded-xl text-xs font-black uppercase tracking-widest transition-all shadow-md active:scale-95 disabled:opacity-50"
                 >

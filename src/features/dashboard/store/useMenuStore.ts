@@ -2,6 +2,9 @@ import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import { type Category, type MenuItem } from '../../../types/menuTypes';
 import { fetchMenuScore, updateMenu, fetchCategories, fetchCategoryItems, createCategory, createMenuItem, patchCategory, deleteCategory, toggleCategoryStatus, deleteMenuItem } from '../api/menuApi';
+import { toast } from 'sonner';
+import i18n from '@/lib/i18n';
+import { getErrorMessage } from '@/utils/error';
 
 /**
  * Interface representing the state and actions for the Menu Store.
@@ -57,7 +60,8 @@ export interface MenuStore {
     /** Helper function to get the full category object for the selected ID */
     getSelectedCategory: () => Category | undefined;
     /** Submits all local changes to the API */
-    submitChanges: () => Promise<void>;
+    /** Saves all pending changes; resolves true when everything saved (or nothing to save). */
+    submitChanges: () => Promise<boolean>;
     /** Fetches categories from the API with caching and revalidation */
     fetchCategories: (force?: boolean) => Promise<void>;
     /** Fetches items for a specific category on demand (initial or refresh) */
@@ -531,69 +535,80 @@ export const useMenuStore = create<MenuStore>()(
                 return findRecursive(categories);
             },
 
+            // 2026-10-21: returns whether everything saved (callers that must not continue on a
+            // failure - UploadMenu's Finish & Complete - check it). Previously it swallowed every
+            // error behind a generic window.alert and resolved normally, so Finish & Complete went
+            // on to activate the brand with the menu unsaved, and the backend's reason was hidden.
+            // Creates run via allSettled: a successfully created item is dropped from
+            // updatedItems even if another call failed, so a retry doesn't create it twice.
             submitChanges: async () => {
                 const { updatedItems, isDirty, isSubmitting } = get();
-                if (!isDirty || isSubmitting) return;
+                if (!isDirty) return true;
+                if (isSubmitting) return false;
 
                 set({ isSubmitting: true });
 
-                const updates = Object.values(updatedItems);
-                
+                const entries = Object.entries(updatedItems);
                 // Separate items into "Create" (new) and "Update" (existing modified)
-                const itemsToCreate = updates.filter(u => u.isNewItem);
-                const itemsToUpdate = updates.filter(u => !u.isNewItem);
+                const toCreate = entries.filter(([, u]) => u.isNewItem);
+                const toUpdate = entries.filter(([, u]) => !u.isNewItem);
 
-                try {
-                    // 1. Handle New Items (Creations)
-                    const creationPromises = itemsToCreate.map(async ({ current }) => {
-                        const { id, ...itemData } = current;
+                // Existing items: one PATCH per changed item with only the changed fields
+                // (PATCH is idempotent, so the update group is simply resent on retry).
+                const updatePayload = toUpdate.map(([, { original, current, modifiedByAddressId }]) => {
+                    const changes: Record<string, unknown> = { itemId: current.id };
+                    if (modifiedByAddressId) changes['restroId'] = modifiedByAddressId;
+
+                    (Object.keys(current) as Array<keyof MenuItem>).forEach(key => {
+                        if (JSON.stringify(original[key]) !== JSON.stringify(current[key])) {
+                            changes[key] = current[key];
+                        }
+                    });
+                    return changes;
+                });
+
+                // Fire all API calls concurrently
+                const [createResults, updateResult] = await Promise.all([
+                    Promise.allSettled(toCreate.map(([, { current }]) => {
+                        const { id: _tempId, ...itemData } = current;
                         return createMenuItem(current.categoryId, itemData);
+                    })),
+                    updatePayload.length > 0
+                        ? updateMenu(updatePayload).then(() => null, (error: unknown) => error)
+                        : Promise.resolve(null),
+                ]);
+
+                const failedCreateKeys = toCreate
+                    .filter((_, idx) => createResults[idx].status === 'rejected')
+                    .map(([key]) => key);
+                const firstError =
+                    (createResults.find(r => r.status === 'rejected') as PromiseRejectedResult | undefined)?.reason
+                    ?? updateResult;
+
+                if (!firstError) {
+                    // Apply changes to local 'categories' state (make them permanent): clear the
+                    // dirty overlay and re-fetch so new items get their real backend IDs.
+                    set({
+                        isDirty: false,
+                        updatedItems: {},
+                        isSubmitting: false,
+                        lastCategoriesFetch: null // Force re-fetch on next access to get real IDs
                     });
-
-                    // 2. Handle Existing Items (Updates)
-                    const updatePayload = itemsToUpdate.map(({ original, current, modifiedByAddressId }) => {
-                        const changes: Record<string, unknown> = { itemId: current.id };
-                        if (modifiedByAddressId) changes['restroId'] = modifiedByAddressId;
-
-                        (Object.keys(current) as Array<keyof MenuItem>).forEach(key => {
-                            if (JSON.stringify(original[key]) !== JSON.stringify(current[key])) {
-                                changes[key] = current[key];
-                            }
-                        });
-                        return changes;
-                    });
-
-                    // Fire all API calls concurrently
-                    const results = await Promise.all([
-                        ...creationPromises,
-                        updatePayload.length > 0 ? updateMenu(updatePayload) : Promise.resolve({ success: true })
-                    ]);
-
-                    const allSuccessful = results.every(r => r.success);
-
-                    if (allSuccessful) {
-                        // 3. Apply changes to local 'categories' state (make them permanent)
-                        // Note: New items will have new IDs from the backend, but for simplicity 
-                        // in this unified "Save" we might need a re-fetch or ID mapping.
-                        // Here we just clear the dirty state and reset.
-                        
-                        set({
-                            isDirty: false,
-                            updatedItems: {},
-                            isSubmitting: false,
-                            lastCategoriesFetch: null // Force re-fetch on next access to get real IDs
-                        });
-                        
-                        // Immediately re-fetch to sync IDs and baseline
-                        await get().fetchCategories(true);
-                    } else {
-                        throw new Error('Some changes failed to save');
-                    }
-                } catch (error) {
-                    console.error('Failed to submit menu changes:', error);
-                    set({ isSubmitting: false });
-                    alert('Failed to submit changes. Please try again.');
+                    await get().fetchCategories(true);
+                    return true;
                 }
+
+                console.error('Failed to submit menu changes:', firstError);
+                // Keep only what still needs saving: failed creates, plus the updates if they failed.
+                const remaining = Object.fromEntries(entries.filter(([key, u]) =>
+                    u.isNewItem ? failedCreateKeys.includes(key) : updateResult !== null));
+                set({
+                    updatedItems: remaining,
+                    isDirty: Object.keys(remaining).length > 0,
+                    isSubmitting: false,
+                });
+                toast.error(getErrorMessage(firstError, i18n.t('dashboard.menuEditor.submitFailed')));
+                return false;
             },
 
             revertChanges: () => {

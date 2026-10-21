@@ -280,3 +280,15 @@ MenuEditor (outlet — handles edit/stock/taxes/charges/new/review paths)
 - **Lesson:** a missing i18n key renders its path as visible text — check new `t()` keys against
   the locale JSON (scripted key check) rather than eyeballing.
 - Left as-is: " ppl"/" pcs" unit suffixes (hardcoded English abbreviations).
+
+### 2026-10-21 — Onboarding menu "Save Changes" / "Finish & Complete" failures were silent
+- `useMenuStore.submitChanges` caught every error, showed a generic `window.alert` (banned by
+  CLAUDE.local.md §3) and resolved normally — so UploadMenu's Finish & Complete went on to
+  `POST /brands/activate` with the menu unsaved, and the backend's error message was never shown.
+- Now returns `Promise<boolean>`, shows `toast.error` with the backend message
+  (`getErrorMessage`, fallback `dashboard.menuEditor.submitFailed`), and Finish & Complete stops on
+  `false`. Creates use `Promise.allSettled`; successfully created items leave `updatedItems` even on
+  partial failure, so a retry no longer duplicates them (POST isn't idempotent).
+- Also fixed: `createMenuItem` used `taxAmount || 5`, turning "Exempt" (0) into 5%.
+- **Known, not fixed:** `createMenuItem` sends `isAvailable: true` regardless of the
+  schedule picked in Add Item, and never sends `nutritionalInfo`.

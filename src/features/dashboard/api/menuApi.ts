@@ -290,7 +290,8 @@ export const createMenuItem = async (categoryId: number, itemData: Partial<MenuI
             name: itemData.name || 'New Item',
             itemPrice: itemData.itemPrice || 0,
             packagingCharges: itemData.packagingCharges || 0,
-            taxAmount: itemData.taxAmount || 5, // Default tax
+            // ?? not ||: 0 is "Exempt" (TaxRateSelect) - || turned it into 5% (2026-10-21).
+            taxAmount: itemData.taxAmount ?? 5,
             foodType: itemData.foodType || 'VEG',
             serviceType: itemData.serviceType || 'BOTH',
             itemType: itemData.itemType || ['SOLID'],
