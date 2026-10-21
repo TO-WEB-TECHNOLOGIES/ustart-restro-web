@@ -53,10 +53,17 @@ export const Verification = () => {
     const { t } = useTranslation();
     const navigate = useNavigate();
     const { updateStatus, setIsMultipleRestro, refreshSession } = useAuth();
-    const { setIsEditing } = useOnboardingStore();
+    const { isEditing, setIsEditing } = useOnboardingStore();
     const [statusData, setStatusData] = useState<OnboardingStatusResponse | null>(null);
     const [isExpired, setIsExpired] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
+
+    // 2026-10-20: being on this page means the partner isn't editing. "Edit Application" sets
+    // isEditing, and only a completed edit submit (or logout) used to clear it, so backing out
+    // of an edit left it stuck. A stuck isEditing blocks OnboardingLayout's step redirects.
+    useEffect(() => {
+        if (isEditing) setIsEditing(false);
+    }, [isEditing, setIsEditing]);
 
     useEffect(() => {
         onboardingService.getOnboardingStatus()
@@ -83,6 +90,9 @@ export const Verification = () => {
                     // refreshed and navigated again). So we only refresh: refreshSession() sets
                     // AuthContext.status from the new token, and OnboardingLayout's existing
                     // redirect moves to /complete only once the token itself is approved.
+                    // 2026-10-20: keep the loader up until the refreshed token decides the
+                    // route - rendering the page meanwhile showed a stopped timer and an
+                    // enabled Edit button for an application that's already approved.
                     refreshSession()
                         .then(tokenStatus => {
                             if (tokenStatus !== 'APPROVED_BUT_MENU_PENDING' && tokenStatus !== 'APPROVED' && tokenStatus !== 'ACTIVE') {
@@ -91,10 +101,15 @@ export const Verification = () => {
                                 console.warn(
                                     `Onboarding status is ${currentStatus} but session status is ${tokenStatus}; staying on verification.`,
                                 );
+                                setIsLoading(false);
                             }
+                            // Otherwise leave the loader up: OnboardingLayout navigates away.
                         })
-                        .catch(err => console.error("Failed to refresh session after approval", err));
-                    return;
+                        .catch(err => {
+                            console.error("Failed to refresh session after approval", err);
+                            setIsLoading(false);
+                        });
+                    return true;
                 }
 
                 if (currentStatus) {
@@ -111,9 +126,16 @@ export const Verification = () => {
                         setIsExpired(true);
                     }
                 }
+                return false;
             })
-            .catch(err => console.error("Failed to fetch status", err))
-            .finally(() => setIsLoading(false));
+            .then(isApproved => {
+                // The approved branch above manages the loader itself (see refreshSession).
+                if (!isApproved) setIsLoading(false);
+            })
+            .catch(err => {
+                console.error("Failed to fetch status", err);
+                setIsLoading(false);
+            });
     // refreshSession is recreated on every AuthProvider render; it's deliberately left out so
     // this one-shot status fetch doesn't re-run on each auth state change.
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -128,8 +150,14 @@ export const Verification = () => {
         };
     }, [statusData]);
 
+    // 2026-10-20: editing is only possible while the application is under review or sent back.
+    // isEditLocked alone wasn't enough - an approved mapping reports it false, so Edit looked
+    // active and opened an empty form (the application data isn't editable any more).
+    const canEdit = !supportInfo.isEditLocked
+        && (statusData?.status === 'APPROVAL_PENDING' || statusData?.status === 'ACTION_REQUIRED');
+
     const handleEditClick = () => {
-        if (supportInfo.isEditLocked) {
+        if (!canEdit) {
             console.log("Edit Locked");
         } else {
             console.log("Edit Unlocked - Navigating to Personal Info");
@@ -207,15 +235,18 @@ export const Verification = () => {
                         <div className="flex flex-col gap-2 order-2 sm:order-1">
                             <button
                                 onClick={handleEditClick}
-                                className={`flex items-center gap-2 px-6 py-3 rounded-xl font-semibold transition-all duration-300 w-fit shadow-lg ${supportInfo.isEditLocked
+                                disabled={!canEdit}
+                                className={`flex items-center gap-2 px-6 py-3 rounded-xl font-semibold transition-all duration-300 w-fit shadow-lg ${!canEdit
                                     ? 'bg-slate-100 text-slate-400 cursor-not-allowed border border-slate-200 shadow-none'
                                     : 'bg-slate-900 text-white hover:bg-slate-800 hover:shadow-xl active:scale-95'
                                     }`}
                             >
                                 <Pencil className="w-4 h-4" />
-                                {supportInfo.isEditLocked ? 'Application Locked' : 'Edit Application'}
+                                {!canEdit
+                                    ? t('onboarding.restaurant.verification.applicationLocked')
+                                    : t('onboarding.restaurant.verification.editApplication')}
                             </button>
-                            {supportInfo.isEditLocked && (
+                            {!canEdit && (
                                 <p className="text-xs text-red-500/80 font-medium animate-in fade-in slide-in-from-top-1 px-1">
                                     {t('onboarding.restaurant.verification.lockedHint')}
                                 </p>

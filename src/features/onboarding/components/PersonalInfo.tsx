@@ -9,6 +9,7 @@ import { personalInfoSchema, type PersonalInfoValues } from '../schemas';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { RequiredMark } from '@/components/ui/required-mark';
 import { Switch } from '@/components/ui/switch';
 import { useAuth } from '@/context/AuthContext';
 import { authService } from '@/features/auth/api/authService';
@@ -222,7 +223,7 @@ export const PersonalInfo = () => {
 
                             {/* Owner Name */}
                             <div className="space-y-2">
-                                <Label htmlFor="fullName" className="font-semibold text-slate-700">{t('onboarding.personal.fullNameLabel')}</Label>
+                                <Label htmlFor="fullName" className="font-semibold text-slate-700">{t('onboarding.personal.fullNameLabel')}<RequiredMark /></Label>
                                 <div className="relative">
                                     <UserIcon className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
                                     <Input
@@ -238,7 +239,7 @@ export const PersonalInfo = () => {
 
                             {/* Designation */}
                             <div className="space-y-2">
-                                <Label htmlFor="designation" className="font-semibold text-slate-700">{t('onboarding.personal.designationLabel')}</Label>
+                                <Label htmlFor="designation" className="font-semibold text-slate-700">{t('onboarding.personal.designationLabel')}<RequiredMark /></Label>
                                 <div className="relative">
                                     <Briefcase className="absolute left-3 top-3 h-5 w-5 text-gray-400 z-10" />
                                     <select
@@ -284,7 +285,7 @@ export const PersonalInfo = () => {
                                     <div className="space-y-4 p-4 rounded-2xl border border-slate-100 animate-in fade-in slide-in-from-top-2 duration-300">
                                         <div className="space-y-2">
                                             <Label htmlFor="authorizedSignatoryName" className="font-semibold text-slate-700">
-                                                {t('onboarding.personal.authorizedSignatoryNameLabel')}
+                                                {t('onboarding.personal.authorizedSignatoryNameLabel')}<RequiredMark />
                                             </Label>
                                             <Input
                                                 id="authorizedSignatoryName"
@@ -300,7 +301,7 @@ export const PersonalInfo = () => {
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                             <div className="space-y-2">
                                                 <Label htmlFor="authorizedSignatoryEmail" className="font-semibold text-slate-700">
-                                                    {t('onboarding.personal.authorizedSignatoryEmailLabel')}
+                                                    {t('onboarding.personal.authorizedSignatoryEmailLabel')}<RequiredMark />
                                                 </Label>
                                                 <Input
                                                     id="authorizedSignatoryEmail"
@@ -315,7 +316,7 @@ export const PersonalInfo = () => {
                                             </div>
                                             <div className="space-y-2">
                                                 <Label htmlFor="authorizedSignatoryMobile" className="font-semibold text-slate-700">
-                                                    {t('onboarding.personal.authorizedSignatoryMobileLabel')}
+                                                    {t('onboarding.personal.authorizedSignatoryMobileLabel')}<RequiredMark />
                                                 </Label>
                                                 <Input
                                                     id="authorizedSignatoryMobile"
@@ -338,7 +339,7 @@ export const PersonalInfo = () => {
                                 {/* Mobile */}
                                 <div className="space-y-2">
                                     <Label className="font-semibold text-slate-700 flex items-center gap-2">
-                                        {t('onboarding.personal.pocMobileLabel')}
+                                        {t('onboarding.personal.pocMobileLabel')}<RequiredMark />
                                         <span className="bg-green-100 text-green-700 text-[10px] px-2 py-0.5 rounded-full font-bold flex items-center gap-1">
                                             <CheckCircle2 className="w-3 h-3" /> {t('onboarding.personal.verified')}
                                         </span>
@@ -357,7 +358,7 @@ export const PersonalInfo = () => {
 
                                 {/* Email */}
                                 <div className="space-y-2">
-                                    <Label htmlFor="email" className="font-semibold text-slate-700">{t('onboarding.personal.emailLabel')}</Label>
+                                    <Label htmlFor="email" className="font-semibold text-slate-700">{t('onboarding.personal.emailLabel')}<RequiredMark /></Label>
                                     <div className="relative">
                                         <MailIcon className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
                                         <Input
@@ -389,7 +390,7 @@ export const PersonalInfo = () => {
                             {/* WhatsApp */}
                             <div className="space-y-4">
                                 <div className="space-y-2">
-                                    <Label htmlFor="whatsapp" className="font-semibold text-slate-700">{t('onboarding.personal.whatsappLabel')}</Label>
+                                    <Label htmlFor="whatsapp" className="font-semibold text-slate-700">{t('onboarding.personal.whatsappLabel')}<RequiredMark /></Label>
                                     <div className="relative">
                                         <div className="absolute left-3 top-3.5 text-gray-500 font-medium z-10 text-sm">+91</div>
                                         <div className="absolute left-10 top-3 bottom-3 w-[1px] bg-slate-200"></div>

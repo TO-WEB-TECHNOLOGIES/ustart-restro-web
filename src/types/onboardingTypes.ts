@@ -47,7 +47,10 @@ export interface AboutRestaurant {
     };
     cuisines: number[];
     menuImages: string[];
+    // 2026-10-20: two separate images, exactly one sent by branch type (backend validates):
+    // dishImage = 16:9 outlet image (single-branch), brandLogo = square logo (multi-branch).
     dishImage?: string;
+    brandLogo?: string;
     // Backend routes these to Brand (multi-branch default) or Restaurant (single-outlet).
     servingOptions: ('DELIVERY' | 'DINE_IN')[];
     operatingHours: RestroDay[];

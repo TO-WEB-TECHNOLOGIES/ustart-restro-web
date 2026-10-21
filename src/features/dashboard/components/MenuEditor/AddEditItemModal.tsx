@@ -14,8 +14,11 @@ import {
   Candy,
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import { RequiredMark } from "@/components/ui/required-mark";
 import { ZodError } from "zod";
 import ReactSelect from "react-select";
+import { TaxRateSelect } from "./TaxRateSelect";
+import { SPICE_SWEET } from "./spiceLevel";
 
 import type { MenuItem, Allergen, MenuTag } from "../../../../types/menuTypes";
 import { useMenuStore } from "../../store/useMenuStore";
@@ -368,7 +371,7 @@ export const AddEditItemModal: React.FC<AddEditItemModalProps> = ({
               {/* Item Name */}
               <div className="space-y-2">
                 <label className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider">
-                  {t("dashboard.menuEditor.addItem.itemName")}
+                  {t("dashboard.menuEditor.addItem.itemName")}<RequiredMark />
                 </label>
                 <input
                   value={formData.name}
@@ -534,7 +537,7 @@ export const AddEditItemModal: React.FC<AddEditItemModalProps> = ({
               {/* Service Type */}
               <div className="space-y-4">
                 <label className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider">
-                  {t("dashboard.menuEditor.addItem.serviceType")}
+                  {t("dashboard.menuEditor.addItem.serviceType")}<RequiredMark />
                 </label>
                 <div className="flex bg-gray-50 dark:bg-slate-800 p-1 rounded-xl border border-gray-200 dark:border-slate-700">
                   {[
@@ -576,7 +579,7 @@ export const AddEditItemModal: React.FC<AddEditItemModalProps> = ({
               {/* Food Type */}
               <div className="space-y-4">
                 <label className="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-wider">
-                  {t("dashboard.menuEditor.addItem.foodType")}
+                  {t("dashboard.menuEditor.addItem.foodType")}<RequiredMark />
                 </label>
                 <div className="grid grid-cols-3 gap-3">
                   {[
@@ -654,7 +657,7 @@ export const AddEditItemModal: React.FC<AddEditItemModalProps> = ({
               <div className="bg-gray-50 dark:bg-slate-800/50 p-6 rounded-2xl space-y-6 border border-gray-100 dark:border-slate-800">
                 <div className="space-y-2">
                   <label className="text-sm font-black text-[var(--color-primary-blue)] uppercase tracking-[0.2em]">
-                    {t("dashboard.menuEditor.addItem.basePrice")}
+                    {t("dashboard.menuEditor.addItem.basePrice")}<RequiredMark />
                   </label>
                   <div className="relative">
                     <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[var(--color-primary-blue)] font-black text-lg">
@@ -685,7 +688,7 @@ export const AddEditItemModal: React.FC<AddEditItemModalProps> = ({
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <label className="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-wider">
-                      {t("dashboard.menuEditor.addItem.packaging")}
+                      {t("dashboard.menuEditor.addItem.packaging")}<RequiredMark />
                     </label>
                     <div className="relative">
                       <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 font-semibold text-sm">
@@ -715,27 +718,15 @@ export const AddEditItemModal: React.FC<AddEditItemModalProps> = ({
                   </div>
                   <div className="space-y-2">
                     <label className="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-wider">
-                      {t("dashboard.menuEditor.addItem.taxes")}
+                      {t("dashboard.menuEditor.addItem.taxes")}<RequiredMark />
                     </label>
-                    <div className="relative">
-                      <input
-                        value={formData.taxAmount ?? ""}
-                        onChange={(e) =>
-                          updateField(
-                            "taxAmount",
-                            e.target.value === ""
-                              ? undefined
-                              : Number(e.target.value),
-                          )
-                        }
-                        className={`w-full pl-4 pr-8 py-3 rounded-xl border ${errors.taxAmount ? "border-red-500" : "border-gray-200 dark:border-slate-700"} bg-white dark:bg-slate-800 text-slate-900 dark:text-white outline-none transition-all text-sm`}
-                        placeholder="5"
-                        type="number"
-                      />
-                      <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 font-bold text-sm">
-                        %
-                      </span>
-                    </div>
+                    {/* 2026-10-21: fixed GST slabs (Exempt = 0 / 5 / 18) instead of a free number - see TaxRateSelect. The "%" suffix is gone: the options carry it. */}
+                    <TaxRateSelect
+                      name="taxAmount"
+                      value={formData.taxAmount}
+                      onChange={(rate) => updateField("taxAmount", rate)}
+                      className={`w-full px-4 py-3 rounded-xl border ${errors.taxAmount ? "border-red-500" : "border-gray-200 dark:border-slate-700"} bg-white dark:bg-slate-800 text-slate-900 dark:text-white outline-none transition-all text-sm cursor-pointer`}
+                    />
                     {errors.taxAmount && (
                       <p className="text-red-500 text-xs mt-1 flex items-center gap-1">
                         <AlertCircle className="w-3 h-3" /> {errors.taxAmount}
@@ -790,7 +781,7 @@ export const AddEditItemModal: React.FC<AddEditItemModalProps> = ({
               <div className="space-y-6">
                 <div className="space-y-2">
                   <label className="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-wider">
-                    {t("dashboard.menuEditor.addItem.consistency")}
+                    {t("dashboard.menuEditor.addItem.consistency")}<RequiredMark />
                   </label>
                   <ReactSelect
                     isMulti
@@ -856,7 +847,7 @@ export const AddEditItemModal: React.FC<AddEditItemModalProps> = ({
                 </div>
                 <div className="space-y-4">
                   <label className="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-wider">
-                    {t("dashboard.menuEditor.addItem.frosting")}
+                    {t("dashboard.menuEditor.addItem.frosting")}<RequiredMark />
                   </label>
                   <div className="flex bg-gray-50 dark:bg-slate-800 p-1 rounded-xl border border-gray-200 dark:border-slate-700">
                     {(["FROSTED", "PRE", "NO"] as const).map((opt) => (
@@ -1195,12 +1186,13 @@ export const AddEditItemModal: React.FC<AddEditItemModalProps> = ({
 
               <div className="space-y-3 w-full">
                 <label className="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-wider">
-                  {t("dashboard.menuEditor.addItem.spiceLevel")}
+                  {t("dashboard.menuEditor.addItem.spiceLevel")}<RequiredMark />
                 </label>
                 <div className="flex bg-gray-50 dark:bg-slate-800 p-1.5 rounded-2xl border border-gray-100 dark:border-slate-700 w-full gap-1">
                   {[
                     {
-                      value: -1,
+                      // 2026-10-21: was -1, which Zod (1-3) rejected - see spiceLevel.ts.
+                      value: SPICE_SWEET,
                       label: t(
                         "dashboard.menuEditor.addItem.spiceLevels.sweet",
                       ),
@@ -1232,10 +1224,10 @@ export const AddEditItemModal: React.FC<AddEditItemModalProps> = ({
                       title={opt.label}
                     >
                       <div className="flex items-center">
-                        {opt.value === -1 ? (
+                        {opt.value === SPICE_SWEET ? (
                           <Candy
                             className={`w-4 h-4 ${
-                              formData.spiceLevel === -1
+                              formData.spiceLevel === SPICE_SWEET
                                 ? "fill-pink-500 text-pink-500"
                                 : "text-gray-300 group-hover/spice:text-gray-500"
                             }`}

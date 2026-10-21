@@ -3,5 +3,15 @@
   "references": [
     { "path": "./tsconfig.app.json" },
     { "path": "./tsconfig.node.json" }
-  ]
+  ],
+  // 2026-10-20: the shadcn CLI resolves "@/..." aliases from this ROOT tsconfig, not from
+  // tsconfig.app.json. Without these paths `npx shadcn add dialog` wrote to a literal ./@/
+  // folder with a broken `import { cn } from "cn"`. Compiles nothing ("files": []), so the
+  // build is unaffected - mirrors the "@/*" alias in tsconfig.app.json / vite.config.ts.
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./src/*"]
+    }
+  }
 }

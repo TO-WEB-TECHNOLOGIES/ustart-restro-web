@@ -39,7 +39,8 @@ export const menuItemSchema = z.object({
     maxQuantity: z.number().min(1, "dashboard.menuEditor.addItem.validation.maxQtyMin").optional(),
     tags: z.array(z.enum(['GLUTEN_FREE', 'SUGAR_FREE', 'JAIN', 'VEGAN', 'CHEFS_SPECIAL', 'HIGH_PROTEIN', 'NONE_OF_THESE'])).optional(),
     allergens: z.array(z.enum(['MILK', 'EGGS', 'FISH', 'SHELLFISH', 'TREE_NUTS', 'PEANUTS', 'WHEAT', 'SOY', 'SESAME', 'NONE_OF_THESE'])).optional(),
-    spiceLevel: z.number().min(1).max(3),
+    // 2026-10-21: 0-3 (was 1-3, which rejected "Sweet") - contract in MenuEditor/spiceLevel.ts.
+    spiceLevel: z.number().min(0).max(3),
     availability: z.object({
         startTime: z.string(),
         endTime: z.string(),

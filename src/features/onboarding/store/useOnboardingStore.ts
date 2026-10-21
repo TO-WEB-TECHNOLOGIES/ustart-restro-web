@@ -27,6 +27,8 @@ export interface AboutRestaurantState {
     cuisines: number[];
     menuImages?: (File | string)[];
     dishImage?: File | string;
+    // 2026-10-20: square brand logo, multi-branch only (dishImage = single-branch outlet image).
+    brandLogo?: File | string;
     // Backend routes these to Brand (multi-branch default) or Restaurant (single-outlet) -
     // the frontend just collects them here alongside the rest of the "about" slice.
     servingOptions?: ('DELIVERY' | 'DINE_IN')[];
@@ -115,6 +117,7 @@ const initialState = {
         cuisines: [],
         menuImages: [],
         dishImage: undefined,
+        brandLogo: undefined,
         servingOptions: ['DELIVERY'] as ('DELIVERY' | 'DINE_IN')[],
         operatingHours: createDefaultScheduleDays(),
         diningHours: createDefaultScheduleDays(),
@@ -184,6 +187,7 @@ export const useOnboardingStore = create<OnboardingState>()(
                     // Persist only URLs (strings), drop File objects
                     menuImages: (state.aboutRestaurant.menuImages || []).filter(img => typeof img === 'string'),
                     dishImage: typeof state.aboutRestaurant.dishImage === 'string' ? state.aboutRestaurant.dishImage : undefined,
+                    brandLogo: typeof state.aboutRestaurant.brandLogo === 'string' ? state.aboutRestaurant.brandLogo : undefined,
                     diningMenuImages: (state.aboutRestaurant.diningMenuImages || []).filter(img => typeof img === 'string'),
                 },
                 documents: {

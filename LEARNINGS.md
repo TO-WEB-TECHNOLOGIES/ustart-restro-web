@@ -162,3 +162,121 @@ MenuEditor (outlet — handles edit/stock/taxes/charges/new/review paths)
 - **Correction (later 2026-10-19) — `restroId` in the JWT means access level, not single/multi**: the backend now issues `user.restroId` only to outlet-level users (associated managers); brand owners of single- AND multi-restaurant brands get `brandId` only (backend `V13` + `buildAuthMetadata` change). The earlier note above that "the token only carries `restroId` for single-restaurant brands" is no longer true. `useAddons.isOutletUser = !!user.restroId` is now correct as-is; the `refreshSession()` calls after single↔multi changes remain useful for the `isMultipleRestro` claim. Root cause it fixes: single-restaurant owners were blocked from creating menu categories/add-ons ("Individual restaurants cannot manage brand categories").
 - **Fix (later 2026-10-19) — menu step "Finish & Complete" called the wrong endpoint**: `UploadMenu.handleFinalSubmit` called `onboardingService.completeOnboarding()` (`POST /restaurant-onboarding/onboard-complete`, the one-time registration submit), which the backend always rejects after registration ("Onboarding has already been completed for this account"). Going live is `POST /api/v1/brands/activate` (`APPROVED_BUT_MENU_PENDING` → `ACTIVE`; needs ≥1 active category and active dishes on every outlet; returns an ACTIVE access token) — new `onboardingService.activateBrand()`. Now navigates to `/dashboard` on success; toasts moved to `t()`.
 - **Known, not fixed here (tracked in ustart-backend `docs/ARCHITECTURE_REVIEW.md` M9)**: `EditRestaurantModal` re-sends kept image entries as the presigned URLs the detail API returned, not S3 keys. Also: the card's inline DINE-IN toggle for a non-locked outlet has no dining-menu upload, so enabling dine-in there is rejected by the backend until photos are added via "View / Modify Details".
+
+### 2026-10-20 — Onboarding cuisine chips showed ids while searching
+- `RestaurantInfo.tsx`'s cuisine multi-select resolved selected labels from `cuisineOptions`, which only holds the current search's results (the query key includes the search term). Searching therefore dropped every selected cuisine not in the new results, and its chip showed "Selected (ID: x)".
+- Fix: a component-level `selectedCuisineNames` (id → name), filled in the select's `onChange` from the picked options' labels rather than synced from query results in a `useEffect` (an effect would cost an extra render per results page). Selected chips are a pure `useMemo`: cached name, then the current results, then a fallback. Unknown ids fall back to the i18n key `onboarding.restaurant.about.cuisineSelectedFallback` instead of a hardcoded English string.
+- Known limit: the cache is in-memory only. On a page reload with a resumed draft, a selected cuisine that isn't in the current results shows the fallback. Fixing that needs the names persisted with the draft or a fetch-by-ids API.
+
+### 2026-10-20 — Mandatory-field asterisks across onboarding + menu
+- New `src/components/ui/required-mark.tsx` (`<RequiredMark />`: red, `aria-hidden` asterisk). Use it after a mandatory field's label text instead of hand-typing `*`. `LocationPicker` takes `required`, and the duplicated `FloatingInput` helpers in `AddRestaurantForm`/`EditRestaurantModal` take `required` too. They destructure it so it never reaches the `<input>`, where native validation bubbles would compete with the zod messages.
+- The source of truth for what's marked is the zod schemas (`onboarding/schemas.ts`, `validations/outletSchema.ts`, `validations/menuSchemas.ts`), plus `ManagerDetails`'s own `validate()`. Fields that are only conditionally required are marked only where their section renders conditionally (signatory details, company name, dining hours/menu, bank "other" fields). Unlabelled address inputs keep their existing `placeholder + " *"` convention.
+- Mismatch found, not fixed: `ManagerDetails`' add-manager modal requires only name + mobile, but `outletSchema`'s refine requires name, mobile, email and WhatsApp for a new (non-picked) manager. A manager saved without email/WhatsApp then fails the outlet submit with "All manager details are required".
+
+### 2026-10-20 — "Copy to all days" for onboarding timings
+- `DayScheduleEditor`'s `cards` layout (used only by `RestaurantInfo`'s Restaurant/Dining Timings) has a per-day "Copy to all days" button: that day's slots are cloned onto all 7 days and every day is set open. The partner then unticks closed days. Copying only onto already-open days was rejected, because the default schedule starts all-closed and the button would then do nothing on first use.
+- The `list` layout (post-approval `BulkScheduleModal`) is unchanged.
+
+### 2026-10-20 — Served cities: + Noida, Ghaziabad (Uttar Pradesh); Delhi's state is "Delhi"
+- `CITY_STATE_MAP` (`onboarding/schemas.ts`) is now the single served-city list, with `SERVED_CITY_OPTIONS`/`SERVED_STATE_OPTIONS` derived from it. The onboarding Primary Address and the post-approval outlet forms both use it; the outlet forms previously hardcoded Gurugram/Haryana only. In the outlet forms, picking a city now sets its state.
+- The backend resolves the city by name only (`AddressUtils.resolveCityFromAddress`, address segment 4), so every key must exist as a `city.name` row. Noida and Ghaziabad rows must be added to the DB before those cities can onboard. The state text is never matched, so showing "Delhi" instead of the DB's "New Delhi" is safe.
+- `INDIAN_STATES` (Registered Address) lists "Delhi" instead of "New Delhi". `STATE_TO_SERVED_CITY` still accepts both, so drafts saved with "New Delhi" keep working.
+- Not changed: an outlet created earlier with state "New Delhi" keeps that text until its city is re-picked in the edit modal.
+
+### 2026-10-20 — Uploaded images visible in RestaurantInfo's upload boxes
+- The delivery and dining menu boxes render picked pages as thumbnails inside the box, plus an "Add Page" tile, via the new `common/UploadedImageTiles.tsx`. Previously they showed only file-name chips below the box. The tiles are fixed-height in one scrolling row, so the box keeps its size. While the box holds images, clicking it no longer opens the file picker; only the "+" tile does.
+- The dish/brand image box previews the cropped image (16:9). "Change" now reopens the picker directly; before, it cleared the image and needed a second click.
+- Not `MenuImagesPicker`: that one has its own empty state and a 2MB limit the onboarding boxes don't apply.
+- String values render as images only when they're loadable URLs; bare storage keys fall back to a file-name tile/chip.
+- File inputs now reset after each pick, so a removed file can be re-added.
+
+### 2026-10-20 — Click-to-expand image preview (first shadcn Dialog)
+- `common/ImagePreviewDialog.tsx` shows an uploaded image full size. It opens from `UploadedImageTiles` thumbnails and from RestaurantInfo's dish/brand preview. It's built on shadcn `Dialog` (needs `npx shadcn@latest add dialog`), the first real Radix dialog in the repo, rather than the custom `modal.tsx`.
+- Gotcha: React bubbles synthetic events from portal content up the component tree. The dialog therefore stops click propagation at its root, otherwise a click inside it would reach the upload box's onClick and reopen the file picker.
+
+### 2026-10-20 — Brand logo (square) split from outlet image (16:9)
+- Onboarding `aboutRestaurant` has two image fields (backend contract change, see ustart-backend `docs/CHANGELOG.md`). `dishImage` is the 16:9 outlet image, single-branch only. `brandLogo` is a square logo, multi-branch only. Exactly one is required by `hasMultipleBranches`, in both `getAboutRestaurantSchema` and the backend `OnboardingValidator`. RestaurantInfo's image box switches field and crop aspect by branch type, and `finalizeAboutSubmit` clears the other field. `AboutRestaurant.tsx` sends only the matching field, because an empty string would make the backend mint a presigned URL for "".
+- Post-approval outlet forms (`AddRestaurantForm`/`EditRestaurantModal`) now crop the outlet image to 16:9 with `ImageCropModal`. The 1MB limit is checked on the cropped file.
+
+### 2026-10-20 — Stuck on Verification after approval until re-login
+- Cause: `useOnboardingStore.isEditing` is persisted in sessionStorage. It's set by "Edit Application" and was cleared only by a completed edit submit (`reset()`) or by logout. After an abandoned edit it stayed `true`, and `OnboardingLayout` skips its "approved → /complete" redirect while `isEditing`. So Verification stayed up across refreshes, and only logout (which resets the store) fixed it.
+- Fix: the approved redirect ignores `isEditing` and clears it, and Verification clears `isEditing` on mount, since being there means the partner isn't editing. While the status API reports an approved status, Verification keeps its loader up until the refreshed token routes away. It used to render a stopped timer and an enabled Edit button meanwhile.
+- "Edit Application" is enabled only for `APPROVAL_PENDING`/`ACTION_REQUIRED` and `!isEditLocked`. An approved mapping reports `isEditLocked=false`, which made Edit look available and open an empty form. The button labels are now i18n keys.
+
+### 2026-10-20 — shadcn CLI needs the `@/*` alias in the ROOT tsconfig.json
+- `npx shadcn add dialog` wrote `./@/components/ui/dialog.tsx` (a literal `@` folder at the repo root) with `import { cn } from "cn"`, because the CLI reads path aliases from the root `tsconfig.json`, which only had `references` and no `compilerOptions.paths`. Vite/tsc were unaffected (they use `vite.config.ts` / `tsconfig.app.json`).
+- Fix: added `baseUrl` + `paths: { "@/*": ["./src/*"] }` to the root `tsconfig.json` (it compiles nothing, so build output is unchanged). Note: `CLAUDE.local.md` §1's "no changes needed to tsconfig" was wrong on this point.
+- Lesson: after any `shadcn add`, check the file landed in `src/components/ui/` and imports `cn` from `@/lib/utils`.
+
+### 2026-10-20 — Outlet image always required; brand logo added for multi-branch
+- Rule revised: the 16:9 outlet image (`dishImage`) is collected for every brand; a multi-branch
+  brand ALSO uploads a square `brandLogo` (the first version asked for only one of the two).
+  Backend `OnboardingValidator`/`createBrand` changed to match.
+- The pick→crop→preview→expand box was extracted from `RestaurantInfo` into
+  `components/common/CroppedImageUpload.tsx`, since it's now rendered twice (two fields).
+- **Lesson:** `npx shadcn add dialog` wrote `import { cn } from "cn"` into `dialog.tsx` even though
+  `components.json` aliases `utils` to `@/lib/utils` — fixed by hand. Check the imports of every
+  CLI-generated component file before assuming it builds.
+
+### 2026-10-21 — Unreadable disabled "Add/Save Category" buttons
+- Menu `AddCategoryModal` and add-on `AddEditAddonCategoryModal` submit buttons used
+  `disabled:opacity-50` with white text (orange fade ≈1.4:1 contrast, navy fade ≈3:1), so the label
+  was barely visible until a name was typed. Replaced with a solid grey disabled style
+  (`disabled:bg-slate-200 disabled:text-slate-500` + dark variants).
+- **Lesson:** don't fade white-on-colour buttons with opacity for the disabled state; swap to a
+  solid muted background with dark text. White on `--color-secondary-orange` (#ff9f43) is
+  low-contrast even when enabled (~2:1) — worth revisiting for orange CTAs generally.
+
+### 2026-10-21 — Onboarding menu: collapsed category sidebar couldn't be reopened; bigger Add Category
+- `UploadMenu.tsx` desktop toggle lived inside the sidebar wrapper. Collapsed (`md:w-0`), it was
+  (1) mostly at negative x, clipped by the row's `overflow-hidden`, and (2) painted under the main
+  area: the wrapper's `transform` class makes it a stacking context, and with `md:z-auto` the later
+  sibling paints on top. Fix: wrapper `md:z-20`, button `-right-10` when closed. Added aria-labels
+  (`dashboard.menuEditor.hideCategories/showCategories`, en+hi).
+- **Lesson:** an absolutely positioned child of a transformed element can't out-stack later
+  siblings via its own z-index — the parent's z-index decides.
+- `CategorySidebar` "Add Category" button enlarged (10px → text-xs, bigger padding, resting border).
+  Shared with the dashboard menu editor, so it changed there too.
+
+### 2026-10-21 — Add Item: failed Save gave no visible feedback
+- `AddItemPage` (used by the onboarding menu step and the dashboard) showed Zod errors only inline
+  next to each field; the Save button is at the top, most fields are far below, and the
+  scroll-to-first-error relies on `document.getElementsByName`, which misses fields without a
+  `name` (category, food type, AI-image declaration). A failed Save looked like a hung button.
+- Added an error-summary note (`role="alert"`) right under the header, listing every message,
+  derived from the `errors` state so it shrinks as fields are fixed. New key
+  `dashboard.menuEditor.addItem.validation.fixBeforeSave` (en/hi).
+
+### 2026-10-21 — Menu item tax: free number → GST slab dropdown
+- New `MenuEditor/TaxRateSelect.tsx` (Exempt / 5% / 18%) replaces the number inputs in
+  `AddItemPage`, `AddEditItemModal` and `MenuItemCard`'s inline tax edit; `formatTaxRate` shows
+  "Exempt" for 0 in the card's price breakdown. "Exempt" is display-only — `taxAmount` is still sent
+  as a number (0), so no backend/schema change. A legacy rate outside the slabs (e.g. 12) is kept
+  as an extra option so opening an old item never silently changes its tax.
+- Zod `taxAmount` (0–100) left as-is on purpose, so existing legacy-rate items still validate.
+- Keys: `dashboard.menuEditor.taxExempt`, `taxSelect` (en/hi).
+
+### 2026-10-21 — Spice level "Sweet" couldn't be saved (frontend/backend contract mismatch)
+- UI sent Sweet=-1, Mild=1, Medium=2, Hot=3; Zod allowed 1–3 (Sweet always failed); backend
+  `mapSpiceLevel` did 1→SWEET, 3→SPICY, else MODERATE (so Mild was stored as SWEET); the items list
+  mapping never read `spiceLevel` back, so editing reset it to the default and overwrote it on save.
+- Now 1:1, 0–3 ↔ SWEET/MODERATE/SPICY/VERY_SPICY. Contract lives in
+  `MenuEditor/spiceLevel.ts` (values, label keys, `spiceLevelFromApi`); backend both
+  `MenuItemServiceImpl`/`MenuAddOnServiceImpl.mapSpiceLevel` updated. `menuApi` uses `?? 1`, not
+  `|| 1`, since 0 is valid.
+- **Lesson:** any `|| default` on a numeric field breaks the moment 0 becomes a real value.
+- Existing rows saved as "Mild" before this hold `SWEET`; they can't be told apart from real Sweet
+  items, so they'll show as Sweet until a partner re-picks the level.
+
+### 2026-10-21 — Review Changes card showed codes/keys instead of text
+- `ModifiedItemCard` printed stored enum codes (NON_VEG, DINE_IN, SEMI_SOLID, CHEFS_SPECIAL,
+  TREE_NUTS…), used i18n keys that didn't exist (`common.yes/no`,
+  `frostingOptions.fresh/preFrosted` — so the key path itself rendered), hardcoded English labels
+  (Tags, Calories, Timing, "Avail. …"), and showed the single-outlet stock key as "default".
+- New `MenuEditor/menuLabels.ts`: code→i18n-key maps reusing AddItemPage's option keys, plus
+  `enumLabel`/`enumListLabel` (drops NONE_OF_THESE; unknown codes humanized, never raw) and
+  `yesNoLabel`. Added `common.yes/no` and `dashboard.menuEditor.review.allDay/availAllDay/
+  availStart/availEnd` (en/hi).
+- **Lesson:** a missing i18n key renders its path as visible text — check new `t()` keys against
+  the locale JSON (scripted key check) rather than eyeballing.
+- Left as-is: " ppl"/" pcs" unit suffixes (hardcoded English abbreviations).

@@ -298,8 +298,10 @@ export const CompleteSetup = () => {
 
       <div className="flex-1 space-y-4 flex flex-col justify-center">
         <div className="p-8 px-0 flex-grow">
+          {/* 2026-10-20: hidden (not removed) - bulk upload isn't built yet (the onClick below is
+              a placeholder). Change `hidden` back to `flex` to show it again. */}
           {isMultipleRestro && (
-            <div className="flex items-center justify-end gap-3 mb-8">
+            <div className="hidden items-center justify-end gap-3 mb-8">
               <Button
                 variant="outline"
                 className="border-slate-300 text-slate-600 hover:bg-slate-50 rounded-xl h-11 px-6 font-medium transition-all"

@@ -1,5 +1,7 @@
 {
   "common": {
+    "yes": "Yes",
+    "no": "No",
     "loading": "Loading...",
     "active": "Active",
     "restore": "Restore",
@@ -242,9 +244,9 @@
         "locationError": "Unable to retrieve your location",
         "addressSearchPlaceholder": "Search for an address...",
         "recentAddresses": "Recent",
-        "unsupportedCity": "We currently only operate in Gurugram and Delhi. Please select a supported city or choose a different address.",
+        "unsupportedCity": "We currently only operate in Gurugram, Delhi, Noida and Ghaziabad. Please select a supported city or choose a different address.",
         "optional": "(Optional)",
-        "posQuestion": "Select the device type you will use for online ordering",
+        "posQuestion": "Select the POS you will use for online ordering",
         "posProviderLabel": "POS Provider",
         "posProviderPlaceholder": "Search or type to add your provider",
         "posProviderHint": "Not listed? Just type the name and select \"Add\" to use it.",
@@ -279,6 +281,7 @@
         "egg": "Egg",
         "cuisineLabel": "Cuisine Type",
         "cuisinePlaceholder": "Search for cuisines (e.g. Punjabi, Italian)",
+        "cuisineSelectedFallback": "Selected cuisine",
         "menuLabel": "Delivery Menu",
         "menuUploadText": "Click to upload menu",
         "menuUploadSubtext": "SVG, PNG, JPG or GIF",
@@ -291,7 +294,6 @@
         "imageSpecTitle": "Image Specifications:",
         "imageSpecText": "Image should be high-resolution, well-lit, and clearly represent your restaurant. Max file size: 5MB. Ensure the background is not cluttered.",
         "brandLogoSpecText": "Logo should be in SVG or high-resolution PNG format with a transparent background if possible. Max file size: 5MB. Ensure the brand is clearly visible.",
-        "imageSelected": "Image Selected",
         "changeImage": "Change",
         "servingOptionsLabel": "How do you serve customers?",
         "servingDelivery": "Delivery",
@@ -366,7 +368,9 @@
         "referenceId": "Reference ID:",
         "timerTitle": "Expected Response within",
         "timerExpiredMessage": "We understand we are delayed by {{hours}} hours and {{minutes}} minutes. We are working tirelessly to get you onboarded at the earliest. We truly value your patience and sincerely regret any delay. Your success is our priority, and we'll be in touch very soon.",
-        "lockedHint": "Please contact customer care to edit your application data."
+        "lockedHint": "Please contact customer care to edit your application data.",
+        "editApplication": "Edit Application",
+        "applicationLocked": "Application Locked"
       },
       "complete": {
         "title": "Complete Your Profile",
@@ -492,6 +496,8 @@
           "copyFrom": "Copy schedule from",
           "copySelectPlaceholder": "Select restaurant...",
           "addTimeSlot": "Add time slot",
+          "copyToAllDays": "Copy to all days",
+          "copiedToAllDays": "Timings copied to all days",
           "openTime": "Open",
           "closeTime": "Close",
           "statusError": "Failed to save schedule.",
@@ -1205,6 +1211,8 @@
         "seeChanges": "See what's changed"
       },
       "categories": "Categories",
+      "hideCategories": "Hide categories",
+      "showCategories": "Show categories",
       "addCategory": "Add Category",
       "addSubcategory": "Add Subcategory",
       "goToAddOns": "Go to Add Ons",
@@ -1259,6 +1267,8 @@
       "discountShort": "Disc",
       "netPrice": "Net Price",
       "basePrice": "Base",
+      "taxExempt": "Exempt",
+      "taxSelect": "Select tax",
       "taxLabel": "Tax",
       "itemPriceLabel": "Item Price",
       "offLabel": "OFF",
@@ -1269,7 +1279,11 @@
       "blocked": "Blocked",
       "active": "Active",
       "review": {
-        "title": "Review Your Changes",
+"allDay": "All Day",
+        "availAllDay": "Available All Day",
+        "availStart": "Available From",
+        "availEnd": "Available Until",
+                "title": "Review Your Changes",
         "subtitle": "Compare your local edits with the live menu before publishing.",
         "publish": "Publish Changes",
         "cancel": "Cancel",
@@ -1458,6 +1472,7 @@
           "both": "Both"
         },
         "validation": {
+          "fixBeforeSave": "Couldn't save the item. Please fix the following:",
           "categoryRequired": "Category is required",
           "nameRequired": "Item Name is required",
           "nameTooLong": "Item Name cannot exceed 100 characters",

@@ -7,6 +7,7 @@ import { useOnboardingStore } from "../store/useOnboardingStore";
 import {
   restaurantInfoSchema,
   CITY_STATE_MAP,
+  SERVED_CITY_OPTIONS,
   resolveServedCity,
   type RestaurantInfoValues,
   getAboutRestaurantSchema,
@@ -20,22 +21,21 @@ import CreatableSelect from "react-select/creatable";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { RequiredMark } from "@/components/ui/required-mark";
 import { Switch } from "@/components/ui/switch";
 import { Modal } from "@/components/ui/modal";
 import { MapPicker } from "@/components/ui/map-picker";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { INDIAN_STATES } from "../../../utils/constants";
-import { Info, BookOpen, Image as ImageIcon, LayoutDashboard, Terminal } from "lucide-react";
+import { Info, BookOpen, LayoutDashboard, Terminal } from "lucide-react";
 import { MenuList } from "./common/MenuList";
 import { FoodTypeButton } from "./common/FoodTypeSelector";
-import { FileDisplay } from "./common/FileDisplay";
+import { UploadedImageTiles } from "./common/UploadedImageTiles";
+import { CroppedImageUpload } from "./common/CroppedImageUpload";
 import { DayScheduleEditor } from "./common/DayScheduleEditor";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { ImageCropModal } from "./common/ImageCropModal";
 import { createDefaultScheduleDays } from "../utils/scheduleValidation";
-
-const CITY_OPTIONS = Object.keys(CITY_STATE_MAP).map((city) => ({ value: city, label: city }));
 
 type AddressLike = { line1?: string; line2?: string; landmark?: string; locality?: string; state?: string; pincode?: string };
 
@@ -286,7 +286,7 @@ export const RestaurantInfo = () => {
       setValueAbout("restaurantAddress.landmark", regLandmark || "");
       setValueAbout("restaurantAddress.pincode", regPincode || "");
       // Registered Address's locality is free text (any city/state) while Primary Address is
-      // locked to Gurugram/Delhi. 2026-10-19: matched via resolveServedCity (case/space-
+      // locked to the served cities (CITY_STATE_MAP). 2026-10-19: matched via resolveServedCity (case/space-
       // insensitive + known renames) instead of an exact key lookup, which silently skipped
       // "gurugram"/"Gurgaon" etc., and falls back to the registered state (Delhi), since
       // "Locality/ City" usually holds an actual locality like "Saket". State then follows from
@@ -306,8 +306,8 @@ export const RestaurantInfo = () => {
     }
   }, [hasMultipleBranches, isSameAsRegistered, regLine1, regLine2, regLandmark, regLocality, regState, regPincode, setValueAbout, clearErrorsAbout, setErrorAbout, t]);
 
-  // Primary Address's state always follows its locality (Gurugram -> Haryana, Delhi -> New Delhi,
-  // matching the backend's city table - see CITY_STATE_MAP).
+  // Primary Address's state always follows its locality (e.g. Gurugram -> Haryana, Noida -> Uttar
+  // Pradesh - see CITY_STATE_MAP).
   // 2026-10-19: case-insensitive via resolveServedCity (e.g. a resumed draft holding "gurugram").
   const restaurantAddressCity = resolveServedCity(restaurantAddressLocality);
   useEffect(() => {
@@ -319,7 +319,7 @@ export const RestaurantInfo = () => {
   // Auto-fills Primary Address from a selected search result's structured components -
   // best-effort (Google doesn't always resolve every component), fields stay editable
   // afterward so the user can correct anything. If the resolved city isn't one we serve
-  // (Gurugram/Delhi), flag it immediately (toast + inline field error) rather than
+  // (CITY_STATE_MAP), flag it immediately (toast + inline field error) rather than
   // silently leaving locality blank and only surfacing the problem at submit time.
   const handleAddressSelected = (result: AddressSearchResult) => {
     const line1 = result.name || result.streetAddress;
@@ -340,19 +340,38 @@ export const RestaurantInfo = () => {
     }
   };
 
+  // 2026-10-20: id -> name cache of the SELECTED cuisines, written in the select's onChange
+  // (react-select hands back the picked options with their labels). cuisineOptions only holds
+  // the CURRENT search's results, so typing a search used to drop the selected cuisines'
+  // names and their chips fell back to showing the raw id. Filled at selection time, not
+  // synced from query results in an effect - no extra render per results page.
+  const [selectedCuisineNames, setSelectedCuisineNames] = useState<Record<number, string>>({});
+
   const selectedCuisineIds = watchAbout("cuisines");
   // Hoisted out of the cuisines Controller's render prop - calling useMemo inside a
   // Controller render callback isn't a real component/hook, so it violated rules-of-hooks.
+  // Label priority: name cached at selection -> current results (covers a resumed draft,
+  // selected before this page mounted) -> generic fallback (resumed-draft id not in the
+  // current results).
   const selectedCuisineOptions = useMemo(() => {
     const ids = selectedCuisineIds || [];
-    return ids.map((id: number) => cuisineOptions.find((o) => o.value === id) || { value: id, label: `Selected (ID: ${id})` });
-  }, [cuisineOptions, selectedCuisineIds]);
+    return ids.map((id: number) => ({
+      value: id,
+      label:
+        selectedCuisineNames[id] ??
+        cuisineOptions.find((o) => o.value === id)?.label ??
+        t("onboarding.restaurant.about.cuisineSelectedFallback"),
+    }));
+  }, [selectedCuisineNames, cuisineOptions, selectedCuisineIds, t]);
 
   const menuInputRef = useRef<HTMLInputElement>(null);
-  const dishInputRef = useRef<HTMLInputElement>(null);
 
   const menuImages = watchAbout("menuImages");
+  // 2026-10-20: the outlet image (16:9, `dishImage`) is always required; a multi-branch brand
+  // additionally uploads a square brand logo (`brandLogo`). Both boxes are CroppedImageUpload.
   const dishImage = watchAbout("dishImage");
+  const brandLogo = watchAbout("brandLogo");
+  const hasMenuImages = Array.isArray(menuImages) && menuImages.length > 0;
 
   const handleMenuFiles = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
@@ -360,30 +379,8 @@ export const RestaurantInfo = () => {
       const currentFiles = (watchAbout("menuImages") as File[]) || [];
       setValueAbout("menuImages", [...currentFiles, ...newFiles], { shouldValidate: true });
     }
-  };
-
-  // Opens the crop modal instead of accepting the raw file directly - the cropped result
-  // (see handleCropped) is what actually lands in form state.
-  const [cropState, setCropState] = useState<{ file: File; imageSrc: string } | null>(null);
-
-  const handleDishFile = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      setCropState({ file, imageSrc: URL.createObjectURL(file) });
-    }
-    // Reset so selecting the exact same file again still fires onChange.
+    // Reset so the same file can be re-added after removing it (onChange wouldn't fire).
     e.target.value = "";
-  };
-
-  const handleCropped = (croppedFile: File) => {
-    setValueAbout("dishImage", croppedFile, { shouldValidate: true });
-    if (cropState) URL.revokeObjectURL(cropState.imageSrc);
-    setCropState(null);
-  };
-
-  const handleCropCancel = () => {
-    if (cropState) URL.revokeObjectURL(cropState.imageSrc);
-    setCropState(null);
   };
 
   const removeMenuFile = (index: number) => {
@@ -397,6 +394,7 @@ export const RestaurantInfo = () => {
   const operatingHours = watchAbout("operatingHours");
   const isDiningHoursSameAsOperating = watchAbout("isDiningHoursSameAsOperating");
   const diningMenuImages = watchAbout("diningMenuImages");
+  const hasDiningMenuImages = Array.isArray(diningMenuImages) && diningMenuImages.length > 0;
   const isDiningMenuSameAsDelivery = watchAbout("isDiningMenuSameAsDelivery");
 
   // "Same as operating timings" / "Same as Delivery Menu" live-copy while checked - same
@@ -422,6 +420,8 @@ export const RestaurantInfo = () => {
       const currentFiles = (watchAbout("diningMenuImages") as File[]) || [];
       setValueAbout("diningMenuImages", [...currentFiles, ...newFiles], { shouldValidate: true });
     }
+    // Reset so the same file can be re-added after removing it (onChange wouldn't fire).
+    e.target.value = "";
   };
 
   const removeDiningMenuFile = (index: number) => {
@@ -445,7 +445,10 @@ export const RestaurantInfo = () => {
       foodTypes: data.foodTypes,
       cuisines: data.cuisines,
       menuImages: data.menuImages,
+      // Outlet image always kept; the logo only for multi-branch, so a logo left over from
+      // toggling hasMultipleBranches off can't be submitted (2026-10-20).
       dishImage: data.dishImage,
+      brandLogo: hasMultipleBranches ? data.brandLogo : undefined,
       servingOptions: data.servingOptions,
       operatingHours: data.operatingHours,
       // Dining Timings only matter when Dine-In is offered - store a fresh all-closed default
@@ -506,7 +509,7 @@ export const RestaurantInfo = () => {
           <div className="space-y-6">
             <div className="space-y-2">
               <Label htmlFor="restaurantName" className="font-semibold text-slate-700">
-                {t("onboarding.restaurant.form.restaurantNameLabel")}
+                {t("onboarding.restaurant.form.restaurantNameLabel")}<RequiredMark />
               </Label>
               <Input
                 id="restaurantName"
@@ -522,7 +525,7 @@ export const RestaurantInfo = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-2">
                 <Label htmlFor="panNumber" className="font-semibold text-slate-700">
-                  {t("onboarding.restaurant.form.panLabel")}
+                  {t("onboarding.restaurant.form.panLabel")}<RequiredMark />
                 </Label>
                 <Input
                   id="panNumber"
@@ -562,7 +565,7 @@ export const RestaurantInfo = () => {
               // with hasMultipleBranches - that only controls isMultipleRestro server-side.
               <div className="space-y-2 animate-in fade-in slide-in-from-top-2 duration-300">
                 <Label htmlFor="companyName" className="font-semibold text-slate-700">
-                  {t("onboarding.restaurant.form.companyNameLabel")}
+                  {t("onboarding.restaurant.form.companyNameLabel")}<RequiredMark />
                 </Label>
                 <div className="flex gap-4 items-center">
                   <div className="flex-1">
@@ -851,7 +854,7 @@ export const RestaurantInfo = () => {
                       control={aboutControl}
                       render={({ field }) => (
                         <ReactSelect
-                          options={CITY_OPTIONS}
+                          options={SERVED_CITY_OPTIONS}
                           value={field.value ? { value: field.value, label: field.value } : null}
                           onChange={(opt: any) => field.onChange(opt?.value || "")}
                           placeholder={`${t("onboarding.restaurant.form.addressLabels.locality")} *`}
@@ -906,6 +909,7 @@ export const RestaurantInfo = () => {
                 onAddressSelected={handleAddressSelected}
                 error={aboutErrors.location?.message}
                 label={t("onboarding.restaurant.form.locationLabel")}
+                required
               />
             </div>
           )}
@@ -914,7 +918,7 @@ export const RestaurantInfo = () => {
           <div className="flex flex-col sm:flex-row gap-6">
             <div className="flex-1 space-y-2">
               <Label className="font-semibold text-slate-700">
-                {t("onboarding.restaurant.about.servingOptionsLabel")}
+                {t("onboarding.restaurant.about.servingOptionsLabel")}<RequiredMark />
               </Label>
               <Controller
                 control={aboutControl}
@@ -967,7 +971,7 @@ export const RestaurantInfo = () => {
 
             <div className="flex-1 space-y-2">
               <Label className="font-semibold text-slate-700">
-                {t("onboarding.restaurant.about.foodTypeLabel")}
+                {t("onboarding.restaurant.about.foodTypeLabel")}<RequiredMark />
               </Label>
               <Controller
                 control={aboutControl}
@@ -1024,7 +1028,7 @@ export const RestaurantInfo = () => {
             <AccordionItem value="operating-hours" className="border-b-0">
               <AccordionTrigger className="hover:no-underline">
                 <Label className="font-semibold text-slate-700 cursor-pointer">
-                  {t("onboarding.restaurant.about.operatingHoursLabel")}
+                  {t("onboarding.restaurant.about.operatingHoursLabel")}<RequiredMark />
                 </Label>
               </AccordionTrigger>
               <AccordionContent>
@@ -1048,7 +1052,7 @@ export const RestaurantInfo = () => {
               <AccordionItem value="dining-hours" className="border-b-0">
                 <AccordionTrigger className="hover:no-underline">
                   <Label className="font-semibold text-slate-700 cursor-pointer">
-                    {t("onboarding.restaurant.about.diningHoursLabel")}
+                    {t("onboarding.restaurant.about.diningHoursLabel")}<RequiredMark />
                   </Label>
                 </AccordionTrigger>
                 <AccordionContent className="space-y-3">
@@ -1083,7 +1087,7 @@ export const RestaurantInfo = () => {
           {/* Cuisine Type - ReactSelect with Infinite Scroll & Search */}
           <div className="space-y-2">
             <Label className="font-semibold text-slate-700">
-              {t("onboarding.restaurant.about.cuisineLabel")}
+              {t("onboarding.restaurant.about.cuisineLabel")}<RequiredMark />
             </Label>
 
             <Controller
@@ -1111,6 +1115,16 @@ export const RestaurantInfo = () => {
                       field.onChange(
                         newValue ? newValue.map((v: any) => v.value) : [],
                       );
+                      // Remember picked names so the chips survive the next search (see
+                      // selectedCuisineNames). Merged, never pruned: a removed id is simply
+                      // no longer looked up.
+                      if (newValue?.length) {
+                        setSelectedCuisineNames((prev) => {
+                          const next = { ...prev };
+                          newValue.forEach((v: any) => { next[v.value] = v.label; });
+                          return next;
+                        });
+                      }
                       setAboutSearchQuery("");
                     }}
                     closeMenuOnSelect={false}
@@ -1165,11 +1179,15 @@ export const RestaurantInfo = () => {
             {/* Delivery Menu */}
             <div className="space-y-2">
               <Label className="font-semibold text-slate-700">
-                {t("onboarding.restaurant.about.menuLabel")}
+                {t("onboarding.restaurant.about.menuLabel")}<RequiredMark />
               </Label>
+              {/* 2026-10-20: picked pages render as thumbnails inside the box (plus an "Add
+                  Page" tile) instead of file-name chips below it, so the partner can see what
+                  they uploaded. The whole box only opens the file picker while it's empty -
+                  once it holds thumbnails, a click on one must not reopen the picker. */}
               <div
-                onClick={() => menuInputRef.current?.click()}
-                className={`border-2 border-dashed rounded-2xl p-8 flex flex-col items-center justify-center text-center hover:bg-slate-50 transition-colors cursor-pointer min-h-[160px] ${aboutErrors.menuImages ? "border-red-300 bg-red-50" : "border-slate-200"}`}
+                onClick={hasMenuImages ? undefined : () => menuInputRef.current?.click()}
+                className={`border-2 border-dashed rounded-2xl min-h-[160px] flex transition-colors ${hasMenuImages ? "p-3 items-center" : "p-8 flex-col items-center justify-center text-center hover:bg-slate-50 dark:hover:bg-zinc-900 cursor-pointer"} ${aboutErrors.menuImages ? "border-red-300 bg-red-50 dark:bg-red-950/20" : "border-slate-200 dark:border-zinc-700"}`}
               >
                 <input
                   type="file"
@@ -1179,29 +1197,27 @@ export const RestaurantInfo = () => {
                   accept="image/*"
                   onChange={handleMenuFiles}
                 />
-                <div className="w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center mb-3 text-secondary-orange">
-                  <BookOpen className="w-6 h-6" />
-                </div>
-                <p className="text-sm font-medium text-secondary-orange">
-                  {t("onboarding.restaurant.about.menuUploadText")}
-                </p>
-                <p className="text-xs text-slate-400 mt-1">
-                  {t("onboarding.restaurant.about.menuUploadSubtext")}
-                </p>
-              </div>
-              {menuImages &&
-                Array.isArray(menuImages) &&
-                menuImages.length > 0 && (
-                  <div className="flex flex-wrap gap-2 mt-2">
-                    {menuImages.map((file: any, idx: number) => (
-                      <FileDisplay
-                        key={idx}
-                        file={file}
-                        onRemove={() => removeMenuFile(idx)}
-                      />
-                    ))}
-                  </div>
+                {hasMenuImages ? (
+                  <UploadedImageTiles
+                    images={menuImages as (File | string)[]}
+                    onAdd={() => menuInputRef.current?.click()}
+                    onRemove={removeMenuFile}
+                    altLabel={t("onboarding.restaurant.about.menuLabel")}
+                  />
+                ) : (
+                  <>
+                    <div className="w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center mb-3 text-secondary-orange">
+                      <BookOpen className="w-6 h-6" />
+                    </div>
+                    <p className="text-sm font-medium text-secondary-orange">
+                      {t("onboarding.restaurant.about.menuUploadText")}
+                    </p>
+                    <p className="text-xs text-slate-400 mt-1">
+                      {t("onboarding.restaurant.about.menuUploadSubtext")}
+                    </p>
+                  </>
                 )}
+              </div>
               {aboutErrors.menuImages && (
                 <p className="text-red-500 text-xs">
                   {aboutErrors.menuImages.message as string}
@@ -1213,7 +1229,7 @@ export const RestaurantInfo = () => {
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <Label className="font-semibold text-slate-700">
-                  {t("onboarding.restaurant.about.diningMenuLabel")}
+                  {t("onboarding.restaurant.about.diningMenuLabel")}<RequiredMark />
                 </Label>
                 <div className="flex items-center gap-2">
                   <input
@@ -1229,9 +1245,10 @@ export const RestaurantInfo = () => {
               </div>
               {!isDiningMenuSameAsDelivery && (
                 <>
+                  {/* Same in-box thumbnails as the delivery menu above. */}
                   <div
-                    onClick={() => diningMenuInputRef.current?.click()}
-                    className={`border-2 border-dashed rounded-2xl p-8 flex flex-col items-center justify-center text-center hover:bg-slate-50 transition-colors cursor-pointer min-h-[160px] ${aboutErrors.diningMenuImages ? "border-red-300 bg-red-50" : "border-slate-200"}`}
+                    onClick={hasDiningMenuImages ? undefined : () => diningMenuInputRef.current?.click()}
+                    className={`border-2 border-dashed rounded-2xl min-h-[160px] flex transition-colors ${hasDiningMenuImages ? "p-3 items-center" : "p-8 flex-col items-center justify-center text-center hover:bg-slate-50 dark:hover:bg-zinc-900 cursor-pointer"} ${aboutErrors.diningMenuImages ? "border-red-300 bg-red-50 dark:bg-red-950/20" : "border-slate-200 dark:border-zinc-700"}`}
                   >
                     <input
                       type="file"
@@ -1241,29 +1258,27 @@ export const RestaurantInfo = () => {
                       accept="image/*"
                       onChange={handleDiningMenuFiles}
                     />
-                    <div className="w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center mb-3 text-secondary-orange">
-                      <BookOpen className="w-6 h-6" />
-                    </div>
-                    <p className="text-sm font-medium text-secondary-orange">
-                      {t("onboarding.restaurant.about.menuUploadText")}
-                    </p>
-                    <p className="text-xs text-slate-400 mt-1">
-                      {t("onboarding.restaurant.about.menuUploadSubtext")}
-                    </p>
-                  </div>
-                  {diningMenuImages &&
-                    Array.isArray(diningMenuImages) &&
-                    diningMenuImages.length > 0 && (
-                      <div className="flex flex-wrap gap-2 mt-2">
-                        {diningMenuImages.map((file: any, idx: number) => (
-                          <FileDisplay
-                            key={idx}
-                            file={file}
-                            onRemove={() => removeDiningMenuFile(idx)}
-                          />
-                        ))}
-                      </div>
+                    {hasDiningMenuImages ? (
+                      <UploadedImageTiles
+                        images={diningMenuImages as (File | string)[]}
+                        onAdd={() => diningMenuInputRef.current?.click()}
+                        onRemove={removeDiningMenuFile}
+                        altLabel={t("onboarding.restaurant.about.diningMenuLabel")}
+                      />
+                    ) : (
+                      <>
+                        <div className="w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center mb-3 text-secondary-orange">
+                          <BookOpen className="w-6 h-6" />
+                        </div>
+                        <p className="text-sm font-medium text-secondary-orange">
+                          {t("onboarding.restaurant.about.menuUploadText")}
+                        </p>
+                        <p className="text-xs text-slate-400 mt-1">
+                          {t("onboarding.restaurant.about.menuUploadSubtext")}
+                        </p>
+                      </>
                     )}
+                  </div>
                 </>
               )}
               {aboutErrors.diningMenuImages && (
@@ -1274,65 +1289,27 @@ export const RestaurantInfo = () => {
             </div>
           </div>
 
-          {/* Restaurant / Brand Image */}
-          <div className="space-y-2">
-            <Label className="font-semibold text-slate-700">
-              {hasMultipleBranches
-                ? t("onboarding.restaurant.about.brandLogoLabel")
-                : t("onboarding.restaurant.about.dishLabel")}
-            </Label>
-            <div
-              onClick={() => dishInputRef.current?.click()}
-              className={`border-2 border-dashed rounded-2xl p-8 flex flex-col items-center justify-center text-center hover:bg-slate-50 transition-colors cursor-pointer min-h-[160px] ${aboutErrors.dishImage ? "border-red-300 bg-red-50" : "border-slate-200"}`}
-            >
-              <input
-                type="file"
-                className="hidden"
-                ref={dishInputRef}
-                accept="image/*"
-                onChange={handleDishFile}
-              />
-              <div className="w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center mb-3 text-secondary-orange">
-                <ImageIcon className="w-6 h-6" />
-              </div>
-              {dishImage ? (
-                <div className="flex flex-col items-center">
-                  <p className="text-sm font-medium text-green-600 mb-1">
-                    {t("onboarding.restaurant.about.imageSelected")}
-                  </p>
-                  <FileDisplay file={dishImage} />
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setValueAbout("dishImage", undefined as any);
-                    }}
-                    className="text-xs text-red-500 mt-2 hover:underline font-medium"
-                  >
-                    {t("onboarding.restaurant.about.changeImage")}
-                  </button>
-                </div>
-              ) : (
-                <>
-                  <p className="text-sm font-medium text-secondary-orange">
-                    {hasMultipleBranches
-                      ? t("onboarding.restaurant.about.brandLogoUploadText")
-                      : t("onboarding.restaurant.about.dishUploadText")}
-                  </p>
-                  <p className="text-xs text-slate-400 mt-1">
-                    {hasMultipleBranches
-                      ? t("onboarding.restaurant.about.brandLogoUploadSubtext")
-                      : t("onboarding.restaurant.about.dishUploadSubtext")}
-                  </p>
-                </>
-              )}
-            </div>
-            {aboutErrors.dishImage && (
-              <p className="text-red-500 text-xs">
-                {aboutErrors.dishImage.message as string}
-              </p>
-            )}
-          </div>
+          {/* Outlet image (always) + brand logo (multi-branch only) - 2026-10-20. */}
+          <CroppedImageUpload
+            value={dishImage}
+            onChange={(file) => setValueAbout("dishImage", file, { shouldValidate: true })}
+            aspect={16 / 9}
+            label={t("onboarding.restaurant.about.dishLabel")}
+            uploadText={t("onboarding.restaurant.about.dishUploadText")}
+            uploadSubtext={t("onboarding.restaurant.about.dishUploadSubtext")}
+            error={aboutErrors.dishImage?.message as string | undefined}
+          />
+          {hasMultipleBranches && (
+            <CroppedImageUpload
+              value={brandLogo}
+              onChange={(file) => setValueAbout("brandLogo", file, { shouldValidate: true })}
+              aspect={1}
+              label={t("onboarding.restaurant.about.brandLogoLabel")}
+              uploadText={t("onboarding.restaurant.about.brandLogoUploadText")}
+              uploadSubtext={t("onboarding.restaurant.about.brandLogoUploadSubtext")}
+              error={aboutErrors.brandLogo?.message as string | undefined}
+            />
+          )}
 
           {/* Info Alert */}
           <div className="bg-blue-50 border border-blue-100 rounded-xl p-4 flex gap-3">
@@ -1342,9 +1319,8 @@ export const RestaurantInfo = () => {
                 {t("onboarding.restaurant.about.imageSpecTitle")}
               </p>
               <p className="text-xs text-blue-600 leading-relaxed">
-                {hasMultipleBranches
-                  ? t("onboarding.restaurant.about.brandLogoSpecText")
-                  : t("onboarding.restaurant.about.imageSpecText")}
+                {t("onboarding.restaurant.about.imageSpecText")}
+                {hasMultipleBranches && ` ${t("onboarding.restaurant.about.brandLogoSpecText")}`}
               </p>
             </div>
           </div>
@@ -1436,17 +1412,6 @@ export const RestaurantInfo = () => {
         </div>
       </Modal>
 
-      {cropState && (
-        <ImageCropModal
-          isOpen
-          imageSrc={cropState.imageSrc}
-          fileName={cropState.file.name}
-          fileType={cropState.file.type}
-          aspect={16 / 9}
-          onCancel={handleCropCancel}
-          onCropped={handleCropped}
-        />
-      )}
     </div>
   );
 };

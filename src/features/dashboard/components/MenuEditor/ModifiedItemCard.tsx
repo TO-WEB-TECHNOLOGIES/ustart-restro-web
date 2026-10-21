@@ -14,6 +14,18 @@ import {
 } from "lucide-react";
 import type { MenuItem } from "../../../../types/menuTypes";
 import { useRestaurantStore } from "../../store/useRestaurantStore";
+import { SPICE_SWEET, spiceLevelLabelKey } from "./spiceLevel";
+import {
+  ALLERGEN_LABELS,
+  CONSISTENCY_LABELS,
+  FOOD_TYPE_LABELS,
+  FROSTING_LABELS,
+  SERVICE_TYPE_LABELS,
+  TAG_LABELS,
+  enumLabel,
+  enumListLabel,
+  yesNoLabel,
+} from "./menuLabels";
 
 /**
  * Helper to render the specific value changes for an item field
@@ -143,7 +155,13 @@ export const ModifiedItemCard = ({
 
       if (oldBool !== newBool) {
         const address = addresses.find((a) => a.id === key);
-        const addressLabel = address ? address.label : key; // Use ID as fallback label
+        // 2026-10-21: "default" is the single-outlet stock key (menuApi maps global availability
+        // to it) and was printed as-is; any other unknown key still falls back to the raw id.
+        const addressLabel = address
+          ? address.label
+          : key === "default"
+            ? t("dashboard.menuEditor.review.stockStatus")
+            : key;
 
         changes.push({
           addressLabel,
@@ -279,37 +297,25 @@ export const ModifiedItemCard = ({
                 {/* Detailed Specs */}
                 <InfoLine
                   label={t("dashboard.menuEditor.filter.dietaryPreference")}
-                  value={current.foodType}
+                  value={enumLabel(t, FOOD_TYPE_LABELS, current.foodType)}
                   icon={Info}
                 />
                 <InfoLine
                   label={t("dashboard.menuEditor.customisable")}
-                  value={
-                    current.isCustomisable ? t("common.yes") : t("common.no")
-                  }
+                  value={yesNoLabel(t, current.isCustomisable)}
                 />
                 <InfoLine
                   label={t("dashboard.menuEditor.addItem.serviceType")}
-                  value={current.serviceType}
+                  value={enumLabel(t, SERVICE_TYPE_LABELS, current.serviceType)}
                   icon={ArrowLeft}
                 />
                 <InfoLine
                   label={t("dashboard.menuEditor.addItem.consistency")}
-                  value={current.itemType?.join(", ")}
+                  value={enumListLabel(t, CONSISTENCY_LABELS, current.itemType)}
                 />
                 <InfoLine
                   label={t("dashboard.menuEditor.addItem.frosting")}
-                  value={
-                    current.isFrosting === "NO"
-                      ? t("dashboard.menuEditor.addItem.frostingOptions.no")
-                      : current.isFrosting === "FROSTED"
-                        ? t(
-                            "dashboard.menuEditor.addItem.frostingOptions.frosted",
-                          )
-                        : t(
-                            "dashboard.menuEditor.addItem.frostingOptions.pre",
-                          )
-                  }
+                  value={enumLabel(t, FROSTING_LABELS, current.isFrosting)}
                   icon={Coffee}
                 />
                 <InfoLine
@@ -332,65 +338,49 @@ export const ModifiedItemCard = ({
                 />
                 <InfoLine
                   label={t("dashboard.menuEditor.addItem.spiceLevel")}
-                  value={
-                    current.spiceLevel === -1
-                      ? t("dashboard.menuEditor.addItem.spiceLevels.sweet")
-                      : current.spiceLevel === 1
-                        ? t("dashboard.menuEditor.addItem.spiceLevels.mild")
-                        : current.spiceLevel === 2
-                          ? t("dashboard.menuEditor.addItem.spiceLevels.medium")
-                          : t("dashboard.menuEditor.addItem.spiceLevels.hot")
-                  }
-                  icon={current.spiceLevel === -1 ? Candy : Flame}
+                  value={t(spiceLevelLabelKey(current.spiceLevel))}
+                  icon={current.spiceLevel === SPICE_SWEET ? Candy : Flame}
                 />
                 <InfoLine
                   label={t("dashboard.menuEditor.addItem.aiGeneratedLabel")}
-                  value={
-                    current.isAiGeneratedImage
-                      ? t("common.yes")
-                      : t("common.no")
-                  }
+                  value={yesNoLabel(t, current.isAiGeneratedImage)}
                   icon={Sparkles}
                 />
 
                 {/* Tags & Allergens */}
                 <InfoLine
-                  label="Tags"
-                  value={current.tags
-                    ?.filter((t) => t !== "NONE_OF_THESE")
-                    .join(", ")}
+                  label={t("dashboard.menuEditor.addItem.tags")}
+                  value={enumListLabel(t, TAG_LABELS, current.tags)}
                 />
                 <InfoLine
-                  label="Allergens"
-                  value={current.allergens
-                    ?.filter((a) => a !== "NONE_OF_THESE")
-                    .join(", ")}
+                  label={t("dashboard.menuEditor.addItem.allergyInfo")}
+                  value={enumListLabel(t, ALLERGEN_LABELS, current.allergens)}
                 />
 
                 {/* Nutritional Info */}
                 <InfoLine
-                  label="Calories"
+                  label={t("dashboard.menuEditor.addItem.nutrition.calories")}
                   value={current.nutritionalInfo?.calories}
                   suffix=" kcal"
                 />
                 <InfoLine
-                  label="Protein"
+                  label={t("dashboard.menuEditor.addItem.nutrition.protein")}
                   value={current.nutritionalInfo?.protein}
                 />
                 <InfoLine
-                  label="Carbs"
+                  label={t("dashboard.menuEditor.addItem.nutrition.carbs")}
                   value={current.nutritionalInfo?.carbs}
                 />
-                <InfoLine label="Fats" value={current.nutritionalInfo?.fats} />
+                <InfoLine label={t("dashboard.menuEditor.addItem.nutrition.fats")} value={current.nutritionalInfo?.fats} />
 
                 {/* Availability */}
                 <div className="flex items-center gap-3 text-[10px] md:text-xs py-1.5 border-b border-slate-100 dark:border-slate-800/40 last:border-none">
                   <span className="text-slate-400 w-28 shrink-0 font-medium">
-                    Timing
+                    {t("dashboard.menuEditor.addItem.availability")}
                   </span>
                   <span className="text-slate-900 dark:text-slate-200 font-bold flex-1 truncate">
                     {current.availability?.allDay
-                      ? "All Day"
+                      ? t("dashboard.menuEditor.review.allDay")
                       : `${current.availability?.startTime} - ${current.availability?.endTime}`}
                   </span>
                 </div>
@@ -409,8 +399,8 @@ export const ModifiedItemCard = ({
               <div className="space-y-0.5">
                 <ChangeLine
                   label={t("dashboard.menuEditor.filter.dietaryPreference")}
-                  oldVal={original.foodType}
-                  newVal={current.foodType}
+                  oldVal={enumLabel(t, FOOD_TYPE_LABELS, original.foodType)}
+                  newVal={enumLabel(t, FOOD_TYPE_LABELS, current.foodType)}
                 />
 
                 {/* Dynamic Stock Changes */}
@@ -462,38 +452,18 @@ export const ModifiedItemCard = ({
                 {/* Detailed Spec Changes */}
                 <ChangeLine
                   label={t("dashboard.menuEditor.addItem.serviceType")}
-                  oldVal={original.serviceType}
-                  newVal={current.serviceType}
+                  oldVal={enumLabel(t, SERVICE_TYPE_LABELS, original.serviceType)}
+                  newVal={enumLabel(t, SERVICE_TYPE_LABELS, current.serviceType)}
                 />
                 <ChangeLine
                   label={t("dashboard.menuEditor.addItem.consistency")}
-                  oldVal={original.itemType?.join(", ")}
-                  newVal={current.itemType?.join(", ")}
+                  oldVal={enumListLabel(t, CONSISTENCY_LABELS, original.itemType)}
+                  newVal={enumListLabel(t, CONSISTENCY_LABELS, current.itemType)}
                 />
                 <ChangeLine
                   label={t("dashboard.menuEditor.addItem.frosting")}
-                  oldVal={
-                    original.isFrosting === "NO"
-                      ? t("dashboard.menuEditor.addItem.frostingOptions.no")
-                      : original.isFrosting === "FROSTED"
-                        ? t(
-                            "dashboard.menuEditor.addItem.frostingOptions.fresh",
-                          )
-                        : t(
-                            "dashboard.menuEditor.addItem.frostingOptions.preFrosted",
-                          )
-                  }
-                  newVal={
-                    current.isFrosting === "NO"
-                      ? t("dashboard.menuEditor.addItem.frostingOptions.no")
-                      : current.isFrosting === "FROSTED"
-                        ? t(
-                            "dashboard.menuEditor.addItem.frostingOptions.frosted",
-                          )
-                        : t(
-                            "dashboard.menuEditor.addItem.frostingOptions.pre",
-                          )
-                  }
+                  oldVal={enumLabel(t, FROSTING_LABELS, original.isFrosting)}
+                  newVal={enumLabel(t, FROSTING_LABELS, current.isFrosting)}
                 />
                 <ChangeLine
                   label={t("dashboard.menuEditor.addItem.serves")}
@@ -519,101 +489,65 @@ export const ModifiedItemCard = ({
                 />
                 <ChangeLine
                   label={t("dashboard.menuEditor.addItem.spiceLevel")}
-                  oldVal={
-                    original.spiceLevel === -1
-                      ? t("dashboard.menuEditor.addItem.spiceLevels.sweet")
-                      : original.spiceLevel === 1
-                        ? t("dashboard.menuEditor.addItem.spiceLevels.mild")
-                        : original.spiceLevel === 2
-                          ? t("dashboard.menuEditor.addItem.spiceLevels.medium")
-                          : t("dashboard.menuEditor.addItem.spiceLevels.hot")
-                  }
-                  newVal={
-                    current.spiceLevel === -1
-                      ? t("dashboard.menuEditor.addItem.spiceLevels.sweet")
-                      : current.spiceLevel === 1
-                        ? t("dashboard.menuEditor.addItem.spiceLevels.mild")
-                        : current.spiceLevel === 2
-                          ? t("dashboard.menuEditor.addItem.spiceLevels.medium")
-                          : t("dashboard.menuEditor.addItem.spiceLevels.hot")
-                  }
+                  oldVal={t(spiceLevelLabelKey(original.spiceLevel))}
+                  newVal={t(spiceLevelLabelKey(current.spiceLevel))}
                 />
                 <ChangeLine
                   label={t("dashboard.menuEditor.customisable")}
-                  oldVal={
-                    original.isCustomisable ? t("common.yes") : t("common.no")
-                  }
-                  newVal={
-                    current.isCustomisable ? t("common.yes") : t("common.no")
-                  }
+                  oldVal={yesNoLabel(t, original.isCustomisable)}
+                  newVal={yesNoLabel(t, current.isCustomisable)}
                 />
                 <ChangeLine
                   label={t("dashboard.menuEditor.addItem.aiGeneratedLabel")}
-                  oldVal={
-                    original.isAiGeneratedImage
-                      ? t("common.yes")
-                      : t("common.no")
-                  }
-                  newVal={
-                    current.isAiGeneratedImage
-                      ? t("common.yes")
-                      : t("common.no")
-                  }
+                  oldVal={yesNoLabel(t, original.isAiGeneratedImage)}
+                  newVal={yesNoLabel(t, current.isAiGeneratedImage)}
                 />
                 <ChangeLine
                   label={t("dashboard.menuEditor.addItem.tags")}
-                  oldVal={original.tags
-                    ?.filter((t) => t !== "NONE_OF_THESE")
-                    .join(", ")}
-                  newVal={current.tags
-                    ?.filter((t) => t !== "NONE_OF_THESE")
-                    .join(", ")}
+                  oldVal={enumListLabel(t, TAG_LABELS, original.tags)}
+                  newVal={enumListLabel(t, TAG_LABELS, current.tags)}
                 />
                 <ChangeLine
                   label={t("dashboard.menuEditor.addItem.allergyInfo")}
-                  oldVal={original.allergens
-                    ?.filter((a) => a !== "NONE_OF_THESE")
-                    .join(", ")}
-                  newVal={current.allergens
-                    ?.filter((a) => a !== "NONE_OF_THESE")
-                    .join(", ")}
+                  oldVal={enumListLabel(t, ALLERGEN_LABELS, original.allergens)}
+                  newVal={enumListLabel(t, ALLERGEN_LABELS, current.allergens)}
                 />
 
                 {/* Nutrition Changes */}
                 <ChangeLine
-                  label="Calories"
+                  label={t("dashboard.menuEditor.addItem.nutrition.calories")}
                   oldVal={original.nutritionalInfo?.calories}
                   newVal={current.nutritionalInfo?.calories}
                 />
                 <ChangeLine
-                  label="Protein"
+                  label={t("dashboard.menuEditor.addItem.nutrition.protein")}
                   oldVal={original.nutritionalInfo?.protein}
                   newVal={current.nutritionalInfo?.protein}
                 />
                 <ChangeLine
-                  label="Carbs"
+                  label={t("dashboard.menuEditor.addItem.nutrition.carbs")}
                   oldVal={original.nutritionalInfo?.carbs}
                   newVal={current.nutritionalInfo?.carbs}
                 />
                 <ChangeLine
-                  label="Fats"
+                  label={t("dashboard.menuEditor.addItem.nutrition.fats")}
                   oldVal={original.nutritionalInfo?.fats}
                   newVal={current.nutritionalInfo?.fats}
                 />
 
                 {/* Availability Changes */}
                 <ChangeLine
-                  label="Avail. All Day"
-                  oldVal={original.availability?.allDay ? "Yes" : "No"}
-                  newVal={current.availability?.allDay ? "Yes" : "No"}
+                  label={t("dashboard.menuEditor.review.availAllDay")}
+                  oldVal={yesNoLabel(t, original.availability?.allDay)}
+                  newVal={yesNoLabel(t, current.availability?.allDay)}
                 />
                 <ChangeLine
-                  label="Avail. Start"
+                  label={t("dashboard.menuEditor.review.availStart")}
                   oldVal={original.availability?.startTime}
                   newVal={current.availability?.startTime}
                 />
                 <ChangeLine
-                  label="Avail. End"
+                  label={t("dashboard.menuEditor.review.availEnd")}
                   oldVal={original.availability?.endTime}
                   newVal={current.availability?.endTime}
                 />

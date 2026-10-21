@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { LocateFixed, Loader2, Search } from "lucide-react";
 import { Label } from "@/components/ui/label";
+import { RequiredMark } from "@/components/ui/required-mark";
 import { Input } from "@/components/ui/input";
 import { MapPicker } from "@/components/ui/map-picker";
 import { toast } from "sonner";
@@ -16,6 +17,8 @@ interface LocationPickerProps {
     /** Called when a search result is picked, in addition to onLocationChange - lets the
      * caller auto-fill address fields from the result's structured components. */
     onAddressSelected?: (result: AddressSearchResult) => void;
+    /** Shows the mandatory-field asterisk after the label (2026-10-20). */
+    required?: boolean;
 }
 
 /**
@@ -26,7 +29,7 @@ interface LocationPickerProps {
  * on first mount, and a debounced search box (backed by the shared address-search API) can
  * also move the pin.
  */
-export const LocationPicker = ({ label, locationValue, onLocationChange, error, onAddressSelected }: LocationPickerProps) => {
+export const LocationPicker = ({ label, locationValue, onLocationChange, error, onAddressSelected, required }: LocationPickerProps) => {
     const { t } = useTranslation();
     const [isLocating, setIsLocating] = useState(false);
     const [searchQuery, setSearchQuery] = useState("");
@@ -108,6 +111,7 @@ export const LocationPicker = ({ label, locationValue, onLocationChange, error, 
             {label && (
                 <Label className="text-base font-semibold text-gray-700 dark:text-slate-200 uppercase tracking-wide">
                     {label}
+                    {required && <RequiredMark />}
                 </Label>
             )}
 

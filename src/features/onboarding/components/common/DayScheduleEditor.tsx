@@ -191,6 +191,23 @@ export const DayScheduleEditor = ({
     }));
   };
 
+  // 2026-10-20: "Copy to all days" (cards layout only) - set timings once instead of per day.
+  // Copies the source day's slots to all 7 days and opens every day; the partner then unticks
+  // the days they're closed (one click each), which is fewer steps than re-entering times.
+  // Slots are cloned so later edits to one day never mutate another day's slot objects.
+  const copyDayToAll = (dayIndex: number) => {
+    setCopyFromId("");
+    const sourceSlots = days[dayIndex].schedules || [];
+    onChange(
+      days.map((day) => ({
+        ...day,
+        isClosed: false,
+        schedules: sourceSlots.map((slot) => ({ ...slot })),
+      })),
+    );
+    toast.success(t("onboarding.restaurant.complete.schedule.copiedToAllDays"));
+  };
+
   const removeTimeSlot = (dayIndex: number, scheduleIndex: number) => {
     updateDay(dayIndex, (day) => ({
       ...day,
@@ -314,9 +331,21 @@ export const DayScheduleEditor = ({
             {days.map((day, idx) =>
               !day.isClosed && (
                 <div key={day.dayOfWeek} className="space-y-2">
-                  <Label className="text-xs font-bold uppercase tracking-wide text-slate-500">
-                    {dayLabel(day.dayOfWeek)}
-                  </Label>
+                  <div className="flex items-center justify-between gap-2">
+                    <Label className="text-xs font-bold uppercase tracking-wide text-slate-500 dark:text-zinc-400">
+                      {dayLabel(day.dayOfWeek)}
+                    </Label>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="text-secondary-orange hover:text-secondary-orange hover:bg-orange-50/50 dark:hover:bg-orange-900/20 h-7 text-xs font-medium"
+                      onClick={() => copyDayToAll(idx)}
+                    >
+                      <Copy className="w-3.5 h-3.5 mr-1" />
+                      {t("onboarding.restaurant.complete.schedule.copyToAllDays")}
+                    </Button>
+                  </div>
                   {renderSlots(day, idx)}
                 </div>
               ),

@@ -100,7 +100,7 @@ export const UploadMenu = () => {
         {/* Category Sidebar - Desktop collapsible, Mobile overlay */}
         <div
           className={`
-                            fixed md:relative inset-y-0 left-0 z-40 md:z-auto
+                            fixed md:relative inset-y-0 left-0 z-40 md:z-20
                             transition-all duration-300 ease-in-out transform
                             ${isSidebarOpen ? "translate-x-0 w-72" : "-translate-x-full md:translate-x-0 md:w-0"}
                             bg-white shadow-xl md:shadow-none
@@ -112,10 +112,18 @@ export const UploadMenu = () => {
             hideScore={true}
           />
 
-          {/* Desktop Sidebar Toggle Button */}
+          {/* Desktop Sidebar Toggle Button
+              2026-10-21: once collapsed, the button couldn't be reached, so the sidebar only came
+              back on reload. Two causes: (1) the wrapper was md:z-auto, but its `transform` makes
+              it a stacking context painted BELOW the main area that follows it, so the main area
+              covered the button (now md:z-20); (2) at md:w-0, -right-3 left most of the button at
+              negative x, clipped by the row's overflow-hidden - when closed it now sits fully
+              inside the visible area (-right-10). */}
           <button
+            type="button"
             onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-            className="hidden md:flex absolute -right-3 top-1/2 -translate-y-1/2 z-50 p-1.5 bg-white border border-slate-200 rounded-full shadow-md text-slate-400 hover:text-[var(--color-primary-blue)] transition-all hover:scale-110 active:scale-90"
+            aria-label={t(isSidebarOpen ? "dashboard.menuEditor.hideCategories" : "dashboard.menuEditor.showCategories")}
+            className={`hidden md:flex absolute ${isSidebarOpen ? "-right-3" : "-right-10"} top-1/2 -translate-y-1/2 z-50 p-1.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-full shadow-md text-slate-400 hover:text-[var(--color-primary-blue)] transition-all hover:scale-110 active:scale-90`}
           >
             {isSidebarOpen ? (
               <PanelLeftClose className="w-4 h-4" />

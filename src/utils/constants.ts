@@ -30,7 +30,8 @@ export const INDIAN_STATES = [
     "Andaman and Nicobar Islands",
     "Chandigarh",
     "Dadra and Nagar Haveli and Daman and Diu",
-    "New Delhi",
+    // 2026-10-20: "Delhi", not "New Delhi" (product decision; matches the Primary Address state).
+    "Delhi",
     "Jammu and Kashmir",
     "Ladakh",
     "Lakshadweep",

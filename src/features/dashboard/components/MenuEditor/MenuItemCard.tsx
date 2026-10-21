@@ -22,6 +22,7 @@ import { Modal } from "../../../../components/ui/modal";
 import { DeleteItemModal } from "./DeleteItemModal";
 import { BlockItemModal } from "./BlockItemModal";
 import { AddEditItemModal } from "./AddEditItemModal";
+import { TaxRateSelect, formatTaxRate } from "./TaxRateSelect";
 
 interface MenuItemCardProps {
   /** The menu item data to display */
@@ -377,19 +378,16 @@ export const MenuItemCard = ({ item }: MenuItemCardProps) => {
                     <span className="hidden md:inline text-[10px] font-black uppercase tracking-widest text-slate-400">
                       {t("dashboard.menuEditor.taxLabel")}
                     </span>
-                    <input
-                      type="number"
+                    {/* 2026-10-21: fixed GST slabs (Exempt = 0 / 5 / 18) instead of a free number - see TaxRateSelect. */}
+                    <TaxRateSelect
                       value={item.taxAmount}
-                      onChange={(e) =>
-                        handleUpdateField("taxAmount", Number(e.target.value))
-                      }
-                      className="w-8 bg-transparent text-sm font-black text-slate-900 dark:text-white outline-none text-right"
+                      onChange={(rate) => handleUpdateField("taxAmount", rate)}
+                      className="bg-transparent dark:bg-slate-800 text-sm font-black text-slate-900 dark:text-white outline-none cursor-pointer"
                     />
-                    <span className="text-sm font-bold text-slate-400">%</span>
                   </div>
                   <div className="flex flex-col items-end mr-2">
                     <span className="text-[10px] font-black text-slate-400 uppercase tracking-tighter">
-                      ₹{finalPrice} + {item.taxAmount}%{" "}
+                      ₹{finalPrice} + {formatTaxRate(t, item.taxAmount)}{" "}
                       {t("dashboard.menuEditor.taxLabel")}
                     </span>
                     <span className="text-xs font-black text-slate-900 dark:text-white">

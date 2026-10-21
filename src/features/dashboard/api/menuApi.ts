@@ -1,5 +1,6 @@
 import type { Category, MenuItem } from '@/types/menuTypes';
 import { delay, MOCK_MENU_SCORE } from './data/mockData';
+import { spiceLevelFromApi } from '../components/MenuEditor/spiceLevel';
 
 /**
  * Data representing menu health metrics.
@@ -175,6 +176,9 @@ export const fetchCategoryItems = async (
             tags: (dto.tags?.map(t => t.toUpperCase()) || []) as any,
             itemType: (dto.itemTypes?.map(t => t.toUpperCase()) || []) as any,
             serviceType: (dto.servingOptions?.toUpperCase() || 'BOTH') as any,
+            // 2026-10-21: was never mapped, so editing an item reset it to the form default and
+            // saving overwrote the stored level.
+            spiceLevel: spiceLevelFromApi(dto.spiceLevel),
         }));
 
         return {
@@ -291,7 +295,8 @@ export const createMenuItem = async (categoryId: number, itemData: Partial<MenuI
             serviceType: itemData.serviceType || 'BOTH',
             itemType: itemData.itemType || ['SOLID'],
             isFrosting: itemData.isFrosting || 'NO',
-            spiceLevel: itemData.spiceLevel || 1,
+            // ?? not ||: 0 is "Sweet", a valid level (2026-10-21).
+            spiceLevel: itemData.spiceLevel ?? 1,
             description: itemData.description || '',
             serves: itemData.serves || 1,
             portionSize: itemData.portionSize || 1,

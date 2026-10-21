@@ -425,9 +425,11 @@ export const CategorySidebar = ({
             setParentCategory(null);
             setIsAddModalOpen(true);
           }}
-          className="flex items-center gap-1.5 text-[var(--color-primary-blue)] dark:text-blue-400 text-[10px] font-black uppercase tracking-wider py-1.5 px-2.5 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-all border border-transparent hover:border-blue-100 dark:hover:border-blue-800 shrink-0"
+          // 2026-10-21: enlarged (was 10px text, py-1.5) - too small to spot/tap as the main
+          // action of the sidebar; a resting border now marks it as a button.
+          className="flex items-center gap-2 text-[var(--color-primary-blue)] dark:text-blue-400 text-xs font-black uppercase tracking-wider py-2.5 px-4 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-xl transition-all border border-blue-100 dark:border-blue-800 hover:border-blue-200 dark:hover:border-blue-700 shrink-0"
         >
-          <Plus className="w-3.5 h-3.5" />
+          <Plus className="w-4 h-4" />
           {t("dashboard.menuEditor.addCategory")}
         </button>
       </div>

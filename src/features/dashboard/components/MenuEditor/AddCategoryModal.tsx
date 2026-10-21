@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { X, Check, ChevronDown, Loader2, AlertCircle } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { RequiredMark } from '@/components/ui/required-mark';
 import { useMenu } from '../../hooks/useMenu';
 import { type Category } from '../../../../types/menuTypes';
 import { categorySchema } from '../../validations/menuSchemas';
@@ -146,7 +147,7 @@ export const AddCategoryModal: React.FC<AddCategoryModalProps> = ({ isOpen, onCl
                         {/* Category Name */}
                         <div>
                             <label className="block text-[10px] font-black text-white uppercase tracking-widest mb-2" htmlFor="categoryName">
-                                {t('dashboard.menuEditor.addCategoryModal.nameLabel')}
+                                {t('dashboard.menuEditor.addCategoryModal.nameLabel')}<RequiredMark />
                             </label>
                             <input
                                 className={`w-full px-4 py-3 bg-slate-50 dark:bg-slate-800 border ${errors.name ? 'border-red-500 focus:ring-red-500/10 focus:border-red-500' : 'border-slate-200 dark:border-slate-700 focus:ring-[var(--color-secondary-orange)]/10 focus:border-[var(--color-secondary-orange)]'} rounded-2xl focus:outline-none focus:ring-4 text-slate-900 dark:text-white font-bold placeholder-slate-400 dark:placeholder-slate-600 transition-all shadow-sm`}
@@ -209,10 +210,12 @@ export const AddCategoryModal: React.FC<AddCategoryModalProps> = ({ isOpen, onCl
                         )}
 
                         {/* Submit Button */}
+                        {/* 2026-10-21: solid grey disabled state instead of disabled:opacity-50 - white text on
+                            the 50%-faded button was nearly unreadable until a name is entered. */}
                         <button
                             type="submit"
                             disabled={!name.trim() || isSubmitting}
-                            className="w-full bg-[var(--color-secondary-orange)] hover:opacity-90 disabled:opacity-50 text-white font-black py-4 rounded-2xl shadow-lg shadow-[var(--color-secondary-orange)]/20 transition-all transform active:scale-[0.98] flex items-center justify-center gap-2 mt-4"
+                            className="w-full bg-[var(--color-secondary-orange)] hover:opacity-90 disabled:bg-slate-200 disabled:text-slate-500 disabled:shadow-none disabled:cursor-not-allowed dark:disabled:bg-slate-800 dark:disabled:text-slate-400 text-white font-black py-4 rounded-2xl shadow-lg shadow-[var(--color-secondary-orange)]/20 transition-all transform active:scale-[0.98] flex items-center justify-center gap-2 mt-4"
                         >
                             {isSubmitting ? (
                                 <Loader2 className="w-5 h-5 animate-spin" />

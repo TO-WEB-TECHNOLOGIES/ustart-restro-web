@@ -58,7 +58,7 @@ export interface MenuItem {
     maxQuantity?: number;
     tags?: MenuTag[];
     allergens?: Allergen[];
-    spiceLevel?: number; // 0 (None) to 3 (Hot)
+    spiceLevel?: number; // 0 Sweet, 1 Mild, 2 Medium, 3 Hot - see MenuEditor/spiceLevel.ts
     nutritionalInfo?: {
         calories: string;
         protein: string;

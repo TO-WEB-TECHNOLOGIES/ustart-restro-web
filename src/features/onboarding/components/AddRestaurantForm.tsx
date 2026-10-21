@@ -4,12 +4,15 @@ import {
   type AddRestaurantValues,
   addRestaurantSchema,
 } from "../validations/outletSchema";
+// 2026-10-20: served city/state lists shared with onboarding (was hardcoded Gurugram/Haryana).
+import { CITY_STATE_MAP, SERVED_CITY_OPTIONS, SERVED_STATE_OPTIONS } from "../schemas";
 import { useOutletStore } from "../store/useOutletStore";
 import { MenuList } from "./common/MenuList";
 import { MenuImagesPicker } from "./common/MenuImagesPicker";
 import { FoodTypeButton } from "./common/FoodTypeSelector";
 import { LocationPicker } from "./common/LocationPicker";
 import { ManagerDetails } from "./common/ManagerDetails";
+import { ImageCropModal } from "./common/ImageCropModal";
 import ReactSelect from "react-select";
 import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
 import CreatableSelect from "react-select/creatable";
@@ -29,6 +32,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
+import { RequiredMark } from "@/components/ui/required-mark";
 import { useAuth } from "@/context/AuthContext";
 import { toast } from "sonner";
 import { useForm, Controller } from "react-hook-form";
@@ -49,10 +53,13 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 // --- Helper Components ---
 
-const FloatingInput = ({ label, error, placeholder, ...props }: any) => (
+// `required` only draws the label asterisk (2026-10-20) - destructured so it never reaches the
+// <input>: native `required` would pop browser validation bubbles over the zod messages.
+const FloatingInput = ({ label, error, placeholder, required, ...props }: any) => (
   <div className="space-y-1.5">
     <Label className="text-xs font-bold uppercase tracking-widest pl-1">
       {label}
+      {required && <RequiredMark />}
     </Label>
     <input
       className="block px-3 py-2.5 w-full text-base text-gray-900 bg-white rounded-xl border border-gray-200 focus:outline-none focus:ring-1 focus:ring-[#FF9F43] focus:border-[#FF9F43] transition-all"
@@ -322,16 +329,36 @@ export const AddRestaurantForm = ({
     return () => subscription.unsubscribe();
   }, [watch, isEditMode]);
 
+  // 2026-10-20: outlet images are cropped to 16:9 before use - the same ImageCropModal and
+  // aspect as onboarding's single-branch outlet image, so every outlet image has one aspect
+  // ratio (the brand logo is the square one). The 1MB limit applies to the CROPPED file, which
+  // is what actually gets uploaded.
+  const [primaryCrop, setPrimaryCrop] = useState<{ file: File; imageSrc: string } | null>(null);
+
   const handlePrimaryImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      if (file.size > 1024 * 1024) {
-        toast.error("Primary image size must be less than 1MB");
-        return;
-      }
-      setPrimaryPreview(URL.createObjectURL(file));
-      setValue("primaryImage", file);
+      setPrimaryCrop({ file, imageSrc: URL.createObjectURL(file) });
     }
+    // Reset so picking the same file again (e.g. after cancelling the crop) still fires.
+    e.target.value = "";
+  };
+
+  const closePrimaryCrop = () => {
+    if (primaryCrop) URL.revokeObjectURL(primaryCrop.imageSrc);
+    setPrimaryCrop(null);
+  };
+
+  const handlePrimaryCropped = (croppedFile: File) => {
+    closePrimaryCrop();
+    if (croppedFile.size > 1024 * 1024) {
+      toast.error(
+        t("onboarding.restaurant.complete.setupForm.fileTooLarge", { name: croppedFile.name, size: 1 }),
+      );
+      return;
+    }
+    setPrimaryPreview(URL.createObjectURL(croppedFile));
+    setValue("primaryImage", croppedFile);
   };
 
   const handleMenuImagesChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -605,6 +632,7 @@ export const AddRestaurantForm = ({
                 <div className="p-6 md:p-8 space-y-8">
                   <div className="grid grid-cols-1 gap-6">
                     <FloatingInput
+                      required
                       label={t(
                         "onboarding.restaurant.complete.setupForm.restaurantName",
                       )}
@@ -624,6 +652,7 @@ export const AddRestaurantForm = ({
                         </Label>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
                           <FloatingInput
+                            required
                             label={t(
                               "onboarding.restaurant.form.addressLabels.line1",
                             )}
@@ -631,6 +660,7 @@ export const AddRestaurantForm = ({
                             error={errors.restaurantAddress?.line1?.message}
                           />
                           <FloatingInput
+                            required
                             label={t(
                               "onboarding.restaurant.form.addressLabels.line2",
                             )}
@@ -650,16 +680,14 @@ export const AddRestaurantForm = ({
                             <Label className="text-xs font-bold uppercase tracking-widest pl-1">
                               {t(
                                 "onboarding.restaurant.form.addressLabels.locality",
-                              )}
+                              )}<RequiredMark />
                             </Label>
                             <Controller
                               name="restaurantAddress.locality"
                               control={control}
                               render={({ field }) => (
                                 <ReactSelect
-                                  options={[
-                                    { value: "Gurugram", label: "Gurugram" },
-                                  ]}
+                                  options={SERVED_CITY_OPTIONS}
                                   value={
                                     field.value
                                       ? {
@@ -668,9 +696,13 @@ export const AddRestaurantForm = ({
                                         }
                                       : null
                                   }
-                                  onChange={(opt: any) =>
-                                    field.onChange(opt?.value || "")
-                                  }
+                                  onChange={(opt: any) => {
+                                    // 2026-10-20: the state follows the city (CITY_STATE_MAP), so a city/state
+                                    // mismatch like Noida + Haryana can't be submitted.
+                                    const city = opt?.value || "";
+                                    field.onChange(city);
+                                    if (city) setValue("restaurantAddress.state", CITY_STATE_MAP[city], { shouldDirty: true });
+                                  }}
                                   className="text-base"
                                   styles={{
                                     control: (base, state) => ({
@@ -701,16 +733,14 @@ export const AddRestaurantForm = ({
                             <Label className="text-xs font-bold uppercase tracking-widest pl-1">
                               {t(
                                 "onboarding.restaurant.form.addressLabels.state",
-                              )}
+                              )}<RequiredMark />
                             </Label>
                             <Controller
                               name="restaurantAddress.state"
                               control={control}
                               render={({ field }) => (
                                 <ReactSelect
-                                  options={[
-                                    { value: "Haryana", label: "Haryana" },
-                                  ]}
+                                  options={SERVED_STATE_OPTIONS}
                                   value={
                                     field.value
                                       ? {
@@ -742,6 +772,7 @@ export const AddRestaurantForm = ({
                             />
                           </div>
                           <FloatingInput
+                            required
                             label={t(
                               "onboarding.restaurant.form.addressLabels.pincode",
                             )}
@@ -854,7 +885,7 @@ export const AddRestaurantForm = ({
                           <Label className="text-lg font-bold uppercase tracking-widest pl-1">
                             {t(
                               "onboarding.restaurant.complete.setupForm.servingOptions",
-                            )}
+                            )}<RequiredMark />
                           </Label>
                           <p className="text-base pl-1">
                             {t(
@@ -914,7 +945,7 @@ export const AddRestaurantForm = ({
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-x-10 gap-y-3 pt-4">
                     <div className="space-y-4">
                       <h3 className="text-base font-semibold uppercase tracking-wide">
-                        {t("onboarding.restaurant.about.foodTypeLabel")}
+                        {t("onboarding.restaurant.about.foodTypeLabel")}<RequiredMark />
                       </h3>
                       <Controller
                         control={control}
@@ -967,7 +998,7 @@ export const AddRestaurantForm = ({
 
                     <div className="space-y-4">
                       <Label className="text-base font-semibold uppercase tracking-wide">
-                        {t("onboarding.restaurant.about.cuisineLabel")}
+                        {t("onboarding.restaurant.about.cuisineLabel")}<RequiredMark />
                       </Label>
                       <Controller
                         control={control}
@@ -1067,7 +1098,7 @@ export const AddRestaurantForm = ({
                       <h3 className="text-base font-semibold uppercase tracking-wide mb-3">
                         {t(
                           "onboarding.restaurant.complete.setupForm.primaryImage",
-                        )}
+                        )}<RequiredMark />
                       </h3>
                       <input
                         type="file"
@@ -1078,7 +1109,7 @@ export const AddRestaurantForm = ({
                       />
                       <div
                         onClick={() => primaryInputRef.current?.click()}
-                        className="border-2 border-dashed border-gray-300 rounded-xl p-2 flex flex-col items-center justify-center bg-gray-50 hover:bg-white hover:border-[#FF9F43] transition-all cursor-pointer h-40 overflow-hidden relative"
+                        className="border-2 border-dashed border-gray-300 rounded-xl p-2 flex flex-col items-center justify-center bg-gray-50 hover:bg-white hover:border-[#FF9F43] transition-all cursor-pointer aspect-video overflow-hidden relative"
                       >
                         {primaryPreview ? (
                           <>
@@ -1171,7 +1202,7 @@ export const AddRestaurantForm = ({
                   {watch("servingOptions")?.includes("DINE_IN") && (
                     <div className="pt-2">
                       <h3 className="text-base font-semibold uppercase tracking-wide mb-3 dark:text-zinc-100">
-                        {t("onboarding.restaurant.complete.setupForm.diningMenu")}
+                        {t("onboarding.restaurant.complete.setupForm.diningMenu")}<RequiredMark />
                       </h3>
                       <Controller
                         control={control}
@@ -1207,6 +1238,7 @@ export const AddRestaurantForm = ({
                 <div className="p-6 md:p-8 space-y-8">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <FloatingInput
+                      required
                       label={t(
                         "onboarding.restaurant.complete.setupForm.panNumber",
                       )}
@@ -1222,6 +1254,7 @@ export const AddRestaurantForm = ({
                     />
                     {/* 2026-10-19: each outlet's own FSSAI licence number + expiry */}
                     <FloatingInput
+                      required
                       label={t(
                         "onboarding.restaurant.complete.setupForm.fssaiNumber",
                       )}
@@ -1231,6 +1264,7 @@ export const AddRestaurantForm = ({
                       maxLength={14}
                     />
                     <FloatingInput
+                      required
                       label={t(
                         "onboarding.restaurant.complete.setupForm.fssaiExpiryDate",
                       )}
@@ -1289,7 +1323,7 @@ export const AddRestaurantForm = ({
                     <h3 className="text-base font-semibold uppercase tracking-wide mb-3">
                       {t(
                         "onboarding.restaurant.complete.setupForm.fssaiLicense",
-                      )}
+                      )}<RequiredMark />
                     </h3>
                     <input
                       type="file"
@@ -1476,6 +1510,7 @@ export const AddRestaurantForm = ({
                   {watch("bankAccountType") === "OTHER" && (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 animate-in fade-in slide-in-from-top-4 duration-500">
                       <FloatingInput
+                        required
                         label={t(
                           "onboarding.restaurant.complete.setupForm.bank.accountNumber",
                         )}
@@ -1483,6 +1518,7 @@ export const AddRestaurantForm = ({
                         error={errors.bankDetails?.accountNumber?.message}
                       />
                       <FloatingInput
+                        required
                         label={t(
                           "onboarding.restaurant.complete.setupForm.bank.holderName",
                         )}
@@ -1490,6 +1526,7 @@ export const AddRestaurantForm = ({
                         error={errors.bankDetails?.accountHolderName?.message}
                       />
                       <FloatingInput
+                        required
                         label={t(
                           "onboarding.restaurant.complete.setupForm.bank.bankName",
                         )}
@@ -1497,6 +1534,7 @@ export const AddRestaurantForm = ({
                         error={errors.bankDetails?.bankName?.message}
                       />
                       <FloatingInput
+                        required
                         label={t(
                           "onboarding.restaurant.complete.setupForm.bank.branch",
                         )}
@@ -1504,6 +1542,7 @@ export const AddRestaurantForm = ({
                         error={errors.bankDetails?.bankBranch?.message}
                       />
                       <FloatingInput
+                        required
                         label={t(
                           "onboarding.restaurant.complete.setupForm.bank.ifsc",
                         )}
@@ -1544,6 +1583,18 @@ export const AddRestaurantForm = ({
           </div>
         </form>
       </div>
+
+      {primaryCrop && (
+        <ImageCropModal
+          isOpen
+          imageSrc={primaryCrop.imageSrc}
+          fileName={primaryCrop.file.name}
+          fileType={primaryCrop.file.type}
+          aspect={16 / 9}
+          onCancel={closePrimaryCrop}
+          onCropped={handlePrimaryCropped}
+        />
+      )}
     </div>
   );
 };

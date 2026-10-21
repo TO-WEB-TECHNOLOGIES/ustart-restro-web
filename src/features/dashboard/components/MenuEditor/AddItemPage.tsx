@@ -17,8 +17,11 @@ import { z } from "zod";
 import ReactSelect from "react-select";
 import { Modal } from "@/components/ui/modal";
 import { useTranslation } from "react-i18next";
+import { RequiredMark } from "@/components/ui/required-mark";
 import { useMenuStore } from "../../store/useMenuStore";
 import { multimediaService } from "@/api/multimediaService";
+import { TaxRateSelect } from "./TaxRateSelect";
+import { SPICE_SWEET } from "./spiceLevel";
 
 export const AddItemPage = () => {
   const { t } = useTranslation();
@@ -317,6 +320,30 @@ export const AddItemPage = () => {
             </div>
           </header>
 
+          {/* 2026-10-21: summary of validation errors, right under the Save button. Inline errors
+              alone weren't enough: many fields sit far below the fold (and some - category,
+              food type, AI-image declaration - have no `name` for the scroll-to-error to find),
+              so a failed Save looked like nothing happened. Derived from `errors`, so each line
+              disappears as its field is fixed (updateField clears that field's error). */}
+          {Object.keys(errors).length > 0 && (
+            <div
+              role="alert"
+              className="mb-8 p-4 rounded-2xl border border-red-200 dark:border-red-900/50 bg-red-50 dark:bg-red-950/30 flex gap-3 animate-in fade-in slide-in-from-top-2 duration-300"
+            >
+              <AlertCircle className="w-5 h-5 text-red-500 shrink-0 mt-0.5" />
+              <div>
+                <p className="text-sm font-bold text-red-800 dark:text-red-300">
+                  {t("dashboard.menuEditor.addItem.validation.fixBeforeSave")}
+                </p>
+                <ul className="mt-1 list-disc pl-5 text-sm text-red-700 dark:text-red-400 space-y-0.5">
+                  {Object.entries(errors).map(([field, message]) => (
+                    <li key={field}>{message}</li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+          )}
+
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 md:gap-12 min-h-full">
             {/* Left Column */}
             <div className="lg:col-span-7 flex flex-col space-y-12 md:space-y-16">
@@ -331,7 +358,7 @@ export const AddItemPage = () => {
                     className={`bg-white dark:bg-slate-900 p-1 rounded-2xl shadow-sm border ${errors.name ? "border-red-500" : "border-slate-100"} dark:border-slate-800 ring-1 ring-slate-100 dark:ring-slate-800 focus-within:ring-2 focus-within:ring-[var(--color-primary-blue)] transition-all`}
                   >
                     <label className="block text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider px-4 pt-3">
-                      {t("dashboard.menuEditor.addItem.itemName")}
+                      {t("dashboard.menuEditor.addItem.itemName")}<RequiredMark />
                     </label>
                     <div className="px-4 pb-2">
                       <input
@@ -689,7 +716,7 @@ export const AddItemPage = () => {
                     className={`bg-white dark:bg-slate-900 p-1 rounded-2xl shadow-sm border ${errors.itemPrice ? "border-red-500" : "border-slate-100"} dark:border-slate-800 ring-1 ring-slate-100 dark:ring-slate-800 focus-within:ring-2 focus-within:ring-[var(--color-primary-blue)] transition-all`}
                   >
                     <label className="block text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider px-4 pt-3">
-                      {t("dashboard.menuEditor.addItem.basePrice")}
+                      {t("dashboard.menuEditor.addItem.basePrice")}<RequiredMark />
                     </label>
                     <div className="flex items-center px-4 pb-2">
                       <span className="text-2xl font-bold text-slate-400 dark:text-slate-600 mr-2">
@@ -719,22 +746,14 @@ export const AddItemPage = () => {
                   </div>
                   <div className="bg-white dark:bg-slate-900 p-3 rounded-xl border border-slate-100 dark:border-slate-800 focus-within:ring-2 focus-within:ring-[var(--color-primary-blue)] transition-all">
                     <label className="block text-xs font-bold text-slate-400 dark:text-slate-500 uppercase mb-1">
-                      {t("dashboard.menuEditor.addItem.taxes")}
+                      {t("dashboard.menuEditor.addItem.taxes")}<RequiredMark />
                     </label>
-                    <input
+                    {/* 2026-10-21: fixed GST slabs (Exempt = 0 / 5 / 18) instead of a free number - see TaxRateSelect. */}
+                    <TaxRateSelect
                       name="taxAmount"
-                      value={formData.taxAmount ?? ""}
-                      onChange={(e) =>
-                        updateField(
-                          "taxAmount",
-                          e.target.value === ""
-                            ? undefined
-                            : Number(e.target.value),
-                        )
-                      }
-                      className="w-full bg-transparent border-0 p-0 text-sm font-bold text-slate-900 dark:text-white focus:ring-0 outline-none"
-                      placeholder="5%"
-                      type="number"
+                      value={formData.taxAmount}
+                      onChange={(rate) => updateField("taxAmount", rate)}
+                      className="w-full bg-transparent dark:bg-slate-900 border-0 p-0 text-sm font-bold text-slate-900 dark:text-white focus:ring-0 outline-none cursor-pointer"
                     />
                     {errors.taxAmount && (
                       <p className="text-red-500 text-xs mt-1">
@@ -754,7 +773,7 @@ export const AddItemPage = () => {
                 <div className="space-y-6">
                   <div className="space-y-3">
                     <label className="text-base font-bold text-navy text-slate-900 dark:text-white">
-                      {t("dashboard.menuEditor.addItem.serviceType")}
+                      {t("dashboard.menuEditor.addItem.serviceType")}<RequiredMark />
                     </label>
                     <div className="flex bg-white dark:bg-slate-800 p-1 rounded-xl border border-gray-200 dark:border-slate-700 shadow-sm">
                       {[
@@ -789,7 +808,7 @@ export const AddItemPage = () => {
                   </div>
                   <div className="space-y-3">
                     <label className="text-base font-bold text-navy text-slate-900 dark:text-white">
-                      {t("dashboard.menuEditor.addItem.foodType")}
+                      {t("dashboard.menuEditor.addItem.foodType")}<RequiredMark />
                     </label>
                     <div className="grid grid-cols-3 gap-2">
                       {[
@@ -945,7 +964,7 @@ export const AddItemPage = () => {
                 </div>
                 <div className="space-y-2">
                   <label className="text-base font-bold text-navy text-slate-900 dark:text-white">
-                    {t("dashboard.menuEditor.addItem.consistency")}
+                    {t("dashboard.menuEditor.addItem.consistency")}<RequiredMark />
                   </label>
                   <ReactSelect
                     isMulti
@@ -1011,7 +1030,7 @@ export const AddItemPage = () => {
                 </div>
                 <div className="space-y-2">
                   <label className="text-base font-bold text-slate-900 dark:text-white">
-                    {t("dashboard.menuEditor.addItem.frosting")}
+                    {t("dashboard.menuEditor.addItem.frosting")}<RequiredMark />
                   </label>
                   <select
                     name="isFrosting"
@@ -1044,12 +1063,13 @@ export const AddItemPage = () => {
                 </div>
                 <div className="space-y-3 w-full">
                   <label className="text-base font-bold text-slate-900 dark:text-white">
-                    {t("dashboard.menuEditor.addItem.spiceLevel")}
+                    {t("dashboard.menuEditor.addItem.spiceLevel")}<RequiredMark />
                   </label>
                   <div className="flex bg-white dark:bg-slate-900 p-1.5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm w-full gap-1">
                     {[
                       {
-                        value: -1,
+                        // 2026-10-21: was -1, which Zod (1-3) rejected - see spiceLevel.ts.
+                      value: SPICE_SWEET,
                         label: t(
                           "dashboard.menuEditor.addItem.spiceLevels.sweet",
                         ),
@@ -1084,10 +1104,10 @@ export const AddItemPage = () => {
                         title={opt.label}
                       >
                         <div className="flex items-center">
-                          {opt.value === -1 ? (
+                          {opt.value === SPICE_SWEET ? (
                             <Candy
                               className={`w-4 h-4 ${
-                                formData.spiceLevel === -1
+                                formData.spiceLevel === SPICE_SWEET
                                   ? "fill-pink-500 text-pink-500"
                                   : "text-gray-300 group-hover/spice:text-gray-500"
                               }`}

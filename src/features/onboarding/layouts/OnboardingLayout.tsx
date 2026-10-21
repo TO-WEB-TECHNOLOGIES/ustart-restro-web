@@ -26,7 +26,7 @@ export const OnboardingLayout = () => {
   const { language, changeLanguage } = useLanguage();
   const navigate = useNavigate();
   const location = useLocation();
-  const { currentStep, setCurrentStep, reset, isEditing } =
+  const { currentStep, setCurrentStep, reset, isEditing, setIsEditing } =
     useOnboardingStore();
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const { status } = useAuth();
@@ -53,14 +53,19 @@ export const OnboardingLayout = () => {
       navigate("/grow-with-ustart/verification", { replace: true });
     } else if (
       (status === "APPROVED_BUT_MENU_PENDING" || status === "APPROVED") &&
-      !isEditing &&
       !location.pathname.includes("/complete") &&
       !location.pathname.includes("/upload-menu")
     ) {
+      // 2026-10-20: no longer skipped while isEditing. isEditing (persisted in sessionStorage)
+      // stayed true after an abandoned "Edit Application", so once the brand was approved this
+      // redirect never fired: Verification stayed up on refresh, and only logout (which resets
+      // the store) got the partner to the next step. An application can't be edited once
+      // approved, so any leftover edit mode is cleared here as well.
+      if (isEditing) setIsEditing(false);
       console.log("Redirecting to completion flow...");
       navigate("/grow-with-ustart/complete", { replace: true });
     }
-  }, [status, location.pathname, navigate, isEditing]);
+  }, [status, location.pathname, navigate, isEditing, setIsEditing]);
 
   const isUploadMenu = location.pathname.includes("/upload-menu");
 

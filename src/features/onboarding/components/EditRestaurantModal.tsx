@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { Modal } from "@/components/ui/modal";
 import { Label } from "@/components/ui/label";
+import { RequiredMark } from "@/components/ui/required-mark";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -39,11 +40,14 @@ import {
   addRestaurantSchema,
   type AddRestaurantValues,
 } from "../validations/outletSchema";
+// 2026-10-20: served city/state lists shared with onboarding (was hardcoded Gurugram/Haryana).
+import { CITY_STATE_MAP, SERVED_CITY_OPTIONS, SERVED_STATE_OPTIONS } from "../schemas";
 
 import { MenuList } from "./common/MenuList";
 import { MenuImagesPicker } from "./common/MenuImagesPicker";
 import { FoodTypeButton } from "./common/FoodTypeSelector";
 import { LocationPicker } from "./common/LocationPicker";
+import { ImageCropModal } from "./common/ImageCropModal";
 import { cn } from "@/lib/utils";
 
 /**
@@ -82,10 +86,13 @@ interface EditRestaurantModalProps {
   restaurantData: Restaurant | any;
 }
 
-const FloatingInput = ({ label, error, placeholder, ...props }: any) => (
+// `required` only draws the label asterisk (2026-10-20) - destructured so it never reaches the
+// <input>: native `required` would pop browser validation bubbles over the zod messages.
+const FloatingInput = ({ label, error, placeholder, required, ...props }: any) => (
   <div className="space-y-1.5 w-full">
     <Label className="text-xs font-bold uppercase tracking-widest pl-1">
       {label}
+      {required && <RequiredMark />}
     </Label>
     <input
       className="block px-3 py-2.5 w-full text-base text-gray-900 bg-white rounded-xl border border-gray-200 focus:outline-none focus:ring-1 focus:ring-[#FF9F43] focus:border-[#FF9F43] transition-all"
@@ -289,16 +296,36 @@ export const EditRestaurantModal = ({
     }
   }, [isOpen, initialValues, reset, restaurantData]);
 
+  // 2026-10-20: outlet images are cropped to 16:9 before use - the same ImageCropModal and
+  // aspect as onboarding's single-branch outlet image, so every outlet image has one aspect
+  // ratio (the brand logo is the square one). The 1MB limit applies to the CROPPED file, which
+  // is what actually gets uploaded.
+  const [primaryCrop, setPrimaryCrop] = useState<{ file: File; imageSrc: string } | null>(null);
+
   const handlePrimaryImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      if (file.size > 1024 * 1024) {
-        toast.error("Primary image size must be less than 1MB");
-        return;
-      }
-      setPrimaryPreview(URL.createObjectURL(file));
-      setValue("primaryImage", file, { shouldDirty: true });
+      setPrimaryCrop({ file, imageSrc: URL.createObjectURL(file) });
     }
+    // Reset so picking the same file again (e.g. after cancelling the crop) still fires.
+    e.target.value = "";
+  };
+
+  const closePrimaryCrop = () => {
+    if (primaryCrop) URL.revokeObjectURL(primaryCrop.imageSrc);
+    setPrimaryCrop(null);
+  };
+
+  const handlePrimaryCropped = (croppedFile: File) => {
+    closePrimaryCrop();
+    if (croppedFile.size > 1024 * 1024) {
+      toast.error(
+        t("onboarding.restaurant.complete.setupForm.fileTooLarge", { name: croppedFile.name, size: 1 }),
+      );
+      return;
+    }
+    setPrimaryPreview(URL.createObjectURL(croppedFile));
+    setValue("primaryImage", croppedFile, { shouldDirty: true });
   };
 
   const handleMenuImagesChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -575,6 +602,7 @@ export const EditRestaurantModal = ({
                     <LockedSection locked={isLocked}>
                     <div className="grid grid-cols-1 gap-6">
                       <FloatingInput
+                        required
                         label={t(
                           "onboarding.restaurant.complete.setupForm.restaurantName",
                         )}
@@ -594,6 +622,7 @@ export const EditRestaurantModal = ({
                         </Label>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                           <FloatingInput
+                            required
                             label={t(
                               "onboarding.restaurant.form.addressLabels.line1",
                             )}
@@ -601,6 +630,7 @@ export const EditRestaurantModal = ({
                             error={errors.restaurantAddress?.line1?.message}
                           />
                           <FloatingInput
+                            required
                             label={t(
                               "onboarding.restaurant.form.addressLabels.line2",
                             )}
@@ -619,16 +649,14 @@ export const EditRestaurantModal = ({
                             <Label className="text-xs font-bold uppercase tracking-widest pl-1">
                               {t(
                                 "onboarding.restaurant.form.addressLabels.locality",
-                              )}
+                              )}<RequiredMark />
                             </Label>
                             <Controller
                               name="restaurantAddress.locality"
                               control={control}
                               render={({ field }) => (
                                 <ReactSelect
-                                  options={[
-                                    { value: "Gurugram", label: "Gurugram" },
-                                  ]}
+                                  options={SERVED_CITY_OPTIONS}
                                   value={
                                     field.value
                                       ? {
@@ -637,9 +665,13 @@ export const EditRestaurantModal = ({
                                         }
                                       : null
                                   }
-                                  onChange={(opt: any) =>
-                                    field.onChange(opt?.value || "")
-                                  }
+                                  onChange={(opt: any) => {
+                                    // 2026-10-20: the state follows the city (CITY_STATE_MAP), so a city/state
+                                    // mismatch like Noida + Haryana can't be submitted.
+                                    const city = opt?.value || "";
+                                    field.onChange(city);
+                                    if (city) setValue("restaurantAddress.state", CITY_STATE_MAP[city], { shouldDirty: true });
+                                  }}
                                   className="react-select-container"
                                   classNamePrefix="react-select"
                                   styles={{
@@ -658,16 +690,14 @@ export const EditRestaurantModal = ({
                             <Label className="text-xs font-bold uppercase tracking-widest pl-1">
                               {t(
                                 "onboarding.restaurant.form.addressLabels.state",
-                              )}
+                              )}<RequiredMark />
                             </Label>
                             <Controller
                               name="restaurantAddress.state"
                               control={control}
                               render={({ field }) => (
                                 <ReactSelect
-                                  options={[
-                                    { value: "Haryana", label: "Haryana" },
-                                  ]}
+                                  options={SERVED_STATE_OPTIONS}
                                   value={
                                     field.value
                                       ? {
@@ -692,6 +722,7 @@ export const EditRestaurantModal = ({
                           </div>
 
                           <FloatingInput
+                            required
                             label={t(
                               "onboarding.restaurant.form.addressLabels.pincode",
                             )}
@@ -775,7 +806,7 @@ export const EditRestaurantModal = ({
                         <Label className="text-sm font-bold uppercase tracking-widest pl-1">
                           {t(
                             "onboarding.restaurant.complete.setupForm.servingOptions",
-                          )}
+                          )}<RequiredMark />
                         </Label>
                         <Controller
                           control={control}
@@ -819,7 +850,7 @@ export const EditRestaurantModal = ({
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8 pt-4 border-t border-slate-50">
                       <div className="space-y-4">
                         <Label className="text-sm font-bold uppercase tracking-widest pl-1">
-                          {t("onboarding.restaurant.about.foodTypeLabel")}
+                          {t("onboarding.restaurant.about.foodTypeLabel")}<RequiredMark />
                         </Label>
                         <Controller
                           control={control}
@@ -869,7 +900,7 @@ export const EditRestaurantModal = ({
 
                       <div className="space-y-4">
                         <Label className="text-sm font-bold uppercase tracking-widest pl-1">
-                          {t("onboarding.restaurant.about.cuisineLabel")}
+                          {t("onboarding.restaurant.about.cuisineLabel")}<RequiredMark />
                         </Label>
                         <Controller
                           control={control}
@@ -921,7 +952,7 @@ export const EditRestaurantModal = ({
                         <Label className="text-sm font-bold uppercase tracking-widest pl-1 mb-3 block">
                           {t(
                             "onboarding.restaurant.complete.setupForm.primaryImage",
-                          )}
+                          )}<RequiredMark />
                         </Label>
                         <input
                           type="file"
@@ -1007,7 +1038,7 @@ export const EditRestaurantModal = ({
                     {watch("servingOptions")?.includes("DINE_IN") && (
                       <div className="pt-4 border-t border-slate-50 dark:border-zinc-800">
                         <Label className="text-sm font-bold uppercase tracking-widest pl-1 mb-3 block">
-                          {t("onboarding.restaurant.complete.setupForm.diningMenu")}
+                          {t("onboarding.restaurant.complete.setupForm.diningMenu")}<RequiredMark />
                         </Label>
                         <Controller
                           control={control}
@@ -1043,6 +1074,7 @@ export const EditRestaurantModal = ({
                   <AccordionContent className="p-6 space-y-6">
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                       <FloatingInput
+                        required
                         label={t(
                           "onboarding.restaurant.complete.setupForm.panNumber",
                         )}
@@ -1062,6 +1094,7 @@ export const EditRestaurantModal = ({
                     {/* 2026-10-19: per-outlet FSSAI number + expiry */}
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                       <FloatingInput
+                        required
                         label={t(
                           "onboarding.restaurant.complete.setupForm.fssaiNumber",
                         )}
@@ -1071,6 +1104,7 @@ export const EditRestaurantModal = ({
                         maxLength={14}
                       />
                       <FloatingInput
+                        required
                         label={t(
                           "onboarding.restaurant.complete.setupForm.fssaiExpiryDate",
                         )}
@@ -1129,7 +1163,7 @@ export const EditRestaurantModal = ({
                       <Label className="text-sm font-bold uppercase tracking-widest pl-1">
                         {t(
                           "onboarding.restaurant.complete.setupForm.fssaiLicense",
-                        )}
+                        )}<RequiredMark />
                       </Label>
                       <input
                         type="file"
@@ -1232,6 +1266,7 @@ export const EditRestaurantModal = ({
                         <div className="space-y-6">
                           <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                             <FloatingInput
+                              required
                               label={t(
                                 "onboarding.restaurant.complete.setupForm.bank.accountNumber",
                               )}
@@ -1239,6 +1274,7 @@ export const EditRestaurantModal = ({
                               error={errors.bankDetails?.accountNumber?.message}
                             />
                             <FloatingInput
+                              required
                               label={t(
                                 "onboarding.restaurant.complete.setupForm.bank.holderName",
                               )}
@@ -1248,6 +1284,7 @@ export const EditRestaurantModal = ({
                               }
                             />
                             <FloatingInput
+                              required
                               label={t(
                                 "onboarding.restaurant.complete.setupForm.bank.bankName",
                               )}
@@ -1255,6 +1292,7 @@ export const EditRestaurantModal = ({
                               error={errors.bankDetails?.bankName?.message}
                             />
                             <FloatingInput
+                              required
                               label={t(
                                 "onboarding.restaurant.complete.setupForm.bank.branch",
                               )}
@@ -1262,6 +1300,7 @@ export const EditRestaurantModal = ({
                               error={errors.bankDetails?.bankBranch?.message}
                             />
                             <FloatingInput
+                              required
                               label={t(
                                 "onboarding.restaurant.complete.setupForm.bank.ifsc",
                               )}
@@ -1376,6 +1415,18 @@ export const EditRestaurantModal = ({
           </div>
         </div>
       </Modal>
+
+      {primaryCrop && (
+        <ImageCropModal
+          isOpen
+          imageSrc={primaryCrop.imageSrc}
+          fileName={primaryCrop.file.name}
+          fileType={primaryCrop.file.type}
+          aspect={16 / 9}
+          onCancel={closePrimaryCrop}
+          onCropped={handlePrimaryCropped}
+        />
+      )}
     </>
   );
 };

@@ -4,6 +4,8 @@ import type { OnboardingData } from '../../../types/onboardingTypes';
 export interface InitiateOnboardingResponse {
     fssaiDocument: string;
     dishImage: string;
+    // 2026-10-20: present only when a brandLogo was sent (multi-branch).
+    brandLogo?: string;
     menuImages: string[];
     diningMenuImages: string[];
     agreementDocument: string;

@@ -9,6 +9,7 @@ import { bankDetailsSchema, type BankDetailsValues } from "../schemas";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { RequiredMark } from "@/components/ui/required-mark";
 
 import { onboardingService } from "../api/onboardingService";
 import { toast } from "sonner";
@@ -123,7 +124,11 @@ export const AboutRestaurant = () => {
           // Was previously spread through untransformed - File objects don't serialize
           // meaningfully over JSON, and nothing queued them for upload below either.
           diningMenuImages: aboutRestaurant.diningMenuImages?.map(getFileName) || [],
-          dishImage: getFileName(aboutRestaurant.dishImage),
+          // 2026-10-20: outlet image always; logo only for multi-branch. undefined (not "") when
+          // absent, or the backend would mint a presigned URL for an empty name.
+          dishImage: aboutRestaurant.dishImage ? getFileName(aboutRestaurant.dishImage) : undefined,
+          brandLogo: restaurantInfo.hasMultipleBranches && aboutRestaurant.brandLogo
+            ? getFileName(aboutRestaurant.brandLogo) : undefined,
           cuisines: aboutRestaurant.cuisines || [],
         } as unknown as OnboardingAboutRestaurant,
         documents: {
@@ -233,8 +238,9 @@ export const AboutRestaurant = () => {
       // Signed partner agreement PDF
       queueUpload(presignedUrls.agreementDocument, agreement.agreementFile);
 
-      // Dish/Brand Image
+      // Outlet image (single-branch) / brand logo (multi-branch) - only one has a URL.
       queueUpload(presignedUrls.dishImage, aboutRestaurant.dishImage);
+      queueUpload(presignedUrls.brandLogo, aboutRestaurant.brandLogo);
 
       // Menu Images - Backend returns an array of URLs matching the order of menuImages in payload
       if (
@@ -323,7 +329,7 @@ export const AboutRestaurant = () => {
             <div className="space-y-4">
               <div className="flex justify-between items-center">
                 <Label className="font-bold text-slate-800">
-                  {t("onboarding.restaurant.documents.fssaiLabel")}
+                  {t("onboarding.restaurant.documents.fssaiLabel")}<RequiredMark />
                 </Label>
                 <span className="bg-slate-100 text-slate-500 text-[10px] px-2 py-0.5 rounded font-medium">
                   {t("onboarding.restaurant.documents.mandatory")}
@@ -382,7 +388,7 @@ export const AboutRestaurant = () => {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
                   <Label htmlFor="fssaiNumber" className="font-semibold text-slate-700">
-                    {t("onboarding.restaurant.documents.fssaiNumberLabel")}
+                    {t("onboarding.restaurant.documents.fssaiNumberLabel")}<RequiredMark />
                   </Label>
                   <Input
                     id="fssaiNumber"
@@ -396,7 +402,7 @@ export const AboutRestaurant = () => {
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="fssaiExpiryDate" className="font-semibold text-slate-700">
-                    {t("onboarding.restaurant.documents.fssaiExpiryDateLabel")}
+                    {t("onboarding.restaurant.documents.fssaiExpiryDateLabel")}<RequiredMark />
                   </Label>
                   <Input
                     id="fssaiExpiryDate"
@@ -426,7 +432,7 @@ export const AboutRestaurant = () => {
                     htmlFor="accountNumber"
                     className="font-semibold text-slate-700"
                   >
-                    {t("onboarding.restaurant.documents.accountNumberLabel")}
+                    {t("onboarding.restaurant.documents.accountNumberLabel")}<RequiredMark />
                   </Label>
                   <Input
                     id="accountNumber"
@@ -448,7 +454,7 @@ export const AboutRestaurant = () => {
                     htmlFor="ifscCode"
                     className="font-semibold text-slate-700"
                   >
-                    {t("onboarding.restaurant.documents.ifscLabel")}
+                    {t("onboarding.restaurant.documents.ifscLabel")}<RequiredMark />
                   </Label>
                   <div className="relative">
                     <Input
@@ -472,7 +478,7 @@ export const AboutRestaurant = () => {
                     htmlFor="accountHolderName"
                     className="font-semibold text-slate-700"
                   >
-                    {t("onboarding.restaurant.documents.holderNameLabel")}
+                    {t("onboarding.restaurant.documents.holderNameLabel")}<RequiredMark />
                   </Label>
                   <div className="relative">
                     <User className="absolute left-3 top-3 w-5 h-5 text-slate-400" />
@@ -497,7 +503,7 @@ export const AboutRestaurant = () => {
                     htmlFor="bankName"
                     className="font-semibold text-slate-700"
                   >
-                    {t("onboarding.restaurant.documents.bankNameLabel")}
+                    {t("onboarding.restaurant.documents.bankNameLabel")}<RequiredMark />
                   </Label>
                   <div className="relative">
                     <Store className="absolute left-3 top-3 w-5 h-5 text-slate-400" />
@@ -522,7 +528,7 @@ export const AboutRestaurant = () => {
                     htmlFor="branchName"
                     className="font-semibold text-slate-700"
                   >
-                    {t("onboarding.restaurant.documents.branchNameLabel")}
+                    {t("onboarding.restaurant.documents.branchNameLabel")}<RequiredMark />
                   </Label>
                   <div className="relative">
                     <MapPin className="absolute left-3 top-3 w-5 h-5 text-slate-400" />

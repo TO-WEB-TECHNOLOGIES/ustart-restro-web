@@ -172,10 +172,12 @@ export const AddEditAddonCategoryModal: React.FC<AddEditAddonCategoryModalProps>
                         </div>
 
                         {/* Submit Button */}
+                        {/* 2026-10-21: solid grey disabled state instead of disabled:opacity-50 - white text on
+                            the 50%-faded button was nearly unreadable until a name is entered. */}
                         <button
                             type="submit"
                             disabled={!categoryName.trim() || isSubmitting}
-                            className="w-full bg-primary-blue hover:bg-[#1a3a5f] disabled:opacity-50 text-white font-black py-4 rounded-2xl shadow-lg transition-all transform active:scale-[0.98] flex items-center justify-center gap-2 mt-4"
+                            className="w-full bg-primary-blue hover:bg-[#1a3a5f] disabled:bg-slate-200 disabled:text-slate-500 disabled:shadow-none disabled:cursor-not-allowed dark:disabled:bg-slate-800 dark:disabled:text-slate-400 text-white font-black py-4 rounded-2xl shadow-lg transition-all transform active:scale-[0.98] flex items-center justify-center gap-2 mt-4"
                         >
                             {isSubmitting ? (
                                 <Loader2 className="w-5 h-5 animate-spin" />

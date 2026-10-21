@@ -38,14 +38,26 @@ export type PersonalInfoValues = z.infer<typeof personalInfoSchema>;
 // association with hasMultipleBranches, which only ever controls isMultipleRestro.
 // City -> state for served cities. Keys MUST equal ustart-backend's `city.name` values exactly:
 // the backend resolves the restaurant's city from address segment 4 by name
-// (AddressUtils.resolveCityFromAddress, case-insensitive). 2026-10-19: the DB stores Delhi as
-// city "Delhi" / state "New Delhi", so this was changed from 'New Delhi': 'Delhi', which made
-// every Delhi onboarding fail with "City identification failed" (product decision: align the
-// frontend to the DB rather than renaming the city row).
+// (AddressUtils.resolveCityFromAddress, case-insensitive). The state (segment 5) is display text
+// only - the backend never matches on it.
+// 2026-10-19: Delhi's key is "Delhi" (the DB city name), not "New Delhi" - the old key made every
+// Delhi onboarding fail with "City identification failed".
+// 2026-10-20: added Noida + Ghaziabad (Uttar Pradesh) - their `city` rows must exist in the DB
+// with exactly these names - and Delhi's state shown as "Delhi" instead of "New Delhi" (product
+// decision; safe because the backend ignores the state text).
+// This map is the single served-city list: the onboarding Primary Address and the post-approval
+// outlet forms (AddRestaurantForm/EditRestaurantModal) all build their city/state options from it.
 export const CITY_STATE_MAP: Record<string, string> = {
     Gurugram: 'Haryana',
-    Delhi: 'New Delhi',
+    Delhi: 'Delhi',
+    Noida: 'Uttar Pradesh',
+    Ghaziabad: 'Uttar Pradesh',
 };
+
+// react-select options derived from CITY_STATE_MAP (2026-10-20) - states de-duplicated, since
+// several served cities share one (Noida/Ghaziabad).
+export const SERVED_CITY_OPTIONS = Object.keys(CITY_STATE_MAP).map((city) => ({ value: city, label: city }));
+export const SERVED_STATE_OPTIONS = [...new Set(Object.values(CITY_STATE_MAP))].map((state) => ({ value: state, label: state }));
 
 // 2026-10-19: alternate spellings of a served city -> its CITY_STATE_MAP key. Only unambiguous
 // ones belong here: Gurgaon was officially renamed Gurugram, and "New Delhi" is what Google
@@ -57,8 +69,9 @@ const CITY_ALIASES: Record<string, string> = {
 
 // 2026-10-19: Registered Address states that by themselves identify a served city. Only Delhi
 // qualifies (the whole territory is served as city "Delhi"); both spellings are accepted since
-// the state list has used both. Haryana is deliberately absent - it doesn't imply Gurugram
-// (e.g. Faridabad isn't served), so a Haryana address must name Gurugram in its locality.
+// the state list has used both. Haryana and Uttar Pradesh are deliberately absent - neither
+// implies one served city (Faridabad, Lucknow aren't served; UP has two served cities), so such
+// an address must name the city in its locality.
 const STATE_TO_SERVED_CITY: Record<string, string> = {
     delhi: 'Delhi',
     'new delhi': 'Delhi',
@@ -146,7 +159,10 @@ const aboutRestaurantBaseSchema = z.object({
     }),
     cuisines: z.array(z.number()).min(1, 'Select at least one cuisine'),
     menuImages: z.array(z.union([z.instanceof(File), z.string()])).min(1, 'Upload at least one menu image'),
-    dishImage: z.union([z.instanceof(File), z.string()]).refine((val) => !!val, { message: 'Dish image is required' }),
+    // 2026-10-20: outlet image (16:9, always required) + brand logo (square, multi-branch only) -
+    // both optional here, required in getAboutRestaurantSchema (the logo by hasMultipleBranches).
+    dishImage: z.union([z.instanceof(File), z.string()]).optional(),
+    brandLogo: z.union([z.instanceof(File), z.string()]).optional(),
     // Moved from restaurantInfoSchema - collected here now, alongside food/cuisine/images.
     // Only required when !hasMultipleBranches - see getAboutRestaurantSchema below, since
     // that flag lives in the sibling "info" form/view, not this one.
@@ -180,12 +196,19 @@ export type AboutRestaurantValues = z.infer<typeof aboutRestaurantBaseSchema>;
 // re-derives this schema whenever that value changes (see RestaurantInfo.tsx's useMemo).
 export const getAboutRestaurantSchema = (hasMultipleBranches: boolean) =>
     aboutRestaurantBaseSchema.superRefine((data, ctx) => {
+        // Mirrors the backend's OnboardingValidator rule (2026-10-20).
+        if (hasMultipleBranches && !data.brandLogo) {
+            ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Brand logo is required', path: ['brandLogo'] });
+        }
+        if (!data.dishImage) {
+            ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Restaurant image is required', path: ['dishImage'] });
+        }
         if (!hasMultipleBranches) {
             const ra = data.restaurantAddress;
             // 2026-10-19: case/space-insensitive (+ "Gurgaon"), via resolveServedCity - the
             // submit path sends the canonical city name, so lenient matching here is safe.
             if (!resolveServedCity(ra?.locality)) {
-                ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Select Gurugram or Delhi', path: ['restaurantAddress', 'locality'] });
+                ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Select Gurugram, Delhi, Noida or Ghaziabad', path: ['restaurantAddress', 'locality'] });
             }
             if (!ra?.pincode || !/^\d{6}$/.test(ra.pincode)) {
                 ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Pincode must be exactly 6 digits', path: ['restaurantAddress', 'pincode'] });

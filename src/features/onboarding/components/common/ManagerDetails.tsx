@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { User, PencilLine, X, ChevronDown, Plus } from "lucide-react";
 import { Label } from "@/components/ui/label";
+import { RequiredMark } from "@/components/ui/required-mark";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Modal } from "@/components/ui/modal";
 import { Input } from "@/components/ui/input";
@@ -328,7 +329,7 @@ export const ManagerDetails = ({
           {/* Using standard Input logic but styling to match the rest roughly */}
           <div className="space-y-1.5">
             <Label className="text-[10px] font-bold uppercase tracking-widest pl-1">
-              {t("onboarding.restaurant.complete.setupForm.management.name")}
+              {t("onboarding.restaurant.complete.setupForm.management.name")}<RequiredMark />
             </Label>
             <div className="space-y-1.5">
               <Input
@@ -373,7 +374,7 @@ export const ManagerDetails = ({
 
           <div className="space-y-1.5">
             <Label className="text-[10px] font-bold uppercase tracking-widest pl-1">
-              {t("onboarding.restaurant.complete.setupForm.management.mobile")}
+              {t("onboarding.restaurant.complete.setupForm.management.mobile")}<RequiredMark />
             </Label>
             <Input
               placeholder={t(
