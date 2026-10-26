@@ -13,6 +13,7 @@ import { FoodTypeButton } from "./common/FoodTypeSelector";
 import { LocationPicker } from "./common/LocationPicker";
 import { ManagerDetails } from "./common/ManagerDetails";
 import { ImageCropModal } from "./common/ImageCropModal";
+import { SameAsBrandCheckbox } from "./common/SameAsBrandCheckbox";
 import ReactSelect from "react-select";
 import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
 import CreatableSelect from "react-select/creatable";
@@ -39,6 +40,7 @@ import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { type Restaurant } from "@/types/restaurantTypes";
 import { masterDataService } from "../api/masterData";
+import { onboardingService } from "../api/onboardingService";
 import { restaurantService } from "@/api/restaurantService";
 import { multimediaService } from "@/api/multimediaService";
 import { useOnboardingStore } from "../store/useOnboardingStore";
@@ -178,6 +180,20 @@ export const AddRestaurantForm = ({
     queryFn: () => masterDataService.getPosProviders({ size: 50 }),
   });
 
+  // 2026-10-26: brand values for the "Same as brand" previews (PAN, cuisines). The backend does
+  // the actual copy, so this is display-only and best-effort: the endpoint only answers for the
+  // user who onboarded the brand, and any other brand user just sees a generic "brand's value
+  // will be used" note instead of the value.
+  const { data: brandData } = useQuery({
+    queryKey: ["brandOnboardingData"],
+    queryFn: () => onboardingService.getOnboardingData(),
+    enabled: !isEditMode,
+    retry: false,
+    staleTime: 5 * 60 * 1000,
+  });
+  const brandPan = brandData?.restaurantInfo?.panNumber || "";
+  const brandCuisineIds = brandData?.aboutRestaurant?.cuisines ?? [];
+
   const posProviderOptions = useMemo(() => {
     return (posProviderData?.content || []).map((p) => ({
       value: p.posProviderName,
@@ -299,6 +315,10 @@ export const AddRestaurantForm = ({
           posProvider: "",
           fssaiNumber: "",
           fssaiExpiryDate: "",
+          // 2026-10-26: "Same as brand" starts unticked (product decision).
+          panSameAsBrand: false,
+          cuisinesSameAsBrand: false,
+          timingsSameAsBrand: false,
           diningMenuImages: [],
           bankAccountType: "BRAND",
           bankDetails: {
@@ -495,7 +515,8 @@ export const AddRestaurantForm = ({
         isEggAvailable: data.foodTypes.isEggAvailable,
         isNonVegAvailable: data.foodTypes.isNonVegAvailable,
         servingOptions: data.servingOptions,
-        cuisineIds: data.cuisines,
+        // 2026-10-26: a "same as brand" field is left out; the backend copies the brand's value.
+        cuisineIds: data.cuisinesSameAsBrand ? undefined : data.cuisines,
         primaryImage: primaryImageKey,
         deliveryMenuImages: menuImageKeys,
         diningMenuImages: offersDineIn ? diningMenuImageKeys : undefined,
@@ -524,7 +545,13 @@ export const AddRestaurantForm = ({
         fssaiLicenseImage: fssaiKey,
         fssaiNumber: data.fssaiNumber,
         fssaiExpiryDate: data.fssaiExpiryDate,
-        panNumber: data.panNumber,
+        panNumber: data.panSameAsBrand ? undefined : data.panNumber,
+        // Create only - the backend ignores these on update, and the edit flow never sets them.
+        ...(!isEditMode && {
+          panSameAsBrand: !!data.panSameAsBrand,
+          cuisinesSameAsBrand: !!data.cuisinesSameAsBrand,
+          timingsSameAsBrand: !!data.timingsSameAsBrand,
+        }),
       };
 
       // 4. API Call
@@ -997,9 +1024,44 @@ export const AddRestaurantForm = ({
                     </div>
 
                     <div className="space-y-4">
-                      <Label className="text-base font-semibold uppercase tracking-wide">
-                        {t("onboarding.restaurant.about.cuisineLabel")}<RequiredMark />
-                      </Label>
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <Label className="text-base font-semibold uppercase tracking-wide">
+                          {t("onboarding.restaurant.about.cuisineLabel")}<RequiredMark />
+                        </Label>
+                        {!isEditMode && (
+                          <Controller
+                            control={control}
+                            name="cuisinesSameAsBrand"
+                            render={({ field }) => (
+                              <SameAsBrandCheckbox
+                                id="cuisinesSameAsBrand"
+                                label={t("onboarding.restaurant.complete.setupForm.sameAsBrand.label")}
+                                checked={!!field.value}
+                                onCheckedChange={(checked) => {
+                                  field.onChange(checked);
+                                  // Re-run the cuisines rule now that it depends on this flag.
+                                  setValue("cuisines", watch("cuisines") || [], { shouldValidate: true });
+                                }}
+                              />
+                            )}
+                          />
+                        )}
+                      </div>
+                      {watch("cuisinesSameAsBrand") ? (
+                        <p className="text-sm text-slate-600 dark:text-slate-300 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 px-3 py-3">
+                          {brandCuisineIds.length > 0
+                            ? t("onboarding.restaurant.complete.setupForm.sameAsBrand.brandCuisines", {
+                                value: brandCuisineIds
+                                  .map((id) => cuisineOptions.find((o) => o.value === id)?.label)
+                                  .filter(Boolean)
+                                  .join(", ") ||
+                                  t("onboarding.restaurant.complete.setupForm.sameAsBrand.cuisineCount", {
+                                    count: brandCuisineIds.length,
+                                  }),
+                              })
+                            : t("onboarding.restaurant.complete.setupForm.sameAsBrand.brandValueUsed")}
+                        </p>
+                      ) : (
                       <Controller
                         control={control}
                         name="cuisines"
@@ -1085,6 +1147,7 @@ export const AddRestaurantForm = ({
                           />
                         )}
                       />
+                      )}
                       {errors.cuisines && (
                         <p className="text-red-500 text-xs mt-1">
                           {errors.cuisines.message}
@@ -1092,6 +1155,36 @@ export const AddRestaurantForm = ({
                       )}
                     </div>
                   </div>
+
+                  {/* 2026-10-26: timings aren't entered on this form (they're set in Verify
+                      Schedules); ticking this makes the backend create the outlet's schedule
+                      from the brand's hours instead. */}
+                  {!isEditMode && (
+                    <div className="space-y-2 rounded-2xl border border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-950 p-4">
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <h3 className="text-base font-semibold uppercase tracking-wide">
+                          {t("onboarding.restaurant.complete.setupForm.sameAsBrand.timingsTitle")}
+                        </h3>
+                        <Controller
+                          control={control}
+                          name="timingsSameAsBrand"
+                          render={({ field }) => (
+                            <SameAsBrandCheckbox
+                              id="timingsSameAsBrand"
+                              label={t("onboarding.restaurant.complete.setupForm.sameAsBrand.label")}
+                              checked={!!field.value}
+                              onCheckedChange={field.onChange}
+                            />
+                          )}
+                        />
+                      </div>
+                      <p className="text-sm text-slate-500 dark:text-slate-400">
+                        {watch("timingsSameAsBrand")
+                          ? t("onboarding.restaurant.complete.setupForm.sameAsBrand.timingsTicked")
+                          : t("onboarding.restaurant.complete.setupForm.sameAsBrand.timingsUnticked")}
+                      </p>
+                    </div>
+                  )}
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-2">
                     <div>
@@ -1237,14 +1330,43 @@ export const AddRestaurantForm = ({
               <AccordionContent className="p-0">
                 <div className="p-6 md:p-8 space-y-8">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <FloatingInput
-                      required
-                      label={t(
-                        "onboarding.restaurant.complete.setupForm.panNumber",
+                    <div className="space-y-2">
+                      <FloatingInput
+                        required
+                        label={t(
+                          "onboarding.restaurant.complete.setupForm.panNumber",
+                        )}
+                        {...register("panNumber")}
+                        // 2026-10-26: read-only (not disabled - RHF drops disabled values, which
+                        // would fail the string schema) while the brand's PAN is used.
+                        readOnly={!!watch("panSameAsBrand")}
+                        placeholder={
+                          watch("panSameAsBrand") && !brandPan
+                            ? t("onboarding.restaurant.complete.setupForm.sameAsBrand.brandValueUsed")
+                            : undefined
+                        }
+                        error={errors.panNumber?.message}
+                      />
+                      {!isEditMode && (
+                        <Controller
+                          control={control}
+                          name="panSameAsBrand"
+                          render={({ field }) => (
+                            <SameAsBrandCheckbox
+                              id="panSameAsBrand"
+                              label={t("onboarding.restaurant.complete.setupForm.sameAsBrand.label")}
+                              checked={!!field.value}
+                              onCheckedChange={(checked) => {
+                                field.onChange(checked);
+                                // Show the brand's PAN while ticked; clear it on untick so the
+                                // user types the outlet's own instead of keeping the brand's.
+                                setValue("panNumber", checked ? brandPan : "", { shouldValidate: true });
+                              }}
+                            />
+                          )}
+                        />
                       )}
-                      {...register("panNumber")}
-                      error={errors.panNumber?.message}
-                    />
+                    </div>
                     <FloatingInput
                       label={t(
                         "onboarding.restaurant.complete.setupForm.gstNumber",

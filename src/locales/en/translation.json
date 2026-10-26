@@ -457,7 +457,17 @@
             "branch": "Bank Branch",
             "ifsc": "Bank IFSC Code"
           },
-          "saveContinue": "Save & Continue"
+          "saveContinue": "Save & Continue",
+          "sameAsBrand": {
+            "label": "Same as brand",
+            "brandValueUsed": "Your brand's details will be used",
+            "brandCuisines": "Brand's cuisines: {{value}}",
+            "cuisineCount_one": "{{count}} cuisine",
+            "cuisineCount_other": "{{count}} cuisines",
+            "timingsTitle": "Opening Hours",
+            "timingsTicked": "This outlet will use your brand's opening hours (and dining hours if it offers dine-in). You can still change them in Verify Schedules.",
+            "timingsUnticked": "You'll set this outlet's opening hours in Verify Schedules after adding it."
+          }
         },
         "status": {
           "pending": "PENDING",

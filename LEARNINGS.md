@@ -292,3 +292,21 @@ MenuEditor (outlet — handles edit/stock/taxes/charges/new/review paths)
 - Also fixed: `createMenuItem` used `taxAmount || 5`, turning "Exempt" (0) into 5%.
 - **Known, not fixed:** `createMenuItem` sends `isAvailable: true` regardless of the
   schedule picked in Add Item, and never sends `nutritionalInfo`.
+
+### 2026-10-26 — Add outlet: "Same as brand" for PAN, cuisines and timings
+- `AddRestaurantForm` (create mode only) has unticked "Same as brand" checkboxes
+  (`common/SameAsBrandCheckbox`, shadcn `Checkbox`) for PAN, cuisines and a new "Opening Hours"
+  row. Ticked fields are omitted from `POST /api/v1/restaurants` and `panSameAsBrand` /
+  `cuisinesSameAsBrand` / `timingsSameAsBrand` are sent; the backend copies the brand's values
+  once (no live link) and creates the outlet's schedule from the brand's hours.
+- **No FSSAI checkbox, on purpose:** each outlet's FSSAI number is unique in the DB and the
+  single-branch onboarding outlet already holds the brand's number, so copying would always fail.
+- Brand values for the previews come from `GET /api/v1/restaurant-onboarding`, best-effort: it
+  only answers for the user who onboarded the brand; others see "brand's details will be used".
+- PAN/cuisine rules moved to object-level zod refines with `when: () => true` - zod 4 otherwise
+  skips object refines while any field is invalid, which would hide those errors.
+- PAN input is `readOnly` (not `disabled`) when ticked: RHF drops disabled values from submit data.
+- `CompleteSetup.onAddSuccess` now fetches the new outlet's schedule, so a copied schedule shows
+  as verified right away.
+- **Lesson:** never round-trip `src/locales/hi/translation.json` through `JSON.parse`/`stringify` -
+  it contains duplicate keys and a round-trip silently drops/reorders them. Insert new keys as text.

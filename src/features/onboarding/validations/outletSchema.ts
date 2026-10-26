@@ -1,5 +1,14 @@
 import { z } from "zod";
 
+// Same format as the backend's RestaurantRequestDTO.PAN_REGEX.
+const PAN_REGEX = /^[A-Z]{5}[0-9]{4}[A-Z]$/;
+
+// 2026-10-26: the PAN/cuisine rules below became object-level refines (they depend on the
+// "same as brand" flags). `when: () => true` makes them run even while other fields still have
+// errors - zod's default skips object refines then, which would hide these field errors until
+// the rest of the form is valid.
+const alwaysCheck = { when: () => true };
+
 export const addRestaurantSchema = z
   .object({
     restaurantName: z.string().min(3, "Required"),
@@ -39,7 +48,8 @@ export const addRestaurantSchema = z
         "Select at least one",
       ),
 
-    cuisines: z.array(z.number()).min(1, "Select at least one"),
+    // Required unless cuisinesSameAsBrand (refine below).
+    cuisines: z.array(z.number()),
 
     // Images
     primaryImage: z.union([z.instanceof(File), z.string()]).refine(val => !!val, "Primary image is required"),
@@ -50,7 +60,15 @@ export const addRestaurantSchema = z
 
     // Government
     // PAN is mandatory per outlet but may be the same as another outlet's/the brand's.
-    panNumber: z.string().regex(/^[A-Z]{5}[0-9]{4}[A-Z]$/, "Invalid PAN format (e.g. ABCDE1234F)"),
+    // Required unless panSameAsBrand (refine below).
+    panNumber: z.string(),
+
+    // 2026-10-26: "Same as brand" (add-outlet only) - the backend copies the brand's PAN /
+    // cuisines / timings once at creation. Optional so the edit modal, which never sets them,
+    // keeps the old rules. FSSAI has no flag: each outlet needs its own unique licence.
+    panSameAsBrand: z.boolean().optional(),
+    cuisinesSameAsBrand: z.boolean().optional(),
+    timingsSameAsBrand: z.boolean().optional(),
     // GSTIN is optional (and may be shared); format-checked only when filled - same regex as
     // the backend's RestaurantRequestDTO.GST_REGEX.
     gstNumber: z
@@ -100,6 +118,16 @@ export const addRestaurantSchema = z
         ifscCode: z.string().regex(/^[A-Z]{4}0[A-Z0-9]{6}$/, "Invalid IFSC format (e.g. HDFC0001234)").optional().or(z.literal("")),
       })
       .optional(),
+  })
+  .refine((data) => !!data.panSameAsBrand || PAN_REGEX.test(data.panNumber ?? ""), {
+    message: "Invalid PAN format (e.g. ABCDE1234F)",
+    path: ["panNumber"],
+    ...alwaysCheck,
+  })
+  .refine((data) => !!data.cuisinesSameAsBrand || (data.cuisines?.length ?? 0) > 0, {
+    message: "Select at least one",
+    path: ["cuisines"],
+    ...alwaysCheck,
   })
   .refine(
     (data) => {

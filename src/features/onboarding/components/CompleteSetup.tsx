@@ -126,9 +126,20 @@ export const CompleteSetup = () => {
   const onAddSuccess = (newRestro: Restaurant) => {
     setRestaurants((prev) => [...prev, newRestro]);
     setExpandedIds((prev) => ({ ...prev, [newRestro.restroId]: true }));
-    // A new outlet has no schedule yet - track it as empty so the "verify schedules" banner
-    // asks for it instead of treating the missing entry as unknown.
+    // Track the new outlet as having no schedule first, so the "verify schedules" banner asks
+    // for it instead of treating the missing entry as unknown. 2026-10-26: then fetch it - an
+    // outlet added with "Same as brand" timings already has the brand's schedule, and the banner
+    // should show it as verified. A 404/failure just leaves it empty, as before.
     setSchedules((prev) => ({ ...prev, [newRestro.restroId]: [] }));
+    restaurantService
+      .getSchedule(newRestro.restroId)
+      .then((res) => {
+        const days = res?.data?.days;
+        if (days?.length) {
+          setSchedules((prev) => ({ ...prev, [newRestro.restroId]: days }));
+        }
+      })
+      .catch(() => undefined);
     setView("list");
     // 2026-10-19: adding a 2nd outlet switches the brand to multi-restaurant server-side
     // (isMultipleRestro claim). Refresh so the claims match; keep the user's current tab.

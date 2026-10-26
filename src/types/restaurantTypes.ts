@@ -53,7 +53,8 @@ export interface RestaurantRequestDTO {
     isEggAvailable: boolean;
     isNonVegAvailable: boolean;
     servingOptions: string[];
-    cuisineIds: number[];
+    // Omitted when cuisinesSameAsBrand (2026-10-26).
+    cuisineIds?: number[];
     primaryImage: string;
     deliveryMenuImages?: string[];
     // Required by the backend when servingOptions includes DINE_IN.
@@ -80,7 +81,13 @@ export interface RestaurantRequestDTO {
     fssaiLicenseImage: string;
     fssaiNumber: string;
     fssaiExpiryDate: string; // yyyy-MM-dd
-    panNumber: string;
+    // Omitted when panSameAsBrand (2026-10-26).
+    panNumber?: string;
+    // 2026-10-26: create only - the backend copies the brand's PAN / cuisines / timings once.
+    // No FSSAI flag: each outlet needs its own unique FSSAI number.
+    panSameAsBrand?: boolean;
+    cuisinesSameAsBrand?: boolean;
+    timingsSameAsBrand?: boolean;
 }
 
 export interface RestaurantResponse {
