@@ -5,7 +5,8 @@ import { decodeToken } from '@/utils/jwt';
 import { useOnboardingStore } from '@/features/onboarding/store/useOnboardingStore';
 import { useOrderStore } from '@/features/dashboard/store/useOrderStore';
 import { useRestaurantStore } from '@/features/dashboard/store/useRestaurantStore';
-import { useAddonStore } from '@/features/dashboard/store/useAddonStore';
+import { queryClient } from '@/api/queryClient';
+import { ADDON_LIBRARY_KEY } from '@/features/dashboard/hooks/useAddonLibrary';
 import { useMenuStore } from '@/features/dashboard/store/useMenuStore';
 
 interface User {
@@ -200,8 +201,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         // initializeAuth above for when it actually gets cleared.
         useOrderStore.getState().reset();
         useRestaurantStore.getState().reset();
-        useAddonStore.getState().reset();
+        // 2026-10-27: the old add-on editor's store is deleted (replaced by the add-on library),
+        // but browsers may still hold its persisted drafts - drop them here too.
+        localStorage.removeItem('ustart-addon-storage');
         useMenuStore.getState().reset();
+        // 2026-10-27: the add-on library page keeps its reads in TanStack Query, not a store.
+        queryClient.removeQueries({ queryKey: [ADDON_LIBRARY_KEY] });
 
         Object.keys(sessionStorage).forEach((key) => {
             if (key.startsWith('draft_settings_')) {

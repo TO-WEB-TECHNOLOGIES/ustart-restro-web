@@ -23,6 +23,7 @@ import { DeleteItemModal } from "./DeleteItemModal";
 import { BlockItemModal } from "./BlockItemModal";
 import { AddEditItemModal } from "./AddEditItemModal";
 import { TaxRateSelect, formatTaxRate } from "./TaxRateSelect";
+import { VariantRow } from "./VariantRow";
 
 interface MenuItemCardProps {
   /** The menu item data to display */
@@ -32,7 +33,8 @@ interface MenuItemCardProps {
 /**
  * Marker component to display symbols for Veg, Non-Veg, and Egg items.
  */
-const FoodTypeMarker = ({ type }: { type: FoodType }) => {
+// 2026-10-27: exported so add-on cards use the same marker.
+export const FoodTypeMarker = ({ type }: { type: FoodType }) => {
   const config = {
     VEG: { color: "border-green-600", dot: "bg-green-600" },
     NON_VEG: { color: "border-red-600", dot: "bg-red-600" },
@@ -71,6 +73,20 @@ export const MenuItemCard = ({ item }: MenuItemCardProps) => {
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [isBlockModalOpen, setIsBlockModalOpen] = useState(false);
   const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
+  // 2026-10-26: clicking the card shows its variants row underneath.
+  const [isVariantsOpen, setIsVariantsOpen] = useState(false);
+
+  /**
+   * Toggles the variants row. Ignores clicks meant for something else: the card's own controls
+   * (buttons, switches, inputs) and anything rendered through a portal - React bubbles events
+   * from the card's modals up to here even though they aren't inside the card in the DOM.
+   */
+  const handleCardClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    const target = e.target as HTMLElement;
+    if (!e.currentTarget.contains(target)) return;
+    if (target.closest("button, a, input, select, textarea, label, [role='switch']")) return;
+    setIsVariantsOpen((open) => !open);
+  };
 
   // Reset editing state when tab changes
   useEffect(() => {
@@ -187,9 +203,12 @@ export const MenuItemCard = ({ item }: MenuItemCardProps) => {
   const isLocalBlocked = item.status === "blocked";
 
   return (
+    <div className="flex flex-col gap-3">
     <motion.div
       layoutId={String(item.id.toString())}
-      className={`bg-white dark:bg-slate-900 rounded-3xl p-4 border border-slate-100 dark:border-slate-800 shadow-sm hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-all flex flex-col lg:flex-row gap-4 group relative ${isLocalDeleted ? "opacity-50 grayscale" : ""}`}
+      onClick={handleCardClick}
+      aria-expanded={isVariantsOpen}
+      className={`cursor-pointer bg-white dark:bg-slate-900 rounded-3xl p-4 border border-slate-100 dark:border-slate-800 shadow-sm hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-all flex flex-col lg:flex-row gap-4 group relative ${isLocalDeleted ? "opacity-50 grayscale" : ""}`}
     >
       {/* Left Section: Image and Primary Details */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 flex-1 min-w-0">
@@ -597,5 +616,9 @@ export const MenuItemCard = ({ item }: MenuItemCardProps) => {
         categoryId={selectedCategoryId || 0}
       />
     </motion.div>
+    {isVariantsOpen && (
+      <VariantRow parent={item} />
+    )}
+    </div>
   );
 };

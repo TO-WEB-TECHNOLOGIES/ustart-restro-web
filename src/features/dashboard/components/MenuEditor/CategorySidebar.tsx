@@ -1,5 +1,6 @@
 import { useState, useMemo, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
+import { addonLibraryPaths } from "../AddonLibrary/paths";
 import {
   Plus,
   MoreVertical,
@@ -464,7 +465,9 @@ export const CategorySidebar = ({
       {/* Footer action to navigate to Add-ons section */}
       <div className="p-4 border-t border-slate-100 dark:border-slate-800">
         <button
-          onClick={() => navigate('/dashboard/menu/addons')}
+          // 2026-10-27: this sidebar is also onboarding's upload-menu step, where /dashboard/...
+          // is bounced by RequireOnboarding (brand not ACTIVE yet) - so the link did nothing there.
+          onClick={() => navigate(addonLibraryPaths(location.pathname).library)}
           className="w-full flex items-center justify-between text-[var(--color-primary-blue)] dark:text-blue-400 text-sm font-black py-4 px-2 hover:translate-x-1 transition-transform group"
         >
           {t("dashboard.menuEditor.goToAddOns")}

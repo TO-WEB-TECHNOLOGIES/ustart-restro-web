@@ -1,5 +1,5 @@
-import { useState, useRef } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState, useRef, useEffect } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { useMenu } from "../../hooks/useMenu";
 import type { MenuItem, Allergen, MenuTag } from "../../../../types/menuTypes";
 import {
@@ -22,6 +22,36 @@ import { useMenuStore } from "../../store/useMenuStore";
 import { multimediaService } from "@/api/multimediaService";
 import { TaxRateSelect } from "./TaxRateSelect";
 import { SPICE_SWEET } from "./spiceLevel";
+import { fetchMenuItemDetail } from "../../api/menuApi";
+import { resolveItem } from "../../store/menuItemLookup";
+
+/**
+ * 2026-10-26: the form fields of an item, used to prefill a variant from its parent and to load a
+ * variant for editing. "None of these" is dropped from tags/allergens because the form shows it as
+ * "nothing picked" and handleSave adds it back when the list is empty.
+ */
+const toFormValues = (source: MenuItem): Partial<MenuItem> => ({
+  categoryId: source.categoryId,
+  name: source.name,
+  description: source.description ?? "",
+  itemPrice: source.itemPrice,
+  packagingCharges: source.packagingCharges ?? 0,
+  taxAmount: source.taxAmount ?? 5,
+  foodType: source.foodType,
+  serviceType: source.serviceType ?? "DELIVERY",
+  itemType: source.itemType ?? [],
+  isFrosting: source.isFrosting,
+  serves: source.serves,
+  portionSize: source.portionSize,
+  weight: source.weight ?? "",
+  maxQuantity: source.maxQuantity,
+  tags: (source.tags ?? []).filter((tag) => tag !== "NONE_OF_THESE"),
+  allergens: (source.allergens ?? []).filter((a) => a !== "NONE_OF_THESE"),
+  spiceLevel: source.spiceLevel ?? 1,
+  availability: source.availability ?? { startTime: "09:00", endTime: "23:00", allDay: true },
+  nutritionalInfo: source.nutritionalInfo ?? { calories: "", protein: "", carbs: "", fats: "" },
+  isAiGeneratedImage: source.isAiGeneratedImage ?? false,
+});
 
 export const AddItemPage = () => {
   const { t } = useTranslation();
@@ -29,6 +59,24 @@ export const AddItemPage = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { selectedCategory } = useMenu();
   const addNewItemLocally = useMenuStore((state) => state.addNewItemLocally);
+  const updateMenuItem = useMenuStore((state) => state.updateMenuItem);
+
+  // 2026-10-26: modes opened from a card's variant row - ?variantOf=<parentId> adds a variant
+  // prefilled from the parent (all but name, price and image; everything stays editable, tax
+  // included), ?edit=<id> edits an existing item or variant with its own values. Ids may be
+  // negative (unsaved local items). ("isVariantMode" = any of these prefilled modes.)
+  const [searchParams] = useSearchParams();
+  const variantOfId = Number(searchParams.get("variantOf")) || null;
+  const editItemId = Number(searchParams.get("edit")) || null;
+  const isVariantMode = variantOfId !== null || editItemId !== null;
+  // The parent when adding/editing a variant; null when editing a base item.
+  const [parentItem, setParentItem] = useState<MenuItem | null>(null);
+  // Category the item lives in (a variant always lives in its parent's).
+  const [sourceCategoryId, setSourceCategoryId] = useState<number | undefined>(undefined);
+  const [isLoadingSource, setIsLoadingSource] = useState(isVariantMode);
+  const [sourceError, setSourceError] = useState(false);
+  // The variant's values as loaded, so an edit only queues the fields the user actually changed.
+  const loadedValuesRef = useRef<Partial<MenuItem> | null>(null);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -129,6 +177,73 @@ export const AddItemPage = () => {
     isAiGeneratedImage: false,
   });
 
+  // 2026-10-26: load what the variant form starts from. A saved item's full details come from
+  // the detail API (the list leaves many fields out), with any pending local edits applied on
+  // top; an unsaved local item is already complete in the store's overlay.
+  useEffect(() => {
+    if (!isVariantMode) return;
+    let cancelled = false;
+    const { categories, updatedItems } = useMenuStore.getState();
+
+    const loadFull = async (id: number): Promise<MenuItem | undefined> => {
+      const pending = updatedItems[id]?.current;
+      if (id < 0) return pending;
+      try {
+        return { ...(await fetchMenuItemDetail(id)), ...(pending ?? {}) };
+      } catch (err) {
+        console.error(`Failed to load item ${id} details`, err);
+        return resolveItem(categories, updatedItems, id);
+      }
+    };
+
+    (async () => {
+      const source = await loadFull((editItemId ?? variantOfId) as number);
+      const parentId = editItemId ? source?.originalProductId : variantOfId;
+      const parent = parentId ? resolveItem(categories, updatedItems, parentId) : undefined;
+      if (cancelled) return;
+      // A parent is needed only for a variant (editing a base item has none).
+      if (!source || (parentId && !parent)) {
+        setSourceError(true);
+      } else {
+        setParentItem(parent ?? null);
+        setSourceCategoryId(parent?.categoryId ?? source.categoryId);
+        if (editItemId) {
+          // Tags/allergens normalised the way handleSave sends them (empty -> "None of these"),
+          // so an untouched list doesn't count as a change.
+          const loaded = toFormValues(source);
+          const orNone = <T,>(list: T[] | undefined, none: T) => (list && list.length > 0 ? list : [none]);
+          loadedValuesRef.current = {
+            ...loaded,
+            tags: orNone(loaded.tags, "NONE_OF_THESE" as MenuTag),
+            allergens: orNone(loaded.allergens, "NONE_OF_THESE" as Allergen),
+            image: source.image,
+          };
+          setFormData(toFormValues(source));
+          setImagePreview(source.image || null);
+          if (source.image) setFormData((prev) => ({ ...prev, image: source.image }));
+        } else {
+          // New variant: the parent's details, except name, price and image (its own).
+          setFormData({
+            ...toFormValues(source),
+            name: "",
+            itemPrice: undefined,
+            image: undefined,
+            isAiGeneratedImage: false,
+          });
+        }
+      }
+      setIsLoadingSource(false);
+    })();
+    return () => {
+      cancelled = true;
+    };
+    // Runs once per opened item; the store is read imperatively on purpose.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [variantOfId, editItemId]);
+
+  // A variant always lives in its parent's category; an edited item stays in its own.
+  const effectiveCategoryId = isVariantMode ? sourceCategoryId : selectedCategory?.id;
+
   const updateField = (field: keyof MenuItem, value: any) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
     // Clear error when field is updated
@@ -202,7 +317,9 @@ export const AddItemPage = () => {
           formData.tags && formData.tags.length > 0
             ? formData.tags
             : (["NONE_OF_THESE"] as MenuTag[]),
-        categoryId: selectedCategory?.id, // Ensure it's present
+        categoryId: effectiveCategoryId, // Ensure it's present
+        // 2026-10-26: links a new variant to its parent (unchanged when editing one).
+        ...(variantOfId !== null && { originalProductId: variantOfId }),
       };
 
       // 2. Validate with Zod first
@@ -210,6 +327,13 @@ export const AddItemPage = () => {
 
       // 3. Clear existing errors if valid
       setErrors({});
+
+      // 2026-10-26: editing an item or variant is a plain queued edit - no "add to stock / schedule"
+      // step, which only applies to new items.
+      if (editItemId !== null) {
+        await saveItemEdit(finalData);
+        return;
+      }
 
       // 4. Store validated data and show confirmation modal
       setValidatedFormData(finalData);
@@ -219,8 +343,42 @@ export const AddItemPage = () => {
     }
   };
 
+  /**
+   * 2026-10-26: queues the edit of an existing item or variant (saved from Review like other edits). For a
+   * saved variant the image is only sent when a new file was picked: the form holds the image's
+   * display URL, and sending that back would replace the stored key (and the backend deletes the
+   * file it replaces).
+   */
+  const saveItemEdit = async (finalData: Partial<MenuItem>) => {
+    if (editItemId === null || effectiveCategoryId === undefined) return;
+    setIsUploading(true);
+    try {
+      // Only changed fields: re-sending unchanged ones isn't harmless - e.g. the availability
+      // window would be written brand-wide, over outlet-specific timings.
+      const loaded = (loadedValuesRef.current ?? {}) as Record<string, unknown>;
+      const updates = Object.fromEntries(
+        Object.entries(finalData).filter(
+          ([key, value]) => key !== "image" && JSON.stringify(loaded[key]) !== JSON.stringify(value),
+        ),
+      ) as Partial<MenuItem>;
+      if (selectedFile) {
+        updates.image = await multimediaService.uploadMenuItemImage(selectedFile);
+      } else if (editItemId < 0 && finalData.image !== loaded.image) {
+        // An unsaved variant's image is a key we uploaded ourselves (or removed), so it's safe.
+        updates.image = finalData.image;
+      }
+      updateMenuItem(effectiveCategoryId, editItemId, updates, null);
+      navigate(-1);
+    } catch (err) {
+      console.error("Error uploading image / saving variant:", err);
+      setErrors({ image: t("dashboard.menuEditor.addItem.validation.imageUploadFailed") });
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
   const performSave = async () => {
-    if (selectedCategory && validatedFormData) {
+    if (effectiveCategoryId !== undefined && validatedFormData) {
       setIsUploading(true);
       try {
         let finalImageKey = "";
@@ -245,7 +403,7 @@ export const AddItemPage = () => {
         };
 
         // Add item locally to updatedItems (no API call)
-        addNewItemLocally(selectedCategory.id, finalizedPayload as MenuItem, {
+        addNewItemLocally(effectiveCategoryId, finalizedPayload as MenuItem, {
           addToStockImmediately,
           scheduledDate: scheduledDateTime,
         });
@@ -295,11 +453,23 @@ export const AddItemPage = () => {
             <div className="flex items-center gap-4 md:gap-6">
               <div>
                 <h1 className="text-xl md:text-2xl font-bold text-slate-900 dark:text-white">
-                  {t("dashboard.menuEditor.addItem.title")}
+                  {editItemId !== null
+                    ? parentItem
+                      ? t("dashboard.menuEditor.variants.editTitle")
+                      : t("dashboard.menuEditor.variants.editItemTitle")
+                    : variantOfId !== null
+                      ? t("dashboard.menuEditor.variants.addTitle")
+                      : t("dashboard.menuEditor.addItem.title")}
                 </h1>
-                <p className="text-sm text-gray-500 font-medium mt-1">
-                  {selectedCategory?.name}{" "}
-                  {t("dashboard.menuEditor.addItem.categorySuffix")}
+                <p className="text-sm text-gray-500 dark:text-slate-400 font-medium mt-1">
+                  {parentItem ? (
+                    t("dashboard.menuEditor.variants.variantOf", { name: parentItem.name })
+                  ) : (
+                    <>
+                      {selectedCategory?.name}{" "}
+                      {t("dashboard.menuEditor.addItem.categorySuffix")}
+                    </>
+                  )}
                 </p>
               </div>
             </div>
@@ -312,13 +482,28 @@ export const AddItemPage = () => {
               </button>
               <button
                 onClick={handleSave}
-                className="bg-[var(--color-primary-blue)] text-white px-6 md:px-8 py-2 md:py-3 rounded-full font-bold text-sm hover:opacity-90 transition-all flex items-center gap-2"
+                // 2026-10-26: not until the variant's starting values have loaded (or if they
+                // couldn't be).
+                disabled={isLoadingSource || sourceError || isUploading}
+                className="bg-[var(--color-primary-blue)] text-white px-6 md:px-8 py-2 md:py-3 rounded-full font-bold text-sm hover:opacity-90 transition-all flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <span>{t("dashboard.menuEditor.addItem.save")}</span>
                 <Check className="w-5 h-5" />
               </button>
             </div>
           </header>
+
+          {/* 2026-10-26: variant form status - loading the parent's/variant's details, or failed. */}
+          {isVariantMode && (isLoadingSource || sourceError) && (
+            <div
+              role={sourceError ? "alert" : "status"}
+              className={`mb-8 p-4 rounded-2xl border text-sm font-medium ${sourceError ? "border-red-200 dark:border-red-900/50 bg-red-50 dark:bg-red-950/30 text-red-700 dark:text-red-400" : "border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 text-slate-600 dark:text-slate-300"}`}
+            >
+              {sourceError
+                ? t("dashboard.menuEditor.variants.loadFailed")
+                : t("dashboard.menuEditor.variants.loading")}
+            </div>
+          )}
 
           {/* 2026-10-21: summary of validation errors, right under the Save button. Inline errors
               alone weren't enough: many fields sit far below the fold (and some - category,

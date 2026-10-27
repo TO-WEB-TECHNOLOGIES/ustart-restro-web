@@ -5,6 +5,7 @@ import { fetchMenuScore, updateMenu, fetchCategories, fetchCategoryItems, create
 import { toast } from 'sonner';
 import i18n from '@/lib/i18n';
 import { getErrorMessage } from '@/utils/error';
+import { findItemInTree } from './menuItemLookup';
 
 /**
  * Interface representing the state and actions for the Menu Store.
@@ -365,6 +366,8 @@ export const useMenuStore = create<MenuStore>()(
                         .filter(entry => {
                             const item = entry.current;
                             if (!entry.isNewItem || item.categoryId !== categoryId) return false;
+                            // 2026-10-26: new variants show in their parent's variant row, not as cards.
+                            if (item.originalProductId) return false;
 
                             // Apply Query Filter
                             if (searchQuery && !item.name.toLowerCase().includes(searchQuery.toLowerCase())) return false;
@@ -464,7 +467,9 @@ export const useMenuStore = create<MenuStore>()(
                 }
             },
 
-            updateMenuItem: (categoryId: number, itemId: number, updates: Partial<MenuItem>, addressId?: string | null) => {
+            // categoryId is no longer used for the lookup (2026-10-26, see below); kept in the
+            // signature so existing callers don't change.
+            updateMenuItem: (_categoryId: number, itemId: number, updates: Partial<MenuItem>, addressId?: string | null) => {
                 const { categories, updatedItems } = get();
                 const newUpdatedItems = { ...updatedItems };
 
@@ -473,25 +478,15 @@ export const useMenuStore = create<MenuStore>()(
                 let originalBaseline: MenuItem | undefined = newUpdatedItems[itemId]?.original;
 
                 if (!originalBaseline) {
-                    // Item not tracked yet, find it in the current categories tree
-                    const findItem = (list: Category[]): MenuItem | undefined => {
-                        for (const cat of list) {
-                            if (cat.id === categoryId && Array.isArray(cat.items)) {
-                                const found = cat.items.find(i => i.id === itemId);
-                                if (found) return found;
-                            }
-                            if (cat.subCategories) {
-                                const found = findItem(cat.subCategories);
-                                if (found) return found;
-                            }
-                        }
-                    };
-                    originalBaseline = findItem(categories);
+                    // Item not tracked yet, find it in the current categories tree. 2026-10-26:
+                    // searches nested variants too (they aren't in cat.items), and no longer needs
+                    // the categoryId to match - item ids are unique across the brand.
+                    originalBaseline = findItemInTree(categories, itemId);
                     currentItemState = originalBaseline;
                 }
 
                 if (!originalBaseline || !currentItemState) {
-                    console.warn(`Menu Store: Item ${itemId} not found in category ${categoryId}.`);
+                    console.warn(`Menu Store: Item ${itemId} not found.`);
                     return;
                 }
 
@@ -567,18 +562,45 @@ export const useMenuStore = create<MenuStore>()(
                     return changes;
                 });
 
-                // Fire all API calls concurrently
-                const [createResults, updateResult] = await Promise.all([
-                    Promise.allSettled(toCreate.map(([, { current }]) => {
-                        const { id: _tempId, ...itemData } = current;
-                        return createMenuItem(current.categoryId, itemData);
-                    })),
+                // 2026-10-26: creates run in two phases - new parents first, then new variants -
+                // because a variant of a parent created in this same session points at the parent's
+                // temporary (negative) id until the parent has a real one.
+                const isVariantEntry = ([, u]: (typeof toCreate)[number]) => !!u.current.originalProductId;
+                const parentCreates = toCreate.filter(entry => !isVariantEntry(entry));
+                const variantCreates = toCreate.filter(isVariantEntry);
+                const createItem = (current: MenuItem, originalProductId?: number | null) => {
+                    const { id: _tempId, productVariants: _variants, ...itemData } = current;
+                    return createMenuItem(current.categoryId, { ...itemData, originalProductId });
+                };
+
+                // Phase 1 runs concurrently with the updates, as before.
+                const [parentResults, updateResult] = await Promise.all([
+                    Promise.allSettled(parentCreates.map(([, { current }]) => createItem(current, null))),
                     updatePayload.length > 0
                         ? updateMenu(updatePayload).then(() => null, (error: unknown) => error)
                         : Promise.resolve(null),
                 ]);
 
-                const failedCreateKeys = toCreate
+                // Temp parent id -> real id, for the parents that were created.
+                const realIdByTempId: Record<number, number> = {};
+                parentCreates.forEach(([, { current }], idx) => {
+                    const result = parentResults[idx];
+                    if (result.status === 'fulfilled') realIdByTempId[current.id] = result.value.item.id;
+                });
+
+                // Phase 2: a variant of an unsaved parent whose create failed isn't sent - it stays
+                // queued with its parent and goes out on the retry.
+                const variantResults = await Promise.allSettled(variantCreates.map(([, { current }]) => {
+                    const parentId = current.originalProductId as number;
+                    const realParentId = parentId > 0 ? parentId : realIdByTempId[parentId];
+                    return realParentId
+                        ? createItem(current, realParentId)
+                        : Promise.reject(new Error(i18n.t('dashboard.menuEditor.variants.parentNotSaved')));
+                }));
+
+                const orderedCreates = [...parentCreates, ...variantCreates];
+                const createResults = [...parentResults, ...variantResults];
+                const failedCreateKeys = orderedCreates
                     .filter((_, idx) => createResults[idx].status === 'rejected')
                     .map(([key]) => key);
                 const firstError =
@@ -600,8 +622,20 @@ export const useMenuStore = create<MenuStore>()(
 
                 console.error('Failed to submit menu changes:', firstError);
                 // Keep only what still needs saving: failed creates, plus the updates if they failed.
-                const remaining = Object.fromEntries(entries.filter(([key, u]) =>
-                    u.isNewItem ? failedCreateKeys.includes(key) : updateResult !== null));
+                // 2026-10-26: a kept variant whose new parent DID save is re-pointed at the parent's
+                // real id - the parent leaves the queue, so its temp id would never resolve again.
+                // Typed explicitly: an untyped [key, value] array literal isn't a tuple, which made
+                // Object.fromEntries fall back to `any` and drop the updatedItems typing.
+                type OverlayEntry = (typeof entries)[number];
+                const remaining: MenuStore['updatedItems'] = Object.fromEntries(entries
+                    .filter(([key, u]) => u.isNewItem ? failedCreateKeys.includes(key) : updateResult !== null)
+                    .map(([key, u]): OverlayEntry => {
+                        const parentId = u.current.originalProductId;
+                        const realParentId = parentId ? realIdByTempId[parentId] : undefined;
+                        return realParentId
+                            ? [key, { ...u, current: { ...u.current, originalProductId: realParentId } }]
+                            : [key, u];
+                    }));
                 set({
                     updatedItems: remaining,
                     isDirty: Object.keys(remaining).length > 0,
@@ -812,7 +846,9 @@ export const useMenuStore = create<MenuStore>()(
 
                 set({
                     updatedItems: newUpdatedItems,
-                    categories: addItemRecursive(categories),
+                    // 2026-10-26: a variant isn't a top-level card (it shows in its parent's variant
+                    // row, from the overlay) and doesn't count towards the category's item count.
+                    categories: newItem.originalProductId ? categories : addItemRecursive(categories),
                     isDirty: true
                 });
             },

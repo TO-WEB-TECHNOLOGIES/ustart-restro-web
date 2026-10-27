@@ -14,6 +14,8 @@ import {
 } from "lucide-react";
 import type { MenuItem } from "../../../../types/menuTypes";
 import { useRestaurantStore } from "../../store/useRestaurantStore";
+import { useMenuStore } from "../../store/useMenuStore";
+import { resolveItem } from "../../store/menuItemLookup";
 import { SPICE_SWEET, spiceLevelLabelKey } from "./spiceLevel";
 import {
   ALLERGEN_LABELS,
@@ -121,6 +123,12 @@ export const ModifiedItemCard = ({
 }: ModifiedItemCardProps) => {
   const { t } = useTranslation();
   const { addresses } = useRestaurantStore();
+  // 2026-10-26: a variant's card names the item it belongs to.
+  const parentName = useMenuStore((state) =>
+    current.originalProductId
+      ? resolveItem(state.categories, state.updatedItems, current.originalProductId)?.name
+      : undefined,
+  );
 
   // Find address label if modified by specific address
   const modificationSourceLabel = modifiedByAddressId
@@ -217,6 +225,11 @@ export const ModifiedItemCard = ({
               )}
             </div>
             <div className="flex flex-col gap-0.5 mt-0.5">
+              {parentName && (
+                <p className="text-xs text-slate-500 dark:text-slate-400 font-semibold truncate">
+                  {t("dashboard.menuEditor.variants.variantOf", { name: parentName })}
+                </p>
+              )}
               {!isNewItem && (
                 <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">
                   ID: #{current.id}

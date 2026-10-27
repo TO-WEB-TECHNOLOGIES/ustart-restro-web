@@ -144,9 +144,15 @@ const MenuEditor = lazy(() =>
     default: module.MenuEditor,
   })),
 );
-const AddonEditor = lazy(() =>
-  import("@/features/dashboard/outlets/menu/AddonEditor").then((module) => ({
-    default: module.AddonEditor,
+// 2026-10-27: the add-on library (rebuilt; replaces AddonEditor) and its full-page add-on form.
+const AddonLibrary = lazy(() =>
+  import("@/features/dashboard/outlets/menu/AddonLibrary").then((module) => ({
+    default: module.AddonLibrary,
+  })),
+);
+const AddonFormPage = lazy(() =>
+  import("@/features/dashboard/outlets/menu/AddonFormPage").then((module) => ({
+    default: module.AddonFormPage,
   })),
 );
 const ComingSoon = lazy(() =>
@@ -228,6 +234,16 @@ export const router = createBrowserRouter([
                   {
                     path: "new",
                     element: withSuspense(UploadMenu),
+                  },
+                  // 2026-10-27: the add-on library during onboarding - the menu sidebar's
+                  // "Go to Add-ons" can't use /dashboard/... before the brand is ACTIVE.
+                  {
+                    path: "addons",
+                    element: withSuspense(AddonLibrary),
+                  },
+                  {
+                    path: "addons/new",
+                    element: withSuspense(AddonFormPage),
                   },
                 ],
               },
@@ -321,7 +337,11 @@ export const router = createBrowserRouter([
                   },
                   {
                     path: "addons",
-                    element: withSuspense(AddonEditor),
+                    element: withSuspense(AddonLibrary),
+                  },
+                  {
+                    path: "addons/new",
+                    element: withSuspense(AddonFormPage),
                   },
                 ],
               },

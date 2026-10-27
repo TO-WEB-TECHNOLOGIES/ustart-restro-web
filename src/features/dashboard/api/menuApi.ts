@@ -47,6 +47,8 @@ export interface MenuItemResponseDTO {
     isCustomizable: boolean;
     variantCount: number;
     originalProductId?: number | null;
+    // 2026-10-26: the list API nests a parent's variants here (same shape, one level deep).
+    productVariants?: MenuItemResponseDTO[];
     foodType: string;
     servCount: number;
     spiceLevel: string;
@@ -109,6 +111,36 @@ export interface PaginatedItems {
 }
 
 /**
+ * Maps one list-API row to the store's MenuItem. 2026-10-26: extracted from fetchCategoryItems so
+ * nested variants (productVariants) go through the same mapping - they used to be dropped.
+ */
+const mapListItem = (dto: MenuItemResponseDTO): MenuItem => ({
+    id: dto.id,
+    name: dto.name,
+    description: dto.description || '',
+    itemPrice: dto.price || 0, // Fallback if no restro context
+    discountAmount: dto.discount || 0,
+    price: dto.finalPrice || 0, // Deprecated field mapping for safety
+    image: dto.image || '',
+    foodType: (dto.foodType?.toUpperCase() || 'VEG') as any, // 'veg' -> 'VEG'
+    isCustomisable: dto.isCustomizable,
+    inStock: { 'default': dto.isAvailable ?? true }, // Map global availability to local structure
+    taxAmount: dto.taxPercentage || 0,
+    packagingCharges: dto.packagingFees || 0,
+    discountIsAbsolute: true, // Assuming default since API doesn't expose it here explicitly
+    status: dto.isActive ? 'active' : 'inactive',
+    categoryId: dto.categoryId,
+    tags: (dto.tags?.map(t => t.toUpperCase()) || []) as any,
+    itemType: (dto.itemTypes?.map(t => t.toUpperCase()) || []) as any,
+    serviceType: (dto.servingOptions?.toUpperCase() || 'BOTH') as any,
+    // 2026-10-21: was never mapped, so editing an item reset it to the form default and
+    // saving overwrote the stored level.
+    spiceLevel: spiceLevelFromApi(dto.spiceLevel),
+    originalProductId: dto.originalProductId ?? null,
+    productVariants: dto.productVariants?.map(mapListItem) ?? [],
+});
+
+/**
  * Fetches items for a specific category with pagination.
  * @param {number} categoryId 
  * @param {number} page 
@@ -157,29 +189,7 @@ export const fetchCategoryItems = async (
 
         const response = await api.get<{ content: MenuItemResponseDTO[], totalPages: number, pageable: { pageNumber: number } }>(`/api/v1/menu/items?${queryParams.toString()}`);
         
-        const mappedItems: MenuItem[] = (response.data.content || []).map(dto => ({
-            id: dto.id,
-            name: dto.name,
-            description: dto.description || '',
-            itemPrice: dto.price || 0, // Fallback if no restro context
-            discountAmount: dto.discount || 0,
-            price: dto.finalPrice || 0, // Deprecated field mapping for safety
-            image: dto.image || '',
-            foodType: (dto.foodType?.toUpperCase() || 'VEG') as any, // 'veg' -> 'VEG'
-            isCustomisable: dto.isCustomizable,
-            inStock: { 'default': dto.isAvailable ?? true }, // Map global availability to local structure
-            taxAmount: dto.taxPercentage || 0,
-            packagingCharges: dto.packagingFees || 0,
-            discountIsAbsolute: true, // Assuming default since API doesn't expose it here explicitly
-            status: dto.isActive ? 'active' : 'inactive',
-            categoryId: dto.categoryId,
-            tags: (dto.tags?.map(t => t.toUpperCase()) || []) as any,
-            itemType: (dto.itemTypes?.map(t => t.toUpperCase()) || []) as any,
-            serviceType: (dto.servingOptions?.toUpperCase() || 'BOTH') as any,
-            // 2026-10-21: was never mapped, so editing an item reset it to the form default and
-            // saving overwrote the stored level.
-            spiceLevel: spiceLevelFromApi(dto.spiceLevel),
-        }));
+        const mappedItems: MenuItem[] = (response.data.content || []).map(mapListItem);
 
         return {
             items: mappedItems,
@@ -228,6 +238,7 @@ export const updateMenu = async (updates: Record<string, unknown>[]): Promise<{ 
             delete payload.discountIsAbsolute;
             delete payload.price; // Read-only on backend
             delete payload.isCustomisable; // Read-only on backend
+            delete payload.productVariants; // 2026-10-26: display-only nesting, not an item field
 
             const queryParams = new URLSearchParams();
             queryParams.append('itemId', String(itemId));
@@ -280,6 +291,52 @@ export const createCategory = async (data: { name: string; description?: string;
 };
 
 /**
+ * Backend detail DTO (GET /api/v1/menu/items/{id}) - only the fields the variant form reads.
+ */
+interface MenuItemDetailDTO extends Omit<MenuItemResponseDTO, 'portionSize' | 'productVariants'> {
+    portionSize?: string | null;
+    calories?: string | null;
+    protein?: string | null;
+    carbs?: string | null;
+    fats?: string | null;
+    startTime?: string | null;
+    endTime?: string | null;
+    allDay?: boolean | null;
+}
+
+/**
+ * 2026-10-26: one item's full details, for the variant form. The list API leaves out allergens,
+ * frosting, serves, portion, weight, max quantity, nutrition and timings, so prefilling a variant
+ * from a saved parent (or editing a saved variant) needs this. Without restaurantId the backend
+ * returns the brand-wide price row.
+ */
+export const fetchMenuItemDetail = async (itemId: number): Promise<MenuItem> => {
+    const { data: dto } = await api.get<MenuItemDetailDTO>(`/api/v1/menu/items/${itemId}`);
+    const portion = dto.portionSize ? Number(dto.portionSize) : NaN;
+    return {
+        ...mapListItem({ ...dto, portionSize: dto.portionSize ?? '', productVariants: [] }),
+        isFrosting: (dto.frostingType?.toUpperCase() || 'NO') as MenuItem['isFrosting'],
+        serves: dto.servCount ?? undefined,
+        portionSize: Number.isFinite(portion) ? portion : undefined,
+        weight: dto.weight || '',
+        maxQuantity: dto.maxQuantityPerOrder ?? undefined,
+        allergens: (dto.allergyWarnings?.map(a => a.toUpperCase()) || []) as MenuItem['allergens'],
+        isAiGeneratedImage: dto.imageTag === 'AI',
+        availability: {
+            startTime: dto.startTime?.slice(0, 5) || '09:00',
+            endTime: dto.endTime?.slice(0, 5) || '23:00',
+            allDay: dto.allDay ?? true,
+        },
+        nutritionalInfo: {
+            calories: dto.calories || '',
+            protein: dto.protein || '',
+            carbs: dto.carbs || '',
+            fats: dto.fats || '',
+        },
+    };
+};
+
+/**
  * Creates a new menu item on the server.
  * @returns {Promise<{ success: boolean; item: MenuItem }>}
  */
@@ -309,6 +366,9 @@ export const createMenuItem = async (categoryId: number, itemData: Partial<MenuI
             isAvailable: true,
             image: itemData.image || '',
             isAiGeneratedImage: itemData.isAiGeneratedImage || false,
+            // 2026-10-26: set for a variant - the backend links it to this parent. submitChanges
+            // only sends real (saved) parent ids here.
+            originalProductId: itemData.originalProductId ?? undefined,
         };
 
         const response = await api.post<{ menuItemId: number, name: string }>('/api/v1/menu/items', payload);

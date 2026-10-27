@@ -310,3 +310,154 @@ MenuEditor (outlet — handles edit/stock/taxes/charges/new/review paths)
   as verified right away.
 - **Lesson:** never round-trip `src/locales/hi/translation.json` through `JSON.parse`/`stringify` -
   it contains duplicate keys and a round-trip silently drops/reorders them. Insert new keys as text.
+
+### 2026-10-26 — Menu item variants row
+- Clicking a menu item card toggles `MenuEditor/VariantRow` under it: a horizontally scrollable
+  row with the item itself first ("Main", opens the existing edit modal), then its variants, then
+  a dotted "+ Add variant" card (hidden for outlet-level users - `user.restroId` - who can only
+  change availability). The card ignores clicks on its own controls and on portal content (React
+  bubbles modal clicks up to the card even though they aren't inside it in the DOM).
+- A variant is a full item of its own on the backend (`originalProductId` on `POST /menu/items`,
+  one level deep; deleting a parent deletes its variants). No backend change was needed.
+  **Product decision:** tax is NOT locked to the parent - it's prefilled like every other field
+  and stays editable.
+- Add/edit happens on the full `AddItemPage`: `?variantOf=<parentId>` prefills everything from the
+  parent except name, price and image; `?editVariant=<id>` edits one. Saved items are loaded via
+  the new `fetchMenuItemDetail` (the list API omits allergens, frosting, serves, portion, weight,
+  nutrition, timings), with pending local edits applied on top.
+- Editing a saved variant queues **only the changed fields**, and never the image unless a new
+  file was picked: the form holds the image's display URL, and sending it back would replace the
+  stored key (the backend deletes the file it replaces); an unchanged availability window would be
+  written brand-wide over outlet-specific timings.
+- Store: the list mapping now keeps `productVariants` (it used to drop them); new variants live
+  only in the `updatedItems` overlay (not in `cat.items`, not counted in `itemCount`);
+  `updateMenuItem` finds nested variants (`store/menuItemLookup.ts`). `submitChanges` creates new
+  parents first, then variants with the parent's real id; a variant whose new parent failed stays
+  queued, and one whose parent succeeded is re-pointed at the real id for the retry.
+- Not in this change: deleting a queued variant before Review, per-variant customizations, the
+  default-variant flag, and removing a saved variant's image.
+
+### 2026-10-26 — Edit + Manage customizations for items and variants
+- Every card in `VariantRow` (base item and each variant) now has **Edit** and **Customize**.
+  Edit opens the full prefilled `AddItemPage` for the base item too (`?edit=<id>`, was
+  `?editVariant=`; product decision: same form for item and variants), queued for Review.
+- **Customize** opens `MenuEditor/CustomizationPanel` (shadcn `Sheet`, right side, full height):
+  one tab per saved row (base + variants), categories first, then options inside each
+  (`CustomizationGroupEditor`): category name, min/max choices (mandatory is derived from
+  min > 0 - backend rule), active; option name, +₹ price, active, pre-selected.
+- Saved by the panel's own Save, not Review (product decision): all rows in one transaction via
+  `PUT /api/v1/menu/item-groups/{parentId}` (`api/customizationApi.ts`). Each row is sent as
+  `{ id, customizationGroups }` only, so nothing else about the item changes. **Gotcha:** a sent
+  `variants` list deletes any saved variant missing from it - the save always lists every variant
+  returned by the read. Unsaved items/variants (temp ids) can't be customized until published.
+- "Same as base item" on a variant tab copies the base's categories/options with ids stripped
+  (`copyGroupsAsNew`), replacing the variant's own after a confirm dialog; unticking restores what it
+  had. The copy is then the variant's own (prices etc. editable). Backend matches id-less entries by
+  name, so a copied name the variant already had updates that entry instead of duplicating it.
+- Client validation (`validateRowGroups`) mirrors the backend's ItemGroupValidator; problems are
+  listed in the panel footer next to Save, not only next to the fields.
+- The confirm `Dialog` is rendered **inside** `SheetContent`: as a sibling it would count as a
+  click outside the sheet.
+- Needs `npx shadcn@latest add sheet` (uses the already-installed `radix-ui`).
+
+### 2026-10-26 — Customization panel: aligned columns, option food type, image + description
+- **Alignment bug:** each option row was its own grid with `auto` columns, so checkboxes/delete
+  sized per row and drifted from the headings. Now one fixed template (`OPTION_COLS`) shared by the
+  heading row and every option row, heading row padded by the option card's border+padding
+  (`px-[11px]`); the category row's four cells each have a heading over an `h-10` control.
+  **Lesson:** separate grids only line up if their column widths are fixed, never `auto`.
+- Each option shows **food type tabs** (Veg / Non-veg / Egg, shadcn `Tabs`), defaulting to its
+  item/variant's food type. Backend change (2026-10-26, no schema change): `foodType` on the option
+  API, stored on the option's own `item_specifications` row; legacy options read back `null`, shown as
+  the item's.
+- "+ Additional details" link under each option opens `OptionDetailsDialog` (image + description,
+  one modal - product decision). A picked image is uploaded on Done (`uploadMenuItemImage`) so the
+  draft holds its key; `imageKey` undefined = unchanged, never echo the read's URL (backend would
+  store it as the key and delete the file), `""` = remove. "Same as base item" doesn't copy images.
+
+### 2026-10-27 — Option "Additional details" holds every optional DB field
+- Product decision ("everything stored"): besides image + description, the modal now edits the
+  option's in-stock flag, time window, and its own specifications row (serves, portion, weight,
+  max qty, frosting, spice level, consistency, tags, allergens, nutrition).
+  Tax (follows the item), discount (options aren't discounted) and the admin lock stay out.
+  Packaging fee was added, then removed the same day (product decision: packaging is charged on
+  the dish, not per option); it isn't sent, so an option's stored fee is left as it is.
+- `api/optionExtras.ts` owns the type, read mapping (`optionExtrasFromDTO`), save mapping
+  (`optionExtrasToNode`) and `hasOptionExtras`; `OptionDraft.extras` carries it, and
+  `OptionExtrasFields.tsx` renders it inside `OptionDetailsDialog` (labels reuse addItem keys).
+- Availability is sent on every save: the backend applies only what differs from the
+  brand value, and a change applies to that option at every outlet (hint shown in the modal).
+- Spice level always comes back set (column defaults to MODERATE), so `hasOptionExtras` ignores
+  Mild; empty number fields are "unchanged", not 0. A half-filled time window blocks Done and is
+  also a panel issue (`errors.optionTimes`).
+- Backend needed the spec fields on options (2026-10-27, reuses `MenuItemRowWriter.applySpecUpdate`).
+
+### 2026-10-27 — Add-on library rebuilt (replaces AddonEditor)
+- Product decisions: new page from scratch at the same route (`/dashboard/menu/addons`); brand
+  DEFAULTS only (no outlet, no dish - dish links stay in the dish form, outlet/dish prices on
+  `/allocation`); full-page add/edit form (`/dashboard/menu/addons/new?group=` / `?edit=`); every
+  stored field except discount (no API field); each form saves immediately; outlet users get a
+  read-only list plus an in-stock box for their own outlet.
+- Files: `api/addonLibraryApi.ts`, `hooks/useAddonLibrary.ts` (TanStack Query - no local draft to
+  keep), `components/AddonLibrary/*`, `outlets/menu/AddonLibrary.tsx` + `AddonFormPage.tsx`.
+  Specs/availability reuse `optionExtras.ts` + `OptionExtrasFields` (add-ons use the same field
+  names); the image control is the shared `MenuEditor/ImagePickField.tsx`.
+- Bugs in the old AddonEditor this avoids: it wrote outlet overrides whenever an outlet was picked
+  in the header; edits forced packagingFees 0 and allDay true (wiping saved values); group CRUD
+  failures were silent; Save used `alert()` and an all-or-nothing `Promise.all`; hand-rolled
+  createPortal modal; dead `brandIdParam`.
+- Gotchas: the add-on PATCH deletes the stored image whenever `itemImage` is present, so the image
+  is sent only on a new upload or removal. The update ignores `addOnCategoryId`, so the form locks
+  the group when editing. Logout drops the `addonLibrary` queries (AuthContext).
+- Old files (AddonEditor page, components/AddonEditor/*, useAddonStore, useAddons, addonApi) are
+  unused; the user deletes them, then AuthContext's `useAddonStore` import/reset goes too.
+- 2026-10-27 fix: "Go to Add-ons" did nothing during onboarding. The menu sidebar is shared with
+  `/grow-with-ustart/upload-menu`, and it linked to `/dashboard/menu/addons`, which
+  `RequireOnboarding` bounces while the brand isn't ACTIVE. The library is now also mounted at
+  `/grow-with-ustart/upload-menu/addons` (+ `/new`); `AddonLibrary/paths.ts` picks the base from
+  the URL (same `/grow-with-ustart` check as the menu editor), and the group sidebar has a
+  "Back to menu" link since onboarding has no dashboard nav.
+- 2026-10-27 restyle ("should look the same as the menu editor"): AddonLibrary now copies
+  MenuEditor's shell (top bar, collapsible w-72 sidebar + edge toggle, mobile slide-in/backdrop/
+  floating button), AddonGroupSidebar copies CategorySidebar (count header, bordered add button,
+  search, blue left-border selection), AddonList copies MenuItemList (action bar, big title with
+  count, dashed empty state) and AddonCard copies MenuItemCard (reuses its now-exported
+  `FoodTypeMarker`, badges, action buttons, existing menuEditor i18n keys). The menu's components
+  themselves can't be reused - they read useMenuStore. Kept deliberately different: hover icons
+  instead of CategorySidebar's hand-rolled dropdown, and a Checkbox instead of the fake `Switch`.
+- 2026-10-27: add-on pages now fill the screen. `h-full` collapsed to the content because neither
+  layout gives its content a definite height (onboarding's content area isn't height-bound at
+  all - UploadMenu uses an explicit calc for the same reason). `paths.ts` now also returns
+  `pageHeight`: `h-[calc(100dvh-4rem)]` under onboarding (h-16 header), `h-[calc(100dvh-5rem)]`
+  in the dashboard (h-20 header); the sidebar and list scroll inside it.
+- 2026-10-27: add-on form restyled to match AddItemPage (same header, two columns: Basic info /
+  Media / Details | Pricing / Classification / Attributes, same field styles); its pieces are in
+  `components/AddonLibrary/AddonFormFields.tsx`. Food-type tiles use static classes (AddItemPage's
+  `border-${color}-600` is never generated by Tailwind, so its selected tile isn't highlighted);
+  consistency is chips, not react-select. Packaging dropped from add-ons (product decision):
+  `packagingCharges` is always sent as 0 on create and update, so a fee saved earlier resets on the
+  next edit; the card no longer shows it.
+- 2026-10-27: add-on base price is required and must be > 0 (product decision). The form shows 0
+  as an empty field with the placeholder and rejects it on Save; the backend still allows 0, so
+  this is enforced in the form only.
+- 2026-10-27: old add-on editor removed - AddonEditor page, components/AddonEditor/* (5 files),
+  useAddonStore, useAddons, addonApi (deleted by the user), plus the AddOnVariant / AddOnCategory
+  types in types/menuTypes.ts and the store reset in AuthContext. Logout now just removes the old
+  store's `ustart-addon-storage` localStorage key (axios.ts already did on session expiry), so
+  browsers still holding its drafts don't carry them into the next account. The top-level
+  `addons.*` locale block stays: AddItemPage and AddEditItemModal still use some of its keys.
+
+### 2026-10-27 — Add-on linking in the customization panel
+- Product decisions: link an add-on GROUP to a dish, then tick which of its add-ons that dish
+  offers; each can get a dish price that applies at every outlet (no outlet-specific prices or
+  stock here); variants "Copy from base item", the base item "Copy from…" another item of its
+  category (incl. variants) - both copy links + special prices; one transactional Save.
+- Backend: item-group nodes gained `addOns` (per-dish price / not offered, full state) next to
+  `addOnCategoryIds` (ustart-backend 2026-10-27). Frontend: `api/addonLinks.ts` (drafts, read from
+  the detail's `addOnCategories` + each group's library list, save fields, copy, validation),
+  `RowCustomizations.addOnGroups`, `MenuEditor/AddonLinksEditor.tsx`, panel wiring.
+- Gotchas: the detail's add-on `isActive` ANDs every level, so "not offered on this dish" is only
+  read as such when the library has the add-on on (else it's shown "turned off in the library").
+  Only add-ons that differ from default (special price or not offered) are sent. A typed price equal
+  to the default counts as no special price. Copy sources come from `fetchCategoryItems` (first 100
+  items) under the `addonLibrary` query key so logout drops them.
