@@ -1,32 +1,27 @@
 import { useTranslation } from "react-i18next";
-import { X, Calendar, Info, Loader2 } from "lucide-react";
-
-interface Deal {
-  id: string;
-  promo: string;
-  desc: string;
-  popular?: boolean;
-  discountValue?: number;
-  minOrderAmount?: number;
-  capOfDiscountAmount?: number;
-  isAbsolute?: boolean;
-  targetCustomers?: string;
-}
+import { Calendar, Info, Loader2 } from "lucide-react";
+import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
+import { offerDays, type ReviewDeal } from "./offerReview";
 
 interface PercentageDiscountReviewModalProps {
   isOpen: boolean;
   onClose: () => void;
   onConfirm: () => void;
-  deal: Deal | null;
+  deal: ReviewDeal | null;
   startDate: Date;
   endDate: Date;
   isLoading?: boolean;
 }
 
-export const PercentageDiscountReviewModal = ({ 
-  isOpen, 
-  onClose, 
-  onConfirm, 
+/**
+ * Review dialog for a percentage offer (also used for Deal of the Day). 2026-11-02: on the shadcn
+ * Dialog (CLAUDE.local.md §1); isAbsolute now uses the backend's meaning (true = flat ₹), it was
+ * inverted before; the "Off" / day labels go through i18n.
+ */
+export const PercentageDiscountReviewModal = ({
+  isOpen,
+  onClose,
+  onConfirm,
   deal,
   startDate,
   endDate,
@@ -34,46 +29,23 @@ export const PercentageDiscountReviewModal = ({
 }: PercentageDiscountReviewModalProps) => {
   const { t, i18n } = useTranslation();
 
-  if (!isOpen || !deal) return null;
+  if (!deal) return null;
 
-  const formatDate = (date: Date) => {
-    return date.toLocaleDateString(i18n.language, {
-      month: 'short',
-      day: 'numeric'
-    });
-  };
-
-  const calculateDays = (start: Date, end: Date) => {
-    const diffTime = Math.abs(end.getTime() - start.getTime());
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    return diffDays;
-  };
-
-  const daysCount = calculateDays(startDate, endDate);
-  const discountDisplay = deal.isAbsolute ? `${deal.discountValue}%` : `₹${deal.discountValue}`;
+  const formatDate = (date: Date) => date.toLocaleDateString(i18n.language, { month: 'short', day: 'numeric' });
+  const discountDisplay = deal.isAbsolute ? `₹${deal.discountValue}` : `${deal.discountValue}%`;
 
   return (
-    <div className="fixed inset-0 z-100 flex items-center justify-center p-4">
-      {/* Backdrop */}
-      <div 
-        className="absolute inset-0 bg-[#0F2441]/40 backdrop-blur-sm animate-in fade-in duration-300"
-        onClick={isLoading ? undefined : onClose}
-      />
-      
-      {/* Modal Container */}
-      <div className="relative bg-white dark:bg-slate-900 w-full max-w-xl rounded-[28px] shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-300 border border-slate-100 dark:border-slate-800">
+    <Dialog open={isOpen} onOpenChange={(open) => { if (!open && !isLoading) onClose(); }}>
+      <DialogContent
+        showCloseButton={!isLoading}
+        className="sm:max-w-xl rounded-[28px] p-0 gap-0 overflow-hidden bg-white dark:bg-slate-900 border-slate-100 dark:border-slate-800"
+      >
         {/* Header */}
-        <div className="flex items-center justify-between px-8 py-6 border-b border-slate-50 dark:border-slate-800">
-          <h2 className="text-xl font-bold text-[#1a2b4b] dark:text-white">
+        <div className="px-8 py-6 border-b border-slate-50 dark:border-slate-800">
+          <DialogTitle className="text-xl font-bold text-[#1a2b4b] dark:text-white">
             {t("dashboard.offers.customerDelightersDetails.dotd.configure.reviewModal.title")}
-          </h2>
-          <button 
-            onClick={onClose}
-            disabled={isLoading}
-            className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition-colors text-slate-400 disabled:opacity-50"
-          >
-            <X className="w-5 h-5" />
-          </button>
+          </DialogTitle>
+          <DialogDescription className="sr-only">{deal.desc}</DialogDescription>
         </div>
 
         {/* Content */}
@@ -90,21 +62,23 @@ export const PercentageDiscountReviewModal = ({
                     {deal.promo}
                   </p>
                 </div>
-                <div>
-                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">
-                    {t("dashboard.offers.customerDelightersDetails.dotd.configure.reviewModal.targeting")}
-                  </p>
-                  <div className="inline-flex px-4 py-1.5 rounded-full bg-orange-100/50 dark:bg-orange-500/10 border border-orange-200/50 dark:border-orange-500/20">
-                    <p className="text-sm font-bold text-secondary-orange">
-                      {deal.targetCustomers}
+                {deal.targetCustomers && (
+                  <div>
+                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">
+                      {t("dashboard.offers.customerDelightersDetails.dotd.configure.reviewModal.targeting")}
                     </p>
+                    <div className="inline-flex px-4 py-1.5 rounded-full bg-orange-100/50 dark:bg-orange-500/10 border border-orange-200/50 dark:border-orange-500/20">
+                      <p className="text-sm font-bold text-secondary-orange">
+                        {deal.targetCustomers}
+                      </p>
+                    </div>
                   </div>
-                </div>
+                )}
               </div>
               <div className="flex flex-col items-center gap-1">
                 <div className="bg-secondary-orange text-white px-6 py-4 rounded-2xl shadow-lg shadow-secondary-orange/20">
                   <span className="text-3xl font-black">{discountDisplay}</span>
-                  <span className="text-sm font-bold block text-center uppercase tracking-tighter">Off</span>
+                  <span className="text-sm font-bold block text-center uppercase tracking-tighter">{t("dashboard.offers.activation.off")}</span>
                 </div>
               </div>
             </div>
@@ -118,11 +92,14 @@ export const PercentageDiscountReviewModal = ({
               </p>
               <p className="text-lg font-bold text-[#1a2b4b] dark:text-white">₹{deal.minOrderAmount}</p>
             </div>
+            {/* A flat deal has no cap; the max saving is the flat amount itself. */}
             <div>
               <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">
                 {t("dashboard.offers.customerDelightersDetails.dotd.configure.reviewModal.maxDiscount")}
               </p>
-              <p className="text-lg font-bold text-[#1a2b4b] dark:text-white">₹{deal.capOfDiscountAmount || deal.minOrderAmount}</p>
+              <p className="text-lg font-bold text-[#1a2b4b] dark:text-white">
+                ₹{deal.isAbsolute ? deal.discountValue : (deal.capOfDiscountAmount || deal.minOrderAmount)}
+              </p>
             </div>
             <div className="col-span-2">
               <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">
@@ -131,8 +108,8 @@ export const PercentageDiscountReviewModal = ({
               <div className="flex items-center gap-3">
                 <Calendar className="text-secondary-orange w-5 h-5" />
                 <p className="text-lg font-bold text-[#1a2b4b] dark:text-white">
-                  {formatDate(startDate)} - {formatDate(endDate)} 
-                  <span className="text-slate-400 font-medium text-sm ml-2">({daysCount === 0 || isNaN(daysCount) ? 1 : daysCount} {daysCount <= 1 ? 'Day' : 'Days'})</span>
+                  {formatDate(startDate)} - {formatDate(endDate)}
+                  <span className="text-slate-400 font-medium text-sm ml-2">({t("dashboard.offers.activation.daysCount", { count: offerDays(startDate, endDate) })})</span>
                 </p>
               </div>
             </div>
@@ -148,7 +125,7 @@ export const PercentageDiscountReviewModal = ({
 
           {/* Footer Actions */}
           <div className="flex flex-col gap-4">
-            <button 
+            <button
               onClick={onConfirm}
               disabled={isLoading}
               className="w-full bg-secondary-orange hover:bg-orange-500 disabled:opacity-70 disabled:hover:bg-secondary-orange text-white font-bold py-4 rounded-xl shadow-lg shadow-secondary-orange/30 transition-all flex items-center justify-center gap-2 text-lg active:scale-[0.98]"
@@ -157,7 +134,7 @@ export const PercentageDiscountReviewModal = ({
               {t("dashboard.offers.customerDelightersDetails.dotd.configure.reviewModal.confirmBtn")}
             </button>
             {!isLoading && (
-              <button 
+              <button
                 onClick={onClose}
                 className="w-full text-slate-500 dark:text-slate-400 font-bold py-2 text-sm hover:text-[#1a2b4b] dark:hover:text-white transition-colors"
               >
@@ -166,7 +143,7 @@ export const PercentageDiscountReviewModal = ({
             )}
           </div>
         </div>
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   );
 };

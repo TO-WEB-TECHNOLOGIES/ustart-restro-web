@@ -19,58 +19,25 @@ import {
   createEliteOffersSchema,
   type EliteOffersFormValues,
 } from "./validations";
-import { offersApi } from "../../api/offersApi";
-
-const SkeletonLoader = () => (
-  <div className="bg-white dark:bg-slate-900 rounded-3xl p-8 shadow-sm border border-slate-100 dark:border-slate-800 space-y-8 animate-pulse">
-    <div className="flex gap-4">
-      <div className="flex-1 h-32 bg-slate-50 dark:bg-slate-800/50 rounded-2xl"></div>
-      <div className="flex-1 h-32 bg-slate-50 dark:bg-slate-800/50 rounded-2xl"></div>
-    </div>
-    <div className="h-4 w-32 bg-slate-100 dark:bg-slate-800 rounded"></div>
-    <div className="flex flex-wrap gap-3">
-      {[1, 2, 3, 4, 5].map((i) => (
-        <div
-          key={i}
-          className="h-14 w-14 bg-slate-50 dark:bg-slate-800/50 rounded-xl"
-        ></div>
-      ))}
-    </div>
-    <div className="h-24 w-full bg-slate-50 dark:bg-slate-800/50 rounded-2xl"></div>
-  </div>
-);
+// 2026-11-02: wired to the backend (was mock data): grids are frontend constants and the offer is
+// created through POST /restaurant-offers with audience 2 (Elite members only) for the outlet(s)
+// picked in the header.
+import { FLAT_DISCOUNT_GRID, PERCENTAGE_OPTIONS } from "./offerConfig";
+import { buildEliteOffer, localToday, useOfferOutletIds } from "./offerPayloads";
+import { useCreateRestaurantOffer } from "../../hooks/useRestaurantOffers";
+import { getErrorMessage } from "@/utils/error";
 
 export const EliteExclusiveOffers = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const [isActivating, setIsActivating] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
   const [isReviewOpen, setIsReviewOpen] = useState(false);
   const [formData, setFormData] = useState<EliteOffersFormValues | null>(null);
 
-  const [offersData, setOffersData] = useState<Record<string, number[]>>({});
-
-  useEffect(() => {
-    let mounted = true;
-    const fetchData = async () => {
-      try {
-        const data = await offersApi.getFlatDealsData();
-        if (mounted) {
-          setOffersData(data);
-          setIsLoading(false);
-        }
-      } catch (error) {
-        if (mounted) {
-          setIsLoading(false);
-          toast.error("Failed to fetch offer configurations");
-        }
-      }
-    };
-    fetchData();
-    return () => {
-      mounted = false;
-    };
-  }, []);
+  // Static grids now (they were a mock fetch with a loading skeleton).
+  const offersData = FLAT_DISCOUNT_GRID;
+  const outletIds = useOfferOutletIds();
+  const createOffer = useCreateRestaurantOffer();
 
   const eliteOffersSchema = useMemo(() => createEliteOffersSchema(t), [t]);
 
@@ -87,7 +54,8 @@ export const EliteExclusiveOffers = () => {
       discountValue: 0,
       movType: "",
       maxDiscountAmount: undefined,
-      startDate: new Date().toISOString().split("T")[0],
+      // Local date: toISOString() is UTC and says "yesterday" before 05:30 IST.
+      startDate: localToday(),
       endDate: "",
     },
   });
@@ -106,7 +74,9 @@ export const EliteExclusiveOffers = () => {
     return d.toISOString().split("T")[0];
   }, [startDate]);
 
-  const currentDiscounts = movType ? offersData[movType] || [] : [];
+  // Flat offers use the ₹ amounts for the chosen MOV; percentage offers use the % options. The
+  // percentage view used to reuse the ₹ grid (up to "500%"), which the backend rejects over 100.
+  const currentDiscounts = !movType ? [] : isFlat ? offersData[movType] || [] : PERCENTAGE_OPTIONS;
 
   // Reset values when type changes
   useEffect(() => {
@@ -121,10 +91,14 @@ export const EliteExclusiveOffers = () => {
 
   const handleConfirmActivation = async () => {
     if (!formData) return;
+    if (outletIds.length === 0) {
+      toast.error(t("dashboard.offers.activation.noOutlet"));
+      return;
+    }
     setIsActivating(true);
 
     try {
-      await new Promise((resolve) => setTimeout(resolve, 2000));
+      await createOffer.mutateAsync(buildEliteOffer({ ...formData, restroIds: outletIds }));
 
       toast.success(
         t("dashboard.offers.exclusiveOffers.configure.toast.success_title"),
@@ -138,8 +112,9 @@ export const EliteExclusiveOffers = () => {
       setIsReviewOpen(false);
       navigate("/dashboard/growth");
     } catch (error) {
+      // The backend's message says what's wrong (outlet not live, code already running, limits).
       toast.error(
-        t("dashboard.offers.exclusiveOffers.configure.toast.error_title"),
+        getErrorMessage(error, t("dashboard.offers.exclusiveOffers.configure.toast.error_title")),
       );
     } finally {
       setIsActivating(false);
@@ -197,9 +172,6 @@ export const EliteExclusiveOffers = () => {
             </p>
           </div>
 
-          {isLoading ? (
-            <SkeletonLoader />
-          ) : (
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-8 mb-10">
               {/* Top Section: Card Selection */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
@@ -538,7 +510,6 @@ export const EliteExclusiveOffers = () => {
                 </div>
               </div>
             </form>
-          )}
         </div>
 
         {/* Sidebar on the Right */}
@@ -571,15 +542,14 @@ export const EliteExclusiveOffers = () => {
           onConfirm={handleConfirmActivation}
           deal={{
             id: "elite-deal",
-            promo: `ELITE-FLAT`,
+            promo: `ELITE-FLAT${formData.discountValue}`,
             desc: t(
               "dashboard.offers.exclusiveOffers.configure.review.flat_desc",
               { value: formData.discountValue },
             ),
             discountValue: formData.discountValue,
             minOrderAmount: Number(formData.movType),
-            capOfDiscountAmount: formData.discountValue,
-            isAbsolute: false,
+            isAbsolute: true,
             targetCustomers: t(
               "dashboard.offers.exclusiveOffers.configure.review.target",
             ),
@@ -597,7 +567,7 @@ export const EliteExclusiveOffers = () => {
           onConfirm={handleConfirmActivation}
           deal={{
             id: "elite-deal",
-            promo: `ELITE-PERCENT`,
+            promo: `ELITE-PCT${formData.discountValue}`,
             desc: t(
               "dashboard.offers.exclusiveOffers.configure.review.percentage_desc",
               { 
@@ -610,7 +580,7 @@ export const EliteExclusiveOffers = () => {
             discountValue: formData.discountValue,
             minOrderAmount: Number(formData.movType),
             capOfDiscountAmount: formData.maxDiscountAmount || Number(formData.movType),
-            isAbsolute: true,
+            isAbsolute: false,
             targetCustomers: t(
               "dashboard.offers.exclusiveOffers.configure.review.target",
             ),

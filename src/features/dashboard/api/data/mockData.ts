@@ -23,51 +23,8 @@ export const MOCK_STATS: Record<string, StatMetric[]> = {
     ]
 };
 
-export const MOCK_OFFERS_DATA: Record<string, number[]> = {
-  "199": [20, 30, 40, 50],
-  "299": [30, 50, 75, 90],
-  "399": [50, 75, 100, 125],
-  "499": [75, 100, 150, 200],
-  "599": [100, 150, 200, 250],
-  "699": [125, 175, 250, 300],
-  "799": [150, 200, 300, 350],
-  "899": [175, 250, 350, 400],
-  "999": [200, 250, 400, 500]
-};
-
-export const MOCK_PERCENTAGES: number[] = [10, 15, 20, 25, 30, 40, 50];
-
-export const MOCK_DAY_DEALS: Record<string, Record<string, any[]>> = {
-  en: {
-    percentage: [
-      { id: "stealdeal", promo: "STEALDEAL", desc: "60% off Upto ₹120 on orders above ₹160 for all users", discountValue: 60, minOrderAmount: 160, capOfDiscountAmount: 120, isAbsolute: true, targetCustomers: "All Users" },
-      { id: "restrohero", promo: "RESTROHERO", desc: "50% off Upto ₹100 on orders above ₹150", popular: true, discountValue: 50, minOrderAmount: 150, capOfDiscountAmount: 100, isAbsolute: true, targetCustomers: "Regular Customers" },
-      { id: "trynew", promo: "TRYNEW", desc: "40% off Upto ₹80 on orders above ₹199 for new users", discountValue: 40, minOrderAmount: 199, capOfDiscountAmount: 80, isAbsolute: true, targetCustomers: "New Customers" },
-      { id: "bigbite", promo: "BIGBITE", desc: "30% off Upto ₹150 on orders above ₹350", discountValue: 30, minOrderAmount: 350, capOfDiscountAmount: 150, isAbsolute: true, targetCustomers: "All Users" },
-    ],
-    flat: [
-      { id: "flatsaver", promo: "FLATSAVER", desc: "Flat ₹50 off on orders above ₹250", discountValue: 50, minOrderAmount: 250, capOfDiscountAmount: 50, isAbsolute: false, targetCustomers: "All Users" },
-      { id: "megasave", promo: "MEGASAVE", desc: "Flat ₹100 off on orders above ₹500", popular: true, discountValue: 100, minOrderAmount: 500, capOfDiscountAmount: 100, isAbsolute: false, targetCustomers: "All Users" },
-      { id: "newuser", promo: "NEWUSER", desc: "Flat ₹75 off on your first order above ₹300", discountValue: 75, minOrderAmount: 300, capOfDiscountAmount: 75, isAbsolute: false, targetCustomers: "New Customers" },
-      { id: "weekend", promo: "WEEKEND", desc: "Flat ₹40 off on weekends above ₹200", discountValue: 40, minOrderAmount: 200, capOfDiscountAmount: 40, isAbsolute: false, targetCustomers: "All Users" },
-    ],
-  },
-  hi: {
-    percentage: [
-      { id: "stealdeal", promo: "STEALDEAL", desc: "सभी उपयोगकर्ताओं के लिए ₹160 से ऊपर के ऑर्डर पर 60% तक ₹120 की छूट", discountValue: 60, minOrderAmount: 160, capOfDiscountAmount: 120, isAbsolute: true, targetCustomers: "सभी उपयोगकर्ता" },
-      { id: "restrohero", promo: "RESTROHERO", desc: "₹150 से ऊपर के ऑर्डर पर 50% तक ₹100 की छूट", popular: true, discountValue: 50, minOrderAmount: 150, capOfDiscountAmount: 100, isAbsolute: true, targetCustomers: "नियमित ग्राहक" },
-      { id: "trynew", promo: "TRYNEW", desc: "नए उपयोगकर्ताओं के लिए ₹199 से ऊपर के ऑर्डर पर 40% तक ₹80 की छूट", discountValue: 40, minOrderAmount: 199, capOfDiscountAmount: 80, isAbsolute: true, targetCustomers: "नए ग्राहक" },
-      { id: "bigbite", promo: "BIGBITE", desc: "₹350 से ऊपर के ऑर्डर पर 30% तक ₹150 की छूट", discountValue: 30, minOrderAmount: 350, capOfDiscountAmount: 150, isAbsolute: true, targetCustomers: "सभी उपयोगकर्ता" },
-    ],
-    flat: [
-      { id: "flatsaver", promo: "FLATSAVER", desc: "₹250 से ऊपर के ऑर्डर पर ₹50 की फ्लैट छूट", discountValue: 50, minOrderAmount: 250, capOfDiscountAmount: 50, isAbsolute: false, targetCustomers: "सभी उपयोगकर्ता" },
-      { id: "megasave", promo: "MEGASAVE", desc: "₹500 से ऊपर के ऑर्डर पर ₹100 की फ्लैट छूट", popular: true, discountValue: 100, minOrderAmount: 500, capOfDiscountAmount: 100, isAbsolute: false, targetCustomers: "सभी उपयोगकर्ता" },
-      { id: "newuser", promo: "NEWUSER", desc: "₹300 से ऊपर के आपके पहले ऑर्डर पर ₹75 की फ्लैट छूट", discountValue: 75, minOrderAmount: 300, capOfDiscountAmount: 75, isAbsolute: false, targetCustomers: "नए ग्राहक" },
-      { id: "weekend", promo: "WEEKEND", desc: "सप्ताहांत में ₹200 से ऊपर के ऑर्डर पर ₹40 की फ्लैट छूट", discountValue: 40, minOrderAmount: 200, capOfDiscountAmount: 40, isAbsolute: false, targetCustomers: "सभी उपयोगकर्ता" },
-    ],
-  }
-};
-
+// 2026-11-02: offer mocks removed (MOV/% grids moved to outlets/growth/offerConfig.ts; deals and
+// Quick Setup tiers come from the backend now).
 
 export const MOCK_ORDERS: Order[] = [
     {
@@ -271,70 +228,6 @@ export const ALL_ADDRESSES = [
     { id: 'addr_111', label: 'Connaught Place', address: 'Inner Circle, Delhi' },
     { id: 'addr_112', label: 'Hadapsar', address: 'Magarpatta City, Pune' },
 ];
-export interface QuickSetupTierItem {
-  promo: string;
-  pct: string;
-  sub: string;
-}
-
-export interface QuickSetupTierSection {
-  labelKey: "sectionLabel" | "percentageLabel" | "eliteLabel";
-  items: QuickSetupTierItem[];
-}
-
-export interface QuickSetupTier {
-  id: "standard" | "growth" | "max";
-  recommended?: boolean;
-  sections: QuickSetupTierSection[];
-}
-
-export const MOCK_QUICK_SETUP_TIERS: QuickSetupTier[] = [
-  {
-    id: "standard",
-    sections: [
-      {
-        labelKey: "sectionLabel",
-        items: [
-          { promo: "TRYNEW", pct: "30% off", sub: "Up to ₹80 for new users" },
-          { promo: "PARTY", pct: "10% off", sub: "Orders above ₹700" },
-        ],
-      },
-    ],
-  },
-  {
-    id: "growth",
-    sections: [
-      {
-        labelKey: "percentageLabel",
-        items: [
-          { promo: "TRYNEW", pct: "50% off", sub: "Up to ₹100 for new users" },
-          { promo: "PARTY", pct: "20% off", sub: "Orders above ₹700" },
-        ],
-      },
-      {
-        labelKey: "eliteLabel",
-        items: [{ promo: "ELITE15", pct: "15% off", sub: "Exclusive for members" }],
-      },
-    ],
-  },
-  {
-    id: "max",
-    sections: [
-      {
-        labelKey: "sectionLabel",
-        items: [
-          { promo: "TRYNEW", pct: "60% off", sub: "Up to ₹120 for new users" },
-          { promo: "PARTY", pct: "25% off", sub: "Orders above ₹700" },
-        ],
-      },
-      {
-        labelKey: "eliteLabel",
-        items: [{ promo: "ELITE20", pct: "20% off", sub: "Exclusive for members" }],
-      },
-    ],
-  },
-];
-
 export const MOCK_MENU_SCORE = {
     score: 80,
     thresholdScore: 90,

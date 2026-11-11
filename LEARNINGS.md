@@ -461,3 +461,56 @@ MenuEditor (outlet — handles edit/stock/taxes/charges/new/review paths)
   Only add-ons that differ from default (special price or not offered) are sent. A typed price equal
   to the default counts as no special price. Copy sources come from `fetchCategoryItems` (first 100
   items) under the `addonLibrary` query key so logout drops them.
+
+### 2026-11-02 — Growth screens wired to the backend (restaurant offers)
+- All five growth screens (`outlets/growth/`) ran on mock data (`api/offersApi.ts`, fake delays up
+  to 12 s). Now: `api/restaurantOffersApi.ts` + `hooks/useRestaurantOffers.ts` (TanStack Query,
+  key prefix `restaurantOffers`, dropped on logout in `AuthContext`). Contract:
+  `ustart-backend/docs/integration-docs/restaurant-offers.md`.
+- Product decisions behind the wiring: the app never picks an offer type (the backend derives it
+  from kind + `audience` 0/2); value grids are frontend constants (`growth/offerConfig.ts`); Deal of
+  the Day is a one-day deal (now → 23:59:59 today); Quick Setup tiers are admin-defined backend
+  bundles; no "your offers" list yet.
+- `growth/offerPayloads.ts`: outlets come from the header picker (one outlet, or every outlet for
+  "All Locations"); promo codes/names are generated (`FLAT50`, `PERCENT-20`, `ELITE-FLAT50`,
+  `ELITE-PCT15`) because the screens have no such fields; payment types `ALL`; date-only values run
+  00:00:00 → 23:59:59; percentage with no max sends cap = MOV (what the review shows).
+- Bugs fixed while wiring: `isAbsolute` was inverted in every screen and in
+  `PercentageDiscountReviewModal`; "today" used `toISOString()` (UTC → yesterday before 05:30 IST,
+  which the backend rejects); Elite's percentage options reused the ₹ grid (up to "500%");
+  hardcoded English toasts / "Off" / "Note:" / "Day(s)".
+- `OfferReviewModal` / `PercentageDiscountReviewModal` moved onto shadcn `Dialog` (CLAUDE.local.md
+  §1); their shared `ReviewDeal` type and `offerDays` live in `components/offerReview.ts`, because
+  `react-refresh/only-export-components` is an error here and fails a component file that also
+  exports helpers. `TierCard` owns its `TierCardSection` type now.
+- Lint gotcha (react-hooks 7, `set-state-in-effect` is an error): a default selection (first deal,
+  recommended bundle) is derived during render from the user's pick, not synced via setState in a
+  useEffect.
+- Quick Setup: bundle codes `standard` / `growth` / `max` keep their translated names; other codes
+  show the admin's text (one language). Card looks are applied by position.
+- Known gap: Quick Setup's step 1 (target customer) is still not sent anywhere — it wasn't in the
+  mock either, and each bundle template carries its own audience. Decide whether to drop the step.
+- Removed with the mocks: offer exports in `api/data/mockData.ts`, translation keys
+  `flatDeals.reviewDialog.daysCount` (→ `offers.activation.daysCount_one/_other`),
+  `dotd.configure.tabs.popular`, `quickSetup.step2.tiers.percentageLabel`. `api/offersApi.ts` is
+  now unused and must be removed (`git rm`, run by hand).
+
+### 2026-11-11 — My Offers page (active offers + history) at /dashboard/offers
+- Why: restaurants could create offers but never see them. The sidebar's Growth → Offers link
+  (`/dashboard/offers`) had no route; it now opens `outlets/offers/MyOffers.tsx`.
+- Data: one `GET /api/v1/restaurant-offers` (`?restroId=` for one outlet, none for "All
+  Locations" → every outlet the user can see), split in the browser by the backend's computed
+  `status`: Active = LIVE + UPCOMING + PAUSED (live ending soonest first, then upcoming, then
+  paused), History = ENDED (newest first, 20 at a time with "Show more"). No backend paging yet —
+  ustart-backend ARCHITECTURE_REVIEW M25.
+- Actions: Pause/Resume and End now → `PATCH /restaurant-offers/{id}` (`isActive` /
+  `endingDateTime` = now as a local string; the backend clamps a late value to now). End now is
+  hidden before an offer starts (backend refuses an end before the start) and asks first in
+  `EndOfferDialog` (shadcn Dialog; AlertDialog isn't installed). Writes invalidate the
+  `restaurantOffers` prefix, so the list refreshes after any create/enroll/activate too.
+- Files: `components/offers/` (`ActiveOfferCard`, `OfferHistoryRow`, `EndOfferDialog`,
+  `offerSummary.ts` — helpers live in a .ts file for react-refresh), API/hook additions
+  (`fetchRestaurantOffers`, `updateRestaurantOffer`, `useRestaurantOfferList`,
+  `useUpdateRestaurantOffer`), `RestaurantOfferDTO` widened to the fields the page reads,
+  `dashboard.offers.myOffers.*` keys in en + hi.
+- No usage/redemption numbers: offers aren't applied at checkout yet (backend M19).

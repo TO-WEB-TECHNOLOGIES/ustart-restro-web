@@ -741,7 +741,6 @@
           "title": "त्वरित सेटअप अभियान",
           "tiers": {
             "sectionLabel": "शामिल छूट",
-            "percentageLabel": "प्रतिशत छूट",
             "eliteLabel": "एलीट एक्सक्लूसिव",
             "standard": {
               "name": "स्टैंडर्ड बूस्ट",
@@ -873,6 +872,78 @@
         "title": "प्रतिशत छूट",
         "description": "USTARTNOW, PARTY और JUMBO प्रोमो कोड का उपयोग करके ऑर्डर और औसत ऑर्डर वैल्यू बढ़ाएं"
       },
+      "activation": {
+        "successTitle": "ऑफ़र चालू हो गया",
+        "failed": "ऑफ़र चालू नहीं हो सका। कृपया फिर से कोशिश करें।",
+        "loadFailed": "ऑफ़र लोड नहीं हो सके। कृपया फिर से कोशिश करें।",
+        "noOutlet": "पहले एक आउटलेट चुनें।",
+        "noDeals": "अभी कोई डील उपलब्ध नहीं है।",
+        "noBundles": "अभी कोई प्लान उपलब्ध नहीं है।",
+        "flatSuccess_one": "₹{{mov}} से ऊपर के ऑर्डर पर ₹{{value}} की फ्लैट छूट {{count}} आउटलेट पर लागू है।",
+        "flatSuccess_other": "₹{{mov}} से ऊपर के ऑर्डर पर ₹{{value}} की फ्लैट छूट {{count}} आउटलेट पर लागू है।",
+        "percentageSuccess_one": "₹{{mov}} से ऊपर के ऑर्डर पर {{value}}% छूट {{count}} आउटलेट पर लागू है।",
+        "percentageSuccess_other": "₹{{mov}} से ऊपर के ऑर्डर पर {{value}}% छूट {{count}} आउटलेट पर लागू है।",
+        "dotdSuccess_one": "{{promo}} आज {{count}} आउटलेट पर चलेगा।",
+        "dotdSuccess_other": "{{promo}} आज {{count}} आउटलेट पर चलेगा।",
+        "bundleSuccess_one": "{{count}} ऑफ़र बनाया गया।",
+        "bundleSuccess_other": "{{count}} ऑफ़र बनाए गए।",
+        "dotdEndsToday": "डील ऑफ़ द डे अभी से आज रात 11:59 बजे तक चलेगी।",
+        "flatDesc": "₹{{mov}} से ऊपर के ऑर्डर पर ₹{{value}} की फ्लैट छूट",
+        "percentageDesc": "₹{{mov}} से ऊपर के ऑर्डर पर ₹{{cap}} तक {{value}}% छूट",
+        "percentageDescUncapped": "₹{{mov}} से ऊपर के ऑर्डर पर {{value}}% छूट",
+        "flatOff": "₹{{value}} की छूट",
+        "percentOff": "{{value}}% की छूट",
+        "off": "छूट",
+        "noteLabel": "नोट:",
+        "daysCount_one": "{{count}} दिन",
+        "daysCount_other": "{{count}} दिन"
+      },
+      "myOffers": {
+        "title": "मेरे ऑफ़र",
+        "subtitle": "आपके आउटलेट पर चल रहे ऑफ़र, और जो ख़त्म हो चुके हैं।",
+        "create": "ऑफ़र बनाएं",
+        "tabs": { "active": "चालू", "history": "इतिहास" },
+        "status": { "LIVE": "लाइव", "UPCOMING": "आने वाला", "PAUSED": "रुका हुआ", "ENDED": "ख़त्म" },
+        "headline": {
+          "flat": "₹{{value}} की छूट",
+          "percent": "{{value}}% की छूट",
+          "upTo": "₹{{cap}} तक",
+          "bxgy": "{{buy}} ख़रीदें, {{free}} मुफ़्त पाएं",
+          "freeDelivery": "मुफ़्त डिलीवरी"
+        },
+        "minOrder": "₹{{mov}} से ऊपर के ऑर्डर पर",
+        "eliteOnly": "सिर्फ़ Elite",
+        "origin": { "enrolled": "USTART डील", "created": "आपका बनाया हुआ" },
+        "timing": {
+          "daysLeft_one": "{{count}} दिन बाकी",
+          "daysLeft_other": "{{count}} दिन बाकी",
+          "endsToday": "आज ख़त्म होगा",
+          "startsIn_one": "{{count}} दिन में शुरू होगा",
+          "startsIn_other": "{{count}} दिन में शुरू होगा",
+          "startsToday": "आज शुरू होगा"
+        },
+        "actions": { "pause": "रोकें", "resume": "फिर से चालू करें", "endNow": "अभी ख़त्म करें" },
+        "endDialog": {
+          "title": "{{promo}} को अभी ख़त्म करें?",
+          "description": "ग्राहक अब यह ऑफ़र इस्तेमाल नहीं कर पाएंगे। ख़त्म किया गया ऑफ़र दोबारा चालू नहीं हो सकता; फिर से चलाने के लिए नया ऑफ़र बनाएं।",
+          "confirm": "ऑफ़र ख़त्म करें",
+          "cancel": "चलने दें"
+        },
+        "toast": {
+          "paused": "{{promo}} रोक दिया गया है।",
+          "resumed": "{{promo}} फिर से चालू है।",
+          "ended": "{{promo}} ख़त्म हो गया है।",
+          "failed": "ऑफ़र अपडेट नहीं हो सका। कृपया फिर से कोशिश करें।"
+        },
+        "emptyActive": {
+          "title": "कोई चालू ऑफ़र नहीं",
+          "text": "ऑफ़र से नए ग्राहक और बड़े ऑर्डर आते हैं। कुछ ही टैप में एक बनाएं।",
+          "cta": "अपना पहला ऑफ़र बनाएं"
+        },
+        "emptyHistory": "आपके चलाए गए ऑफ़र ख़त्म होने के बाद यहाँ दिखेंगे।",
+        "showMore": "और देखें",
+        "retry": "फिर से कोशिश करें"
+      },
       "customerDelightersDetails": {
         "title": "अपने ग्राहकों को खुश करें",
         "subtitle": "अपने ग्राहकों के लिए कुछ विशेष बनाकर एक नई चमक पैदा करें",
@@ -943,8 +1014,7 @@
             "flatDiscountHint": "प्रति बिल फ्लैट छूट",
             "minOrder": "न्यूनतम ऑर्डर",
             "cartValue": "कार्ट मूल्य",
-            "durationUppercase": "अवधि",
-            "daysCount": "{{count}} दिन"
+            "durationUppercase": "अवधि"
           }
         },
         "percentageDiscounts": {
@@ -986,8 +1056,7 @@
             "tabs": {
               "percentageDiscount": "प्रतिशत छूट",
               "flatOff": "फ्लैट छूट",
-              "itemLevelDiscount": "आइटम स्तर की छूट",
-              "popular": "लोकप्रिय"
+              "itemLevelDiscount": "आइटम स्तर की छूट"
             },
             "tip": "सीमित समय के लिए फ़्लैश डील आपके दैनिक ऑर्डर वॉल्यूम को 40% तक बढ़ा सकते हैं।",
             "previewBtn": "पूर्वावलोकन",

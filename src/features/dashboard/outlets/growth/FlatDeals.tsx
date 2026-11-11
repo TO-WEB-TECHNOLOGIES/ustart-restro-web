@@ -17,60 +17,24 @@ import { toast } from "sonner";
 import { OfferSupportSidebar } from "../../components/OfferSupportSidebar";
 import { OfferReviewModal } from "../../components/OfferReviewModal";
 import { createFlatDealsSchema, type FlatDealsFormValues } from "./validations";
-import { offersApi } from "../../api/offersApi";
-
-const SkeletonLoader = () => (
-  <div className="bg-white dark:bg-slate-900 rounded-3xl p-8 shadow-sm border border-slate-100 dark:border-slate-800 space-y-8 animate-pulse">
-    <div className="space-y-4">
-      <div className="h-4 w-32 bg-slate-100 dark:bg-slate-800 rounded"></div>
-      <div className="h-14 w-full bg-slate-50 dark:bg-slate-800/50 rounded-xl"></div>
-    </div>
-    <div className="space-y-4">
-      <div className="h-4 w-40 bg-slate-100 dark:bg-slate-800 rounded"></div>
-      <div className="grid grid-cols-5 gap-3">
-        {[1, 2, 3, 4, 5].map((i) => (
-          <div key={i} className="h-14 bg-slate-50 dark:bg-slate-800/50 rounded-xl"></div>
-        ))}
-      </div>
-    </div>
-    <div className="h-24 w-full bg-slate-50 dark:bg-slate-800/50 rounded-2xl"></div>
-    <div className="flex gap-4">
-      <div className="flex-1 h-32 bg-slate-50 dark:bg-slate-800/50 rounded-2xl"></div>
-      <div className="flex-1 h-32 bg-slate-50 dark:bg-slate-800/50 rounded-2xl"></div>
-    </div>
-    <div className="h-14 w-full bg-slate-200 dark:bg-slate-700 rounded-xl"></div>
-  </div>
-);
+// 2026-11-02: wired to the backend (was mock data): the value grid is a frontend constant and the
+// offer is created through POST /restaurant-offers for the outlet(s) picked in the header.
+import { FLAT_DISCOUNT_GRID } from "./offerConfig";
+import { buildFlatOffer, localToday, useOfferOutletIds } from "./offerPayloads";
+import { useCreateRestaurantOffer } from "../../hooks/useRestaurantOffers";
+import { getErrorMessage } from "@/utils/error";
 
 export const FlatDeals = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const [isActivating, setIsActivating] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
   const [step, setStep] = useState(1);
   const [isReviewOpen, setIsReviewOpen] = useState(false);
   const [formData, setFormData] = useState<FlatDealsFormValues | null>(null);
-  const [offersData, setOffersData] = useState<Record<string, number[]>>({});
-
-  useEffect(() => {
-    let mounted = true;
-    const fetchData = async () => {
-      try {
-        const data = await offersApi.getFlatDealsData();
-        if (mounted) {
-          setOffersData(data);
-          setIsLoading(false);
-        }
-      } catch (error) {
-        if (mounted) {
-          setIsLoading(false);
-          toast.error("Failed to fetch offer configurations");
-        }
-      }
-    };
-    fetchData();
-    return () => { mounted = false; };
-  }, []);
+  // The grid is static now (it was a mock fetch with a loading skeleton).
+  const offersData = FLAT_DISCOUNT_GRID;
+  const outletIds = useOfferOutletIds();
+  const createOffer = useCreateRestaurantOffer();
 
   const flatDealsSchema = useMemo(() => createFlatDealsSchema(t), [t]);
 
@@ -86,7 +50,8 @@ export const FlatDeals = () => {
       targetCustomer: "",
       discountValue: 0,
       movType: "",
-      startDate: new Date().toISOString().split('T')[0],
+      // Local date: toISOString() is UTC and says "yesterday" before 05:30 IST.
+      startDate: localToday(),
       endDate: "",
     },
   });
@@ -110,20 +75,26 @@ export const FlatDeals = () => {
 
   const handleConfirmActivation = async () => {
     if (!formData) return;
+    if (outletIds.length === 0) {
+      toast.error(t("dashboard.offers.activation.noOutlet"));
+      return;
+    }
     setIsActivating(true);
     
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      toast.success("Offer Activated Successfully!", {
-        description: `Flat ₹${formData.discountValue} discount set for orders above ₹${formData.movType}.`,
+      const created = await createOffer.mutateAsync(buildFlatOffer({ ...formData, restroIds: outletIds }));
+      toast.success(t("dashboard.offers.activation.successTitle"), {
+        description: t("dashboard.offers.activation.flatSuccess", {
+          value: formData.discountValue,
+          mov: formData.movType,
+          count: created.length,
+        }),
       });
-      
       setIsReviewOpen(false);
       navigate("/dashboard/growth");
     } catch (error) {
-      toast.error("Failed to activate offer");
+      // The backend's message says what's wrong (outlet not live, code already running, limits).
+      toast.error(getErrorMessage(error, t("dashboard.offers.activation.failed")));
     } finally {
       setIsActivating(false);
     }
@@ -158,9 +129,6 @@ export const FlatDeals = () => {
             </div>
           </div>
 
-          {isLoading ? (
-            <SkeletonLoader />
-          ) : (
             <form onSubmit={handleSubmit(onSubmit)} className="bg-white dark:bg-slate-900 rounded-3xl p-8 shadow-sm border border-slate-100 dark:border-slate-800 space-y-8 mb-10">
               {step === 1 ? (
                 <>
@@ -409,7 +377,6 @@ export const FlatDeals = () => {
               </>
             )}
             </form>
-          )}
         </div>
 
         {/* Sidebar */}
@@ -431,11 +398,10 @@ export const FlatDeals = () => {
           deal={{
             id: "flat-deal",
             promo: `FLAT${formData.discountValue}`,
-            desc: "Flat Discount Offer",
+            desc: t("dashboard.offers.activation.flatDesc", { value: formData.discountValue, mov: formData.movType }),
             discountValue: formData.discountValue,
             minOrderAmount: Number(formData.movType),
-            capOfDiscountAmount: formData.discountValue,
-            isAbsolute: false,
+            isAbsolute: true,
             targetCustomers: formData.targetCustomer === 'all' 
               ? t("dashboard.offers.customerDelightersDetails.flatDeals.targetCustomerSelection.allCustomers")
               : formData.targetCustomer === 'new'

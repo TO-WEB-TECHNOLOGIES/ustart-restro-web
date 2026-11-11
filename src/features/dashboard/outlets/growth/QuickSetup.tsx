@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import {
   ArrowLeft,
@@ -13,13 +13,19 @@ import {
   Loader2,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { toast } from "sonner";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { OfferSupportSidebar } from "../../components/OfferSupportSidebar";
-import { TierCard } from "../../components/TierCard";
-import { offersApi } from "../../api/offersApi";
-import type { QuickSetupTier } from "../../api/data/mockData";
+import { TierCard, type TierCardSection } from "../../components/TierCard";
+// 2026-11-02: wired to the backend (was mock data). Tiers are USTART's Quick Setup bundles
+// (GET /restaurant-offers/bundles, admin-defined); activating one creates every template in it at
+// the outlet(s) picked in the header, with the chosen dates.
+import { useActivateOfferBundle, useOfferBundles } from "../../hooks/useRestaurantOffers";
+import type { OfferBundleDTO } from "../../api/restaurantOffersApi";
+import { endOfDay, localToday, startOfDay, templateDescription, useOfferOutletIds } from "./offerPayloads";
+import { getErrorMessage } from "@/utils/error";
 
 // ── Schemas ────────────────────────────────────────────────────────────────────
 
@@ -27,7 +33,8 @@ const step1Schema = z.object({
   targetCustomer: z.string().min(1, "dashboard.offers.quickSetup.validation.targetCustomerRequired"),
 });
 
-const today = new Date().toISOString().split("T")[0];
+// Local date: toISOString() is UTC and says "yesterday" before 05:30 IST.
+const today = localToday();
 
 const addDays = (dateStr: string, days: number) => {
   const d = new Date(dateStr);
@@ -55,30 +62,34 @@ type Step1Values = z.infer<typeof step1Schema>;
 type Step2Values = z.infer<typeof step2Schema>;
 
 // ── UI config (visual only, not from API) ──────────────────────────────────────
+// Bundles are admin-defined now, so the three looks are applied by position (cycling).
 
-const TIER_UI = {
-  standard: {
+const TIER_UI_LIST = [
+  {
     Icon: Leaf,
     iconBg: "bg-terracotta-green/10",
     iconColor: "text-terracotta-green",
     checkColor: "text-terracotta-green",
     accentBorder: "border-terracotta-green",
   },
-  growth: {
+  {
     Icon: Rocket,
     iconBg: "bg-secondary-orange/10",
     iconColor: "text-secondary-orange",
     checkColor: "text-secondary-orange",
     accentBorder: "border-primary-blue",
   },
-  max: {
+  {
     Icon: Zap,
     iconBg: "bg-purple-50 dark:bg-purple-900/20",
     iconColor: "text-purple-600",
     checkColor: "text-purple-600",
     accentBorder: "border-purple-600",
   },
-} as const;
+] as const;
+
+/** The three original tiers keep their translated name/description when an admin uses these codes. */
+const TRANSLATED_TIER_CODES = ["standard", "growth", "max"];
 
 // ── Skeleton ───────────────────────────────────────────────────────────────────
 
@@ -114,14 +125,21 @@ export const QuickSetup = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const [step, setStep] = useState(1);
-  const [selectedTier, setSelectedTier] = useState<"standard" | "growth" | "max">("growth");
-  const [tiers, setTiers] = useState<QuickSetupTier[] | null>(null);
+  const [pickedTier, setSelectedTier] = useState<number | null>(null);
   const [isActivating, setIsActivating] = useState(false);
 
-  // Fetch tier data in the background on mount
-  useEffect(() => {
-    offersApi.getQuickSetupTiers().then(setTiers);
-  }, []);
+  const bundlesQuery = useOfferBundles();
+  const activateBundle = useActivateOfferBundle();
+  const outletIds = useOfferOutletIds();
+  // null while loading, like the old mock fetch, so the skeleton logic below stays the same.
+  const tiers: OfferBundleDTO[] | null = bundlesQuery.isLoading ? null : bundlesQuery.data ?? [];
+
+  // The recommended bundle (else the first) is preselected until the restaurant picks one, and a
+  // pick that's no longer listed falls back to it. Worked out during render rather than synced with
+  // setState in an effect (react-hooks/set-state-in-effect).
+  const selectedTier = tiers?.some((b) => b.offerBundleId === pickedTier)
+    ? pickedTier
+    : (tiers?.find((b) => b.isRecommended) ?? tiers?.[0])?.offerBundleId ?? null;
 
   // ── Step 1 form ──
   const {
@@ -159,15 +177,26 @@ export const QuickSetup = () => {
   const minEndDate = watchedStartDate ? addDays(watchedStartDate, 15) : addDays(today, 15);
 
   const onActivate = handleSubmit(async (data) => {
-    if (!tiers) return;
+    if (!tiers || selectedTier === null) return;
+    if (outletIds.length === 0) {
+      toast.error(t("dashboard.offers.activation.noOutlet"));
+      return;
+    }
     setIsActivating(true);
     try {
-      await offersApi.activateQuickSetupCampaign({
-        tierId: selectedTier,
-        startDate: data.startDate,
-        endDate: data.endDate,
+      const created = await activateBundle.mutateAsync({
+        bundleId: selectedTier,
+        restroIds: outletIds,
+        startingDateTime: startOfDay(data.startDate),
+        endingDateTime: endOfDay(data.endDate),
+      });
+      toast.success(t("dashboard.offers.activation.successTitle"), {
+        description: t("dashboard.offers.activation.bundleSuccess", { count: created.length }),
       });
       navigate("/dashboard/growth");
+    } catch (error) {
+      // The backend's message says what's wrong (outlet not live, a code already running, …).
+      toast.error(getErrorMessage(error, t("dashboard.offers.activation.failed")));
     } finally {
       setIsActivating(false);
     }
@@ -178,8 +207,30 @@ export const QuickSetup = () => {
     question: t(`dashboard.offers.customerDelightersDetails.flatDeals.learningCenter.q${i}`),
   }));
 
-  const resolveSectionLabel = (labelKey: string) =>
-    t(`dashboard.offers.quickSetup.step2.tiers.${labelKey}`);
+  // Bundle → card sections: customer offers under "Included Discounts", Elite-only ones under
+  // "Elite Exclusive". Headline and condition text are built from the numbers (translated).
+  const sectionsOf = useMemo(() => (bundle: OfferBundleDTO): TierCardSection[] => {
+    const toItem = (item: OfferBundleDTO["items"][number]) => ({
+      promo: item.template.promoCode,
+      pct: item.template.isAbsolute
+        ? t("dashboard.offers.activation.flatOff", { value: item.template.discountAmount })
+        : t("dashboard.offers.activation.percentOff", { value: item.template.discountAmount }),
+      sub: templateDescription(t, item.template),
+    });
+    const sections: TierCardSection[] = [];
+    const customers = bundle.items.filter((i) => i.audience !== 2).map(toItem);
+    const elite = bundle.items.filter((i) => i.audience === 2).map(toItem);
+    if (customers.length) sections.push({ label: t("dashboard.offers.quickSetup.step2.tiers.sectionLabel"), items: customers });
+    if (elite.length) sections.push({ label: t("dashboard.offers.quickSetup.step2.tiers.eliteLabel"), items: elite });
+    return sections;
+  }, [t]);
+
+  const tierName = (bundle: OfferBundleDTO) => TRANSLATED_TIER_CODES.includes(bundle.bundleCode)
+    ? t(`dashboard.offers.quickSetup.step2.tiers.${bundle.bundleCode}.name`)
+    : bundle.bundleName;
+  const tierDesc = (bundle: OfferBundleDTO) => TRANSLATED_TIER_CODES.includes(bundle.bundleCode)
+    ? t(`dashboard.offers.quickSetup.step2.tiers.${bundle.bundleCode}.desc`)
+    : bundle.bundleDescription ?? "";
 
   // ── Render ──────────────────────────────────────────────────────────────────
 
@@ -306,27 +357,24 @@ export const QuickSetup = () => {
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-stretch">
                 {tiers === null
                   ? [1, 2, 3].map((i) => <TierCardSkeleton key={i} />)
-                  : tiers.map((tier) => {
-                      const ui = TIER_UI[tier.id];
+                  : tiers.map((tier, index) => {
+                      const ui = TIER_UI_LIST[index % TIER_UI_LIST.length];
                       return (
                         <TierCard
-                          key={tier.id}
-                          id={tier.id}
-                          name={t(`dashboard.offers.quickSetup.step2.tiers.${tier.id}.name`)}
-                          desc={t(`dashboard.offers.quickSetup.step2.tiers.${tier.id}.desc`)}
-                          recommended={tier.recommended}
+                          key={tier.offerBundleId}
+                          id={String(tier.offerBundleId)}
+                          name={tierName(tier)}
+                          desc={tierDesc(tier)}
+                          recommended={tier.isRecommended}
                           recommendedLabel={t("dashboard.offers.quickSetup.step2.tiers.growth.recommended")}
                           Icon={ui.Icon}
                           iconBg={ui.iconBg}
                           iconColor={ui.iconColor}
                           checkColor={ui.checkColor}
                           accentBorder={ui.accentBorder}
-                          sections={tier.sections.map((s) => ({
-                            ...s,
-                            label: resolveSectionLabel(s.labelKey),
-                          }))}
-                          isSelected={selectedTier === tier.id}
-                          onSelect={() => setSelectedTier(tier.id)}
+                          sections={sectionsOf(tier)}
+                          isSelected={selectedTier === tier.offerBundleId}
+                          onSelect={() => setSelectedTier(tier.offerBundleId)}
                         />
                       );
                     })}
@@ -334,6 +382,16 @@ export const QuickSetup = () => {
               {tiers === null && (
                 <p className="text-xs text-center text-slate-400 animate-pulse">
                   {t("dashboard.offers.quickSetup.step2.loadingPlans")}
+                </p>
+              )}
+              {bundlesQuery.isError && (
+                <p className="text-sm text-center font-medium text-red-500">
+                  {getErrorMessage(bundlesQuery.error, t("dashboard.offers.activation.loadFailed"))}
+                </p>
+              )}
+              {tiers !== null && tiers.length === 0 && !bundlesQuery.isError && (
+                <p className="text-sm text-center font-medium text-slate-500 dark:text-slate-400">
+                  {t("dashboard.offers.activation.noBundles")}
                 </p>
               )}
 
@@ -408,7 +466,7 @@ export const QuickSetup = () => {
                   </p>
                   <button
                     type="submit"
-                    disabled={isActivating || tiers === null}
+                    disabled={isActivating || tiers === null || selectedTier === null}
                     className="w-full py-4 bg-secondary-orange hover:bg-orange-500 disabled:opacity-60 disabled:cursor-not-allowed text-white font-bold text-lg rounded-xl shadow-lg shadow-secondary-orange/20 transition-all active:scale-[0.99] flex items-center justify-center gap-2 group"
                   >
                     {isActivating ? (

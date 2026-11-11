@@ -742,7 +742,6 @@
           "title": "Quick Setup Campaign",
           "tiers": {
             "sectionLabel": "Included Discounts",
-            "percentageLabel": "Percentage Discounts",
             "eliteLabel": "Elite Exclusive",
             "standard": {
               "name": "Standard Boost",
@@ -873,6 +872,78 @@
         "title": "Percentage Discounts",
         "description": "Increase orders and average order values using USTARTNOW, PARTY & JUMBO promo codes"
       },
+      "activation": {
+        "successTitle": "Offer activated",
+        "failed": "Couldn't activate the offer. Please try again.",
+        "loadFailed": "Couldn't load the offers. Please try again.",
+        "noOutlet": "Select an outlet first.",
+        "noDeals": "No deals are available right now.",
+        "noBundles": "No plans are available right now.",
+        "flatSuccess_one": "Flat ₹{{value}} off on orders above ₹{{mov}} is set at {{count}} outlet.",
+        "flatSuccess_other": "Flat ₹{{value}} off on orders above ₹{{mov}} is set at {{count}} outlets.",
+        "percentageSuccess_one": "{{value}}% off on orders above ₹{{mov}} is set at {{count}} outlet.",
+        "percentageSuccess_other": "{{value}}% off on orders above ₹{{mov}} is set at {{count}} outlets.",
+        "dotdSuccess_one": "{{promo}} runs today at {{count}} outlet.",
+        "dotdSuccess_other": "{{promo}} runs today at {{count}} outlets.",
+        "bundleSuccess_one": "{{count}} offer created.",
+        "bundleSuccess_other": "{{count}} offers created.",
+        "dotdEndsToday": "Deal of the Day runs from now until 11:59 PM today.",
+        "flatDesc": "Flat ₹{{value}} off on orders above ₹{{mov}}",
+        "percentageDesc": "{{value}}% off up to ₹{{cap}} on orders above ₹{{mov}}",
+        "percentageDescUncapped": "{{value}}% off on orders above ₹{{mov}}",
+        "flatOff": "₹{{value}} off",
+        "percentOff": "{{value}}% off",
+        "off": "Off",
+        "noteLabel": "Note:",
+        "daysCount_one": "{{count}} Day",
+        "daysCount_other": "{{count}} Days"
+      },
+      "myOffers": {
+        "title": "My Offers",
+        "subtitle": "Offers running at your outlets, and the ones that have ended.",
+        "create": "Create offer",
+        "tabs": { "active": "Active", "history": "History" },
+        "status": { "LIVE": "Live", "UPCOMING": "Upcoming", "PAUSED": "Paused", "ENDED": "Ended" },
+        "headline": {
+          "flat": "₹{{value}} OFF",
+          "percent": "{{value}}% OFF",
+          "upTo": "up to ₹{{cap}}",
+          "bxgy": "Buy {{buy}} get {{free}} free",
+          "freeDelivery": "Free delivery"
+        },
+        "minOrder": "on orders above ₹{{mov}}",
+        "eliteOnly": "Elite only",
+        "origin": { "enrolled": "USTART deal", "created": "Created by you" },
+        "timing": {
+          "daysLeft_one": "{{count}} day left",
+          "daysLeft_other": "{{count}} days left",
+          "endsToday": "Ends today",
+          "startsIn_one": "Starts in {{count}} day",
+          "startsIn_other": "Starts in {{count}} days",
+          "startsToday": "Starts today"
+        },
+        "actions": { "pause": "Pause", "resume": "Resume", "endNow": "End now" },
+        "endDialog": {
+          "title": "End {{promo}} now?",
+          "description": "Customers won't be able to use this offer any more. An ended offer can't be restarted; create a new one to run it again.",
+          "confirm": "End offer",
+          "cancel": "Keep running"
+        },
+        "toast": {
+          "paused": "{{promo}} is paused.",
+          "resumed": "{{promo}} is back on.",
+          "ended": "{{promo}} has ended.",
+          "failed": "Couldn't update the offer. Please try again."
+        },
+        "emptyActive": {
+          "title": "No active offers",
+          "text": "Offers bring in new customers and bigger orders. Set one up in a few taps.",
+          "cta": "Create your first offer"
+        },
+        "emptyHistory": "Offers you've run will show up here once they end.",
+        "showMore": "Show more",
+        "retry": "Try again"
+      },
       "customerDelightersDetails": {
         "title": "Delight your customers",
         "subtitle": "Create a spark with something extra special for your customers",
@@ -944,8 +1015,7 @@
             "flatDiscountHint": "Flat discount per bill",
             "minOrder": "MIN. ORDER",
             "cartValue": "Cart Value",
-            "durationUppercase": "DURATION",
-            "daysCount": "{{count}} Days"
+            "durationUppercase": "DURATION"
           }
         },
         "percentageDiscounts": {
@@ -987,8 +1057,7 @@
             "tabs": {
               "percentageDiscount": "Percentage Discount",
               "flatOff": "Flat Off",
-              "itemLevelDiscount": "Item Level Discount",
-              "popular": "POPULAR"
+              "itemLevelDiscount": "Item Level Discount"
             },
             "tip": "Limited-time flash deals can increase your daily order volume by up to 40%.",
             "previewBtn": "PREVIEW",

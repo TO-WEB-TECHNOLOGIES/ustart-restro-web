@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { ArrowLeft, Lightbulb, Loader2 } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
@@ -6,70 +6,71 @@ import { toast } from "sonner";
 import { OfferSupportSidebar } from "../../components/OfferSupportSidebar";
 import { PercentageDiscountReviewModal } from "../../components/PercentageDiscountReviewModal";
 import { OfferReviewModal } from "../../components/OfferReviewModal";
-import { offersApi } from "../../api/offersApi";
+import type { ReviewDeal } from "../../components/offerReview";
+// 2026-11-02: wired to the backend (was mock data). Deals are USTART's restaurant templates
+// (GET /restaurant-offers/templates); activating one runs it as a one-day deal, from now until
+// 23:59:59 today (product decision), at the outlet(s) picked in the header.
+import { useEnrollDealOfTheDay, useOfferTemplates } from "../../hooks/useRestaurantOffers";
+import { customerTypeLabelKey, templateDescription, useOfferOutletIds } from "./offerPayloads";
+import { getErrorMessage } from "@/utils/error";
 
 type TabValues = "percentage" | "flat";
-interface Deal {
-  id: string;
-  promo: string;
-  desc: string;
-  popular?: boolean;
-}
 
 export const DealOfTheDay = () => {
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<TabValues>("percentage");
-  const [selectedDeal, setSelectedDeal] = useState<string | null>(null);
-  const [dealsInfo, setDealsInfo] = useState<Deal[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [pickedDeal, setSelectedDeal] = useState<string | null>(null);
   const [showReviewModal, setShowReviewModal] = useState(false);
   const [isActivating, setIsActivating] = useState(false);
 
+  const templatesQuery = useOfferTemplates();
+  const enroll = useEnrollDealOfTheDay();
+  const outletIds = useOfferOutletIds();
+  const isLoading = templatesQuery.isLoading;
+
+  // Tabs split templates by discount kind; buy-X-get-Y / free-delivery-only templates appear in
+  // neither (these screens have no view for them yet).
+  const dealsInfo: ReviewDeal[] = useMemo(() => (templatesQuery.data ?? [])
+    .filter((tpl) => tpl.discountAmount != null && tpl.isAbsolute === (activeTab === "flat"))
+    .map((tpl) => ({
+      id: tpl.ustartOfferId,
+      promo: tpl.promoCode,
+      desc: templateDescription(t, tpl),
+      discountValue: tpl.discountAmount ?? undefined,
+      minOrderAmount: tpl.minOrderAmount,
+      capOfDiscountAmount: tpl.capOfDiscountAmount ?? undefined,
+      isAbsolute: tpl.isAbsolute ?? undefined,
+      targetCustomers: t(customerTypeLabelKey(tpl.applicableOnCustomerType)),
+    })), [templatesQuery.data, activeTab, t]);
+
+  // The first deal of the tab is preselected (the backend has no "popular" flag), and a pick that
+  // isn't in the tab any more falls back to it. Worked out during render rather than synced with
+  // setState in an effect (react-hooks/set-state-in-effect, and one render instead of two).
+  const selectedDeal = dealsInfo.some((d) => d.id === pickedDeal) ? pickedDeal : dealsInfo[0]?.id ?? null;
   const currentDeal = dealsInfo.find(d => d.id === selectedDeal) || null;
 
   const handleConfirmActivation = async () => {
+    if (!currentDeal || !currentDeal.id) return;
+    if (outletIds.length === 0) {
+      toast.error(t("dashboard.offers.activation.noOutlet"));
+      return;
+    }
     setIsActivating(true);
-    const promise = new Promise((resolve) => setTimeout(resolve, 2000));
-    
-    toast.promise(promise, {
-      loading: 'Activating your Deal of the Day...',
-      success: () => {
-        setTimeout(() => {
-          setIsActivating(false);
-          setShowReviewModal(false);
-          navigate("..");
-        }, 500);
-        return 'Deal activated successfully!';
-      },
-      error: 'Failed to activate deal.',
-    });
-
     try {
-      await promise;
-    } catch (e) {
+      const created = await enroll.mutateAsync({ ustartOfferId: currentDeal.id, restroIds: outletIds });
+      toast.success(t("dashboard.offers.activation.successTitle"), {
+        description: t("dashboard.offers.activation.dotdSuccess", { promo: currentDeal.promo, count: created.length }),
+      });
+      setShowReviewModal(false);
+      navigate("..");
+    } catch (error) {
+      // e.g. "already has an active offer with the code …" when it was enrolled earlier today.
+      toast.error(getErrorMessage(error, t("dashboard.offers.activation.failed")));
+    } finally {
       setIsActivating(false);
     }
   };
-
-  useEffect(() => {
-    const fetchDeals = async () => {
-      setIsLoading(true);
-      try {
-        const data = await offersApi.getDayDeals(activeTab, i18n.language.split('-')[0]);
-        setDealsInfo(data);
-        // Find popular deal to set as default if none selected or if switching tabs
-        const popular = data.find(d => d.popular);
-        setSelectedDeal(popular ? popular.id : (data[0]?.id || null));
-      } catch (error) {
-        console.error("Failed to fetch deals:", error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchDeals();
-  }, [activeTab, i18n.language]);
 
   const learningCenterItems = [1, 2, 3].map((i) => ({
     question: t(`dashboard.offers.customerDelightersDetails.dotd.configure.learningCenter.q${i}`),
@@ -128,7 +129,6 @@ export const DealOfTheDay = () => {
                   <div className="absolute bottom-0 left-0 w-full h-0.5 bg-slate-400 rounded-t-full"></div>
                 )}
               </button>
-
             </div>
 
             {/* Tip Box */}
@@ -149,6 +149,18 @@ export const DealOfTheDay = () => {
                   </div>
                 </div>
               ) : null}
+
+              {templatesQuery.isError && (
+                <p className="text-sm font-medium text-red-500 text-center py-10">
+                  {getErrorMessage(templatesQuery.error, t("dashboard.offers.activation.loadFailed"))}
+                </p>
+              )}
+
+              {!isLoading && !templatesQuery.isError && dealsInfo.length === 0 && (
+                <p className="text-sm font-medium text-slate-500 dark:text-slate-400 text-center py-10">
+                  {t("dashboard.offers.activation.noDeals")}
+                </p>
+              )}
 
               <div className={`${isLoading ? 'opacity-40 pointer-events-none' : 'opacity-100'} transition-opacity duration-300 space-y-4`}>
                 {dealsInfo.map((deal) => (
@@ -177,11 +189,6 @@ export const DealOfTheDay = () => {
                       <div>
                         <h3 className="font-extrabold text-[15px] sm:text-base text-[#1a2b4b] dark:text-white tracking-wide flex items-center gap-3">
                           {deal.promo}
-                          {deal.popular && (
-                            <span className="bg-secondary-orange text-white text-[9px] font-black tracking-wider px-2 py-0.5 rounded shadow-sm opacity-90 uppercase">
-                              {t("dashboard.offers.customerDelightersDetails.dotd.configure.tabs.popular")}
-                            </span>
-                          )}
                         </h3>
                         <p className="text-sm text-slate-500 dark:text-slate-400 mt-1 font-medium leading-snug">
                           {deal.desc}
@@ -189,13 +196,13 @@ export const DealOfTheDay = () => {
                       </div>
                     </div>
                     <div className="hidden sm:block">
-                       <input 
-                         type="radio" 
-                         name="deal" 
-                         value={deal.id} 
-                         checked={selectedDeal === deal.id} 
-                         onChange={() => setSelectedDeal(deal.id)} 
-                         className="sr-only" 
+                       <input
+                         type="radio"
+                         name="deal"
+                         value={deal.id}
+                         checked={selectedDeal === deal.id}
+                         onChange={() => setSelectedDeal(deal.id ?? null)}
+                         className="sr-only"
                        />
                     </div>
                   </label>
@@ -203,8 +210,13 @@ export const DealOfTheDay = () => {
               </div>
             </div>
 
-            {/* Preveiw Button */}
-            <div className="mt-10 pt-4">
+            {/* One-day note: the deal ends tonight */}
+            <p className="mt-6 text-xs font-medium text-slate-500 dark:text-slate-400">
+              {t("dashboard.offers.activation.dotdEndsToday")}
+            </p>
+
+            {/* Preview Button */}
+            <div className="mt-4 pt-4">
               <button
                 type="button"
                 disabled={!selectedDeal || isLoading}
@@ -227,8 +239,9 @@ export const DealOfTheDay = () => {
         />
       </div>
 
+      {/* One-day deal: start and end are both today. */}
       {activeTab === "percentage" ? (
-        <PercentageDiscountReviewModal 
+        <PercentageDiscountReviewModal
           isOpen={showReviewModal}
           onClose={() => setShowReviewModal(false)}
           onConfirm={handleConfirmActivation}
@@ -238,7 +251,7 @@ export const DealOfTheDay = () => {
           isLoading={isActivating}
         />
       ) : (
-        <OfferReviewModal 
+        <OfferReviewModal
           isOpen={showReviewModal}
           onClose={() => setShowReviewModal(false)}
           onConfirm={handleConfirmActivation}

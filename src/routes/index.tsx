@@ -45,6 +45,12 @@ const Orders = lazy(() =>
     default: module.Orders,
   })),
 );
+// 2026-11-11: My Offers - active offers + history (sidebar Growth → Offers, which had no route).
+const MyOffers = lazy(() =>
+  import("@/features/dashboard/outlets/offers/MyOffers").then((module) => ({
+    default: module.MyOffers,
+  })),
+);
 const CreateOffers = lazy(() =>
   import("@/features/dashboard/outlets/growth/CreateOffers").then((module) => ({
     default: module.CreateOffers,
@@ -265,6 +271,10 @@ export const router = createBrowserRouter([
               {
                 path: "orders",
                 element: withSuspense(Orders),
+              },
+              {
+                path: "offers",
+                element: withSuspense(MyOffers),
               },
               {
                 path: "growth",

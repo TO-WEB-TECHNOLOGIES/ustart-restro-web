@@ -1,5 +1,13 @@
 import { Check, Star } from "lucide-react";
-import type { QuickSetupTierSection } from "../api/data/mockData";
+
+/**
+ * 2026-11-02: one labelled group of offers in a Quick Setup tier card. Was the mock data's
+ * QuickSetupTierSection type; the card now gets its sections from the backend's bundles.
+ */
+export interface TierCardSection {
+  label: string;
+  items: { promo: string; pct: string; sub: string }[];
+}
 
 interface TierCardProps {
   id: string;
@@ -12,7 +20,7 @@ interface TierCardProps {
   iconColor: string;
   checkColor: string;
   accentBorder: string;
-  sections: (Omit<QuickSetupTierSection, "labelKey"> & { label: string })[];
+  sections: TierCardSection[];
   isSelected: boolean;
   onSelect: () => void;
 }

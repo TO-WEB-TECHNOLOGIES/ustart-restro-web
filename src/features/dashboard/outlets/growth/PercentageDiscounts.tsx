@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import {
   Loader2,
@@ -20,65 +20,25 @@ import {
   createPercentageDiscountsSchema, 
   type PercentageDiscountsFormValues 
 } from "./validations";
-import { offersApi } from "../../api/offersApi";
-
-const SkeletonLoaderStep2 = () => (
-  <div className="space-y-4 animate-pulse">
-    {/* MOV Selection */}
-    <div className="space-y-4">
-      <div className="h-4 w-32 bg-slate-100 dark:bg-slate-800 rounded"></div>
-      <div className="flex flex-wrap gap-3">
-        {[1, 2, 3, 4, 5].map((i) => (
-          <div key={i} className="h-14 w-24 bg-slate-100 dark:bg-slate-800 rounded-xl"></div>
-        ))}
-      </div>
-    </div>
-    {/* Percentage Discount */}
-    <div className="space-y-4">
-      <div className="h-4 w-32 bg-slate-100 dark:bg-slate-800 rounded"></div>
-      <div className="grid grid-cols-4 gap-3">
-        {[1, 2, 3, 4, 5, 6, 7].map((i) => (
-          <div key={i} className="h-14 bg-slate-100 dark:bg-slate-800 rounded-xl"></div>
-        ))}
-      </div>
-    </div>
-  </div>
-);
+// 2026-11-02: wired to the backend (was mock data): the MOV and % grids are frontend constants and
+// the offer is created through POST /restaurant-offers for the outlet(s) picked in the header.
+import { FLAT_DISCOUNT_GRID, PERCENTAGE_OPTIONS } from "./offerConfig";
+import { buildPercentageOffer, localToday, useOfferOutletIds } from "./offerPayloads";
+import { useCreateRestaurantOffer } from "../../hooks/useRestaurantOffers";
+import { getErrorMessage } from "@/utils/error";
 
 export const PercentageDiscounts = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const [step, setStep] = useState(1);
   const [isActivating, setIsActivating] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
   const [isReviewOpen, setIsReviewOpen] = useState(false);
   const [formData, setFormData] = useState<PercentageDiscountsFormValues | null>(null);
-  const [offersData, setOffersData] = useState<Record<string, number[]>>({});
-  const [percentages, setPercentages] = useState<number[]>([]);
-
-  useEffect(() => {
-    let mounted = true;
-    const fetchData = async () => {
-      try {
-        const [movData, percentageOptions] = await Promise.all([
-          offersApi.getFlatDealsData(),
-          offersApi.getPercentageDiscountOptions(),
-        ]);
-        if (mounted) {
-          setOffersData(movData);
-          setPercentages(percentageOptions);
-          setIsLoading(false);
-        }
-      } catch (error) {
-        if (mounted) {
-          setIsLoading(false);
-          toast.error("Failed to fetch offer configurations");
-        }
-      }
-    };
-    fetchData();
-    return () => { mounted = false; };
-  }, []);
+  // Static grids now (they were a mock fetch with a loading skeleton).
+  const offersData = FLAT_DISCOUNT_GRID;
+  const percentages = PERCENTAGE_OPTIONS;
+  const outletIds = useOfferOutletIds();
+  const createOffer = useCreateRestaurantOffer();
 
   const percentageDiscountsSchema = useMemo(() => createPercentageDiscountsSchema(t), [t]);
 
@@ -97,7 +57,8 @@ export const PercentageDiscounts = () => {
       discountValue: 0,
       movType: "",
       maxDiscountAmount: undefined,
-      startDate: new Date().toISOString().split("T")[0],
+      // Local date: toISOString() is UTC and says "yesterday" before 05:30 IST.
+      startDate: localToday(),
       endDate: "",
     },
   });
@@ -132,20 +93,25 @@ export const PercentageDiscounts = () => {
 
   const handleConfirmActivation = async () => {
     if (!formData) return;
+    if (outletIds.length === 0) {
+      toast.error(t("dashboard.offers.activation.noOutlet"));
+      return;
+    }
     setIsActivating(true);
     try {
-      const response = await offersApi.activatePercentageDiscount(formData);
-      if (response.success) {
-        toast.success("Percentage Discount Activated Successfully!", {
-          description: `${formData.discountValue}% off on orders above ₹${formData.movType}${formData.maxDiscountAmount ? ` (max discount: ₹${formData.maxDiscountAmount})` : ""}.`,
-        });
-        setIsReviewOpen(false);
-        navigate("/dashboard/growth");
-      } else {
-        toast.error("Failed to activate offer");
-      }
+      const created = await createOffer.mutateAsync(buildPercentageOffer({ ...formData, restroIds: outletIds }));
+      toast.success(t("dashboard.offers.activation.successTitle"), {
+        description: t("dashboard.offers.activation.percentageSuccess", {
+          value: formData.discountValue,
+          mov: formData.movType,
+          count: created.length,
+        }),
+      });
+      setIsReviewOpen(false);
+      navigate("/dashboard/growth");
     } catch (error) {
-      toast.error("Failed to activate offer");
+      // The backend's message says what's wrong (outlet not live, code already running, limits).
+      toast.error(getErrorMessage(error, t("dashboard.offers.activation.failed")));
     } finally {
       setIsActivating(false);
     }
@@ -251,11 +217,7 @@ export const PercentageDiscounts = () => {
               /* Step 2: Discount Configuration */
               <div className="bg-white dark:bg-slate-900 rounded-3xl p-8 shadow-sm border border-slate-100 dark:border-slate-800 space-y-10 animate-in fade-in slide-in-from-right-4 duration-500">
 
-                {/* MOV Selection */}
-                {isLoading ? (
-                  <SkeletonLoaderStep2 />
-                ) : (
-                  <>
+                <>
                     {/* MOV Selection */}
                     <div className="space-y-4">
                       <label className="text-sm font-bold text-primary-blue dark:text-white uppercase tracking-wide flex items-center gap-2">
@@ -341,7 +303,6 @@ export const PercentageDiscounts = () => {
                       </div>
                     </div>
                   </>
-                )}
 
                 {/* Duration Section */}
                 <div className="space-y-6 pt-4 border-t border-slate-50 dark:border-slate-800">
@@ -457,8 +418,12 @@ export const PercentageDiscounts = () => {
             discountValue: formData.discountValue,
             minOrderAmount: Number(formData.movType),
             capOfDiscountAmount: formData.maxDiscountAmount || Number(formData.movType),
-            isAbsolute: true,
-            targetCustomers: formData.targetCustomer === "all" ? "All Customers" : formData.targetCustomer === "new" ? "New Customers" : "Returning",
+            isAbsolute: false,
+            targetCustomers: formData.targetCustomer === "all"
+              ? t("dashboard.offers.customerDelightersDetails.flatDeals.targetCustomerSelection.allCustomers")
+              : formData.targetCustomer === "new"
+              ? t("dashboard.offers.customerDelightersDetails.flatDeals.targetCustomerSelection.newCustomers")
+              : t("dashboard.offers.customerDelightersDetails.flatDeals.targetCustomerSelection.returningCustomers"),
           }}
           startDate={new Date(formData.startDate)}
           endDate={new Date(formData.endDate)}

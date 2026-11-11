@@ -7,6 +7,7 @@ import { useOrderStore } from '@/features/dashboard/store/useOrderStore';
 import { useRestaurantStore } from '@/features/dashboard/store/useRestaurantStore';
 import { queryClient } from '@/api/queryClient';
 import { ADDON_LIBRARY_KEY } from '@/features/dashboard/hooks/useAddonLibrary';
+import { RESTAURANT_OFFERS_KEY } from '@/features/dashboard/hooks/useRestaurantOffers';
 import { useMenuStore } from '@/features/dashboard/store/useMenuStore';
 
 interface User {
@@ -207,6 +208,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         useMenuStore.getState().reset();
         // 2026-10-27: the add-on library page keeps its reads in TanStack Query, not a store.
         queryClient.removeQueries({ queryKey: [ADDON_LIBRARY_KEY] });
+        // 2026-11-02: growth screens' templates/bundles (one brand's view) must not leak to the next login.
+        queryClient.removeQueries({ queryKey: [RESTAURANT_OFFERS_KEY] });
 
         Object.keys(sessionStorage).forEach((key) => {
             if (key.startsWith('draft_settings_')) {
