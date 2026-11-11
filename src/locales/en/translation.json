@@ -944,6 +944,72 @@
         "showMore": "Show more",
         "retry": "Try again"
       },
+      "offerMenu": {
+        "dishCount_one": "{{count}} dish",
+        "dishCount_other": "{{count}} dishes",
+        "itemsFailed": "Couldn't load these dishes",
+        "retry": "Try again",
+        "noItems": "No dishes in this category",
+        "moreItems": "Showing the first {{count}} dishes of this category",
+        "menuFailed": "Couldn't load your menu",
+        "noCategories": "Your menu has no categories yet",
+        "back": "Back",
+        "outletRequired": {
+          "title": "Pick one outlet",
+          "text": "This is set per outlet. Choose an outlet in the location picker at the top instead of All Locations."
+        }
+      },
+      "bogoPage": {
+        "title": "BOGO Offers",
+        "subtitle": "Buy 1, get 1 free. Tick categories or dishes to switch it on; untick to switch it off.",
+        "applied": "Offer applied",
+        "paused": "This BOGO is paused, so customers don't see it.",
+        "openMyOffers": "Resume it in My Offers",
+        "selectAll": "Apply BOGO on all dishes",
+        "selectAllHint": "Includes dishes you add to the menu later",
+        "loadFailed": "Couldn't load your BOGO offer",
+        "toast": {
+          "saved": "BOGO offer updated",
+          "ended": "BOGO offer switched off",
+          "failed": "Couldn't save the BOGO offer"
+        },
+        "footer": {
+          "unsaved": "You have unsaved changes",
+          "willEnd": "Nothing is ticked: saving switches BOGO off",
+          "discard": "Discard",
+          "save": "Save",
+          "allDishes": "BOGO is on for all dishes",
+          "off": "BOGO is off",
+          "selection": "BOGO is on for {{categories}} categories and {{dishes}} dishes"
+        }
+      },
+      "itemDiscountPage": {
+        "title": "Item Level Discount",
+        "subtitle": "Set a discount on each dish for this outlet. Customers see the lower price as soon as you save.",
+        "note": "This changes the dish's menu price at this outlet. It has no end date and doesn't appear in My Offers; set it back to 0 to remove it.",
+        "type": "Discount type",
+        "discountFor": "Discount for {{name}}",
+        "finalPrice": "Final price",
+        "errors": {
+          "invalidNumber": "Enter 0 or a positive number",
+          "maxPercent": "A percentage can't be more than 100",
+          "belowPrice": "Must be less than the price (₹{{price}})"
+        },
+        "toast": {
+          "saved_one": "Saved the discount on {{count}} dish",
+          "saved_other": "Saved discounts on {{count}} dishes",
+          "partFailed": "Couldn't save: {{names}}. {{reason}}",
+          "failed": "Couldn't save the discount"
+        },
+        "footer": {
+          "changed_one": "{{count}} dish changed",
+          "changed_other": "{{count}} dishes changed",
+          "none": "No changes",
+          "fixErrors": "Fix the highlighted dishes to save",
+          "discard": "Discard",
+          "save": "Save"
+        }
+      },
       "customerDelightersDetails": {
         "title": "Delight your customers",
         "subtitle": "Create a spark with something extra special for your customers",
@@ -1446,6 +1512,7 @@
         }
       },
       "variants": {
+        "saveFirst": "Save this variant (Review) to set its stock and price",
         "edit": "Edit",
         "customize": "Customize",
         "editItemTitle": "Edit Item",
@@ -1582,6 +1649,32 @@
         "cancelAction": "Cancel",
         "markAllInStock": "This will mark all items in this category as IN STOCK for all your restaurant locations. Do you want to proceed?",
         "markAllOutOfStock": "This will mark all items in this category as OUT OF STOCK for all your restaurant locations. Do you want to proceed?"
+      },
+      "outletSave": {
+        "saved": "Saved for {{name}}",
+        "failed": "Couldn't save {{name}}",
+        "cancel": "Cancel",
+        "save": "Save",
+        "edit": "Edit",
+        "confirmAll": "Yes, change all outlets",
+        "availableIn": "Available in {{available}} of {{total}} outlets",
+        "outletsShort": "{{available}}/{{total}} outlets",
+        "stockAllOnTitle": "Mark {{name}} in stock everywhere?",
+        "stockAllOffTitle": "Mark {{name}} out of stock everywhere?",
+        "stockAllText_one": "This changes availability at your {{count}} outlet.",
+        "stockAllText_other": "This changes availability at all {{count}} outlets, not just one.",
+        "allOutletsPrice": "Prices differ by outlet",
+        "appliesToAll_one": "Applies to your {{count}} outlet",
+        "appliesToAll_other": "Applies to all {{count}} outlets, not just one",
+        "priceError": "Enter a price above 0",
+        "priceAllTitle": "Change {{name}}'s price for every outlet?",
+        "priceAllText_one": "The values you changed will be saved for your {{count}} outlet.",
+        "priceAllText_other": "The values you changed will replace each outlet's own value at all {{count}} outlets, not just one.",
+        "bulkSaved_one": "Updated {{count}} dish",
+        "bulkSaved_other": "Updated {{count}} dishes",
+        "bulkFailed": "{{failed}} of {{count}} dishes couldn't be updated. Try again.",
+        "bulkLoadFailed": "Couldn't load this category's dishes, so nothing was changed. Try again.",
+        "everyOutlet": "This applies to every outlet."
       },
       "editCategory": "Edit Category",
       "deleteCategory": "Delete Category",

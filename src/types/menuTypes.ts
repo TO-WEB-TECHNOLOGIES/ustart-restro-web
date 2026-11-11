@@ -30,8 +30,14 @@ export interface MenuItem {
     isCustomisable: boolean;
     /** Optional flag indicating if the item currently has a discount */
     hasDiscount?: boolean;
-    /** Map of restaurant IDs (address IDs) to their stock status */
+    /**
+     * Map of restaurant IDs (address IDs) to their stock status. 2026-11-11: from the list API it
+     * holds only the outlet the list was loaded for ({} for "All Locations" - use the counts below).
+     */
     inStock: Record<string, boolean>;
+    /** 2026-11-11, "All Locations" lists only: outlets where the dish is available / all outlets. */
+    availableRestaurantCount?: number;
+    restaurantCount?: number;
     /** Tax amount applicable to this item */
     taxAmount: number;
     /** Packaging charges for the item */

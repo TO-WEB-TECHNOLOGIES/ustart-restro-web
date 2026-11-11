@@ -5,6 +5,8 @@ import { fetchMenuScore, updateMenu, fetchCategories, fetchCategoryItems, create
 import { toast } from 'sonner';
 import i18n from '@/lib/i18n';
 import { getErrorMessage } from '@/utils/error';
+import { ALL_LOCATIONS_ID } from '@/types/storeTypes';
+import { useRestaurantStore } from './useRestaurantStore';
 import { findItemInTree } from './menuItemLookup';
 
 /**
@@ -69,6 +71,14 @@ export interface MenuStore {
     fetchCategoryItems: (categoryId: number) => Promise<void>;
     /** Fetches the next page of items for infinite scroll */
     fetchNextPage: (categoryId: number) => Promise<void>;
+    /** 2026-11-11: drops loaded items and reloads the open category for the outlet now selected. */
+    reloadItemsForOutlet: () => void;
+    /**
+     * 2026-11-11: writes values that were already saved on the server (price / discount / stock save
+     * straight away) into the loaded item, and into any pending edit's baseline so they never show
+     * up as a change in the review list.
+     */
+    patchLoadedItem: (itemId: number, patch: Partial<MenuItem>) => void;
     /** Reverts all local changes for updated items */
     revertChanges: () => void;
     /** Directly adds a new category via API */
@@ -156,6 +166,38 @@ const updateCategoryInTree = (categories: Category[], categoryId: number, update
 /**
  * Helper to add a new category to the hierarchical tree locally.
  */
+/**
+ * 2026-11-11: price and availability are per outlet, so items load for the outlet picked in the
+ * header (undefined = "All Locations" → brand-wide list with counts). The menu used to load without
+ * it, so a brand user saw brand-wide values whichever outlet was picked.
+ */
+const menuOutletId = (): string | undefined => {
+    const id = useRestaurantStore.getState().selectedAddressId;
+    return id && id !== ALL_LOCATIONS_ID ? id : undefined;
+};
+
+/** 2026-11-11: categories with no loaded items (for an outlet switch). */
+const clearItemsInTree = (categories: Category[]): Category[] =>
+    categories.map(cat => ({
+        ...cat,
+        items: undefined,
+        currentPage: 0,
+        totalPages: undefined,
+        subCategories: cat.subCategories ? clearItemsInTree(cat.subCategories) : cat.subCategories,
+    }));
+
+/** 2026-11-11: applies a patch to one loaded item or variant wherever it sits in the tree. */
+const patchItemInTree = (categories: Category[], itemId: number, patch: Partial<MenuItem>): Category[] =>
+    categories.map(cat => ({
+        ...cat,
+        items: cat.items?.map(item => item.id === itemId
+            ? { ...item, ...patch }
+            : item.productVariants?.some(v => v.id === itemId)
+                ? { ...item, productVariants: item.productVariants.map(v => v.id === itemId ? { ...v, ...patch } : v) }
+                : item),
+        subCategories: cat.subCategories ? patchItemInTree(cat.subCategories, itemId, patch) : cat.subCategories,
+    }));
+
 const addCategoryToTree = (categories: Category[], parentId: number | null, newCategory: Category): Category[] => {
     if (!parentId) {
         return [newCategory, ...categories];
@@ -277,6 +319,31 @@ export const useMenuStore = create<MenuStore>()(
                 }
             },
 
+            reloadItemsForOutlet: () => {
+                set(state => ({ categories: clearItemsInTree(state.categories), isItemsLoading: {} }));
+                const id = get().selectedCategoryId;
+                if (id) get().fetchCategoryItems(id);
+            },
+
+            patchLoadedItem: (itemId, patch) => {
+                set(state => {
+                    const pending = state.updatedItems[itemId];
+                    return {
+                        categories: patchItemInTree(state.categories, itemId, patch),
+                        updatedItems: pending
+                            ? {
+                                ...state.updatedItems,
+                                [itemId]: {
+                                    ...pending,
+                                    original: { ...pending.original, ...patch },
+                                    current: { ...pending.current, ...patch },
+                                },
+                            }
+                            : state.updatedItems,
+                    };
+                });
+            },
+
             reset: () => set({
                 categories: [],
                 updatedItems: {},
@@ -344,13 +411,18 @@ export const useMenuStore = create<MenuStore>()(
                 }));
 
                 try {
+                    const outletId = menuOutletId();
                     const response = await fetchCategoryItems(
                         categoryId,
                         1,
                         5,
                         searchQuery,
-                        filters
+                        filters,
+                        outletId
                     );
+                    // 2026-11-11: the outlet changed while this was loading; reloadItemsForOutlet
+                    // has already asked for the new outlet's items, so drop these.
+                    if (menuOutletId() !== outletId) return;
 
                     // 1. Merge session-stored local edits into API items
                     const { updatedItems } = get();
@@ -429,13 +501,17 @@ export const useMenuStore = create<MenuStore>()(
                 }));
 
                 try {
+                    const outletId = menuOutletId();
                     const response = await fetchCategoryItems(
                         categoryId,
                         nextPage,
                         5,
                         searchQuery,
-                        filters
+                        filters,
+                        outletId
                     );
+                    // 2026-11-11: a page of another outlet's items must not be appended.
+                    if (menuOutletId() !== outletId) return;
 
                     // Merge session-stored local edits into NEW API items being appended
                     const { updatedItems } = get();
@@ -552,13 +628,24 @@ export const useMenuStore = create<MenuStore>()(
                 // (PATCH is idempotent, so the update group is simply resent on retry).
                 const updatePayload = toUpdate.map(([, { original, current, modifiedByAddressId }]) => {
                     const changes: Record<string, unknown> = { itemId: current.id };
-                    if (modifiedByAddressId) changes['restroId'] = modifiedByAddressId;
+                    // 2026-11-11 (bug fix): an edit made under "All Locations" carries the picker's
+                    // pseudo-id 'all', which was sent as restaurantId=all and failed with a 500
+                    // ("Invalid UUID string: all"). "All Locations" means brand-wide, i.e. no restaurantId.
+                    if (modifiedByAddressId && modifiedByAddressId !== ALL_LOCATIONS_ID) {
+                        changes['restroId'] = modifiedByAddressId;
+                    }
 
                     (Object.keys(current) as Array<keyof MenuItem>).forEach(key => {
                         if (JSON.stringify(original[key]) !== JSON.stringify(current[key])) {
                             changes[key] = current[key];
                         }
                     });
+                    // 2026-11-11: the backend needs the ₹/% flag with every discount amount, so a
+                    // change to either one sends both (updateMenu maps them to the API names).
+                    if ('discountAmount' in changes || 'discountIsAbsolute' in changes) {
+                        changes.discountAmount = current.discountAmount;
+                        changes.discountIsAbsolute = current.discountIsAbsolute;
+                    }
                     return changes;
                 });
 

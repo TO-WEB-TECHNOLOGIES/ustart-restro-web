@@ -3,13 +3,16 @@ import {
     type ActivateBundleRequest,
     type CreateRestaurantOfferRequest,
     type DealOfTheDayRequest,
+    type SaveBogoRequest,
     type UpdateRestaurantOfferRequest,
     activateOfferBundle,
     createRestaurantOffer,
     enrollDealOfTheDay,
+    fetchBogo,
     fetchOfferBundles,
     fetchOfferTemplates,
     fetchRestaurantOffers,
+    saveBogo,
     updateRestaurantOffer,
 } from '../api/restaurantOffersApi';
 
@@ -58,3 +61,16 @@ export const useActivateOfferBundle = () =>
 /** 2026-11-11: pause/resume or end early, from the My Offers cards. */
 export const useUpdateRestaurantOffer = () =>
     useOfferWrite(({ offerId, ...body }: UpdateRestaurantOfferRequest & { offerId: string }) => updateRestaurantOffer(offerId, body));
+
+/**
+ * 2026-11-11: the outlet's BOGO ticks (BOGO page). Under the prefix, so pausing/ending it in My
+ * Offers refreshes the page's ticks, and saving here refreshes My Offers.
+ */
+export const useBogo = (restroId: string | null) =>
+    useQuery({
+        queryKey: [RESTAURANT_OFFERS_KEY, 'bogo', restroId],
+        queryFn: () => fetchBogo(restroId as string),
+        enabled: restroId !== null,
+    });
+
+export const useSaveBogo = () => useOfferWrite((body: SaveBogoRequest) => saveBogo(body));

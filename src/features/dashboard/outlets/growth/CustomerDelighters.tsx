@@ -71,6 +71,9 @@ export const CustomerDelighters = () => {
               onClick={() => {
                 if (item.id === "flatDeals") navigate("flat-deals");
                 if (item.id === "dotd") navigate("dotd");
+                // 2026-11-11: BOGO and item discount pages added (the cards did nothing before).
+                if (item.id === "bogo") navigate("bogo");
+                if (item.id === "itemDiscount") navigate("item-discount");
               }}
               className="w-full text-left group transition-all duration-300 hover:bg-slate-50 dark:hover:bg-slate-800/50 p-5 md:p-6 flex items-start justify-between gap-4"
             >

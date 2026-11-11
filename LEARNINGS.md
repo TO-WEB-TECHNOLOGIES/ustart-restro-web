@@ -514,3 +514,80 @@ MenuEditor (outlet — handles edit/stock/taxes/charges/new/review paths)
   `useUpdateRestaurantOffer`), `RestaurantOfferDTO` widened to the fields the page reads,
   `dashboard.offers.myOffers.*` keys in en + hi.
 - No usage/redemption numbers: offers aren't applied at checkout yet (backend M19).
+
+### 2026-11-11 — BOGO Offers + Item Level Discount pages; menu discount and "all" fixes
+- Why: the Customer Delighters cards "BOGO" and "Item discount" had no page or click handler.
+  Routes `growth/customer-delighters/bogo` and `.../item-discount`.
+- Both pages are **per outlet**: with "All Locations" they ask for one outlet (BOGO coverage and
+  dish prices differ by outlet). Shared frame/tree in `components/offers/menu/`
+  (`OfferMenuPageShell`, `OfferMenuTree` on the shadcn Accordion, `DishThumb`,
+  `CategoryItemsState`, `offerMenuTree.ts`). Menu data via TanStack Query (`hooks/useOfferMenu.ts`,
+  keys under `restaurantOffers`), not the menu editor's store — that store holds an unsaved-edit
+  overlay these pages must not touch. A category's dishes load when it's first opened (Radix
+  unmounts closed sections), 100 per category.
+- BOGO (`components/offers/bogo/`): a toggle board for the outlet's one ongoing BOGO
+  (`GET`/`PUT /restaurant-offers/bogo`). Opens with what's applied ticked; "Offer applied" chips
+  show the saved state; a ticked category locks its dishes and sub-categories (sub-category ids are
+  sent too); "Select all" = all dishes incl. later ones; nothing ticked + Save ends it. Rules are
+  pure functions in `bogoSelection.ts`. Variants aren't listed (the rule is on the dish).
+- Item Level Discount (`components/offers/itemDiscount/`): the dish's menu price discount at the
+  outlet (user decision: no dates, not an offer, not in My Offers). ₹/% per dish, size variants as
+  their own rows, edited rows highlighted, one Save = one PATCH per changed dish
+  (`updateItemDiscount`); failed dishes stay edited and are named in the toast. Limits mirror the
+  backend: ≥ 0, % ≤ 100, ₹ < price.
+- Bug fixes found on the way:
+  - The menu editor's charges-tab discount never saved: the backend had no field for it, and the
+    app sent `discountAmount` and dropped the ₹/% flag. Backend now takes `itemDiscount` +
+    `isAbsoluteDiscount`; `updateMenu` maps to them and the store always sends both together;
+    the list's `isAbsoluteDiscount` is read (was hardcoded ₹).
+  - Menu edits made under "All Locations" were sent with `restaurantId=all` → 500 "Invalid UUID
+    string: all". The store now omits restaurantId for `ALL_LOCATIONS_ID` (= brand-wide edit).
+- `fetchCategoryItems` gained an optional `restaurantId` (last param): without it a brand user
+  gets the brand-wide price row, not the selected outlet's. The menu editor still doesn't pass it
+  — a likely reason its prices don't follow the outlet picker; not changed here.
+
+### 2026-11-11 — Menu editor: price & availability are per outlet, saved straight away
+- Why: price and availability live per outlet (`menu_item_prices` / `menu_item_availability`),
+  but the editor treated them as one value. The Stock tab was stuck: the list mapped availability
+  to `inStock: { default }`, which no screen read (always "Out of stock"), and `updateMenu` deleted
+  `inStock` before sending, so no stock change ever reached the API. Items also loaded without
+  `restaurantId`, so a brand user saw brand-wide values whatever outlet was picked.
+- Loading: the store passes the header's outlet (`menuOutletId()`, undefined for All Locations)
+  to every item fetch, drops responses for an outlet that's no longer picked, and
+  `reloadItemsForOutlet()` runs from `MenuEditor` on mount and on every outlet change.
+  `inStock` now holds only the loaded outlet's value; All-Locations lists carry
+  `availableRestaurantCount` / `restaurantCount` (backend `restaurantCount` added the same day).
+- Saving (user decision): price, discount and availability **save immediately** from the card and
+  never enter the review list (`hooks/useItemOutletSave.ts` → `patchItemOutletFields`, then
+  `patchLoadedItem` updates the loaded item and any pending edit's baseline). Taxes are unchanged
+  (still via review).
+  - Stock tab (`StockControl`): one outlet = its switch; All Locations = "Available in X of Y
+    outlets" + a switch for every outlet after `AllOutletsConfirmDialog` (shadcn Dialog; replaced
+    the old custom Modal here). The category switch lists the category's dishes (100 max) and
+    PATCHes each, so it covers dishes not scrolled into view.
+  - Charges tab (`ChargesEditor`): one outlet = that outlet's values + Save; All Locations = no
+    price shown, Edit opens price/discount at 0, sends only changed fields, confirms "all N outlets".
+  - Prices are hidden under All Locations on the card and variant cards — dashboard only; the
+    onboarding menu step reuses these components with no outlet and keeps the brand-wide price.
+- Leftovers: price/stock edits saved in a session before this change can still sit in the review
+  list; discard them once. The full "Edit item" form still sends price through the review list.
+- Same day, follow-up: the variants row (opened by clicking a card) now follows the tab like the
+  parent card — `VariantCardActions`: Stock → `StockControl`, Charges → `ChargesEditor`, Taxes →
+  `TaxRateSelect` (queued for Review, like the parent), Edit/onboarding → Edit + Customize. Each
+  variant has its own price/stock/tax rows (the list API nests variants built per outlet / per
+  brand like their parents). Unsaved variants (temp id < 0) show "save it first" on Stock/Charges.
+  `itemFinalPrice` moved to `MenuEditor/menuPrice.ts`, shared by both cards.
+
+### 2026-11-11 — Route pages: retry failed downloads instead of showing the error page
+- Pages are lazy chunks; a slow connection or a tab opened before a deploy (old chunk names gone)
+  made the download fail → GlobalErrorBoundary. The old inline wrapper in `routes/index.tsx`
+  reloaded once, but its "already reloaded" flag was cleared by a setTimeout that the reload killed,
+  so after one reload every later failure that session went straight to the error page; it also
+  reloaded on any error (incl. real bugs) and never retried in place.
+- Now `src/lib/lazyWithRetry.ts`: only chunk-download errors are handled (`isChunkLoadError`);
+  retry twice (0.5 s, 1.5 s), then reload once (`reloadOnceForNewBuild`, guard = timestamp in
+  sessionStorage, 60 s window, storage errors tolerated); the loading screen (Suspense fallback)
+  stays up meanwhile. Other errors still reach the error page. `main.tsx` handles Vite's
+  `vite:preloadError` (shared JS/CSS chunk preload) with the same guarded reload.
+- Not covered: a page that crashes while its *data* is loading (e.g. reading an undefined API
+  field) — that's a bug in that page and needs its own loading state.

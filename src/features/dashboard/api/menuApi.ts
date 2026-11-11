@@ -64,6 +64,7 @@ export interface MenuItemResponseDTO {
     // Price Fields (Restaurant Context Only)
     price?: number;
     discount?: number;
+    isAbsoluteDiscount?: boolean; // 2026-11-11: true = ₹, false = %
     finalPrice?: number;
     packagingFees?: number;
     taxPercentage?: number;
@@ -75,6 +76,7 @@ export interface MenuItemResponseDTO {
 
     // Brand Summary Fields
     unavailableRestaurantCount?: number;
+    restaurantCount?: number; // 2026-11-11: all the brand's outlets
 }
 
 /**
@@ -124,10 +126,19 @@ const mapListItem = (dto: MenuItemResponseDTO): MenuItem => ({
     image: dto.image || '',
     foodType: (dto.foodType?.toUpperCase() || 'VEG') as any, // 'veg' -> 'VEG'
     isCustomisable: dto.isCustomizable,
-    inStock: { 'default': dto.isAvailable ?? true }, // Map global availability to local structure
+    // 2026-11-11: availability is per outlet. An outlet-scoped list (restroId set) gives that
+    // outlet's value; the "All Locations" list gives counts. It used to be stored under a fake
+    // 'default' key that no screen looked up, so every dish showed "Out of stock".
+    inStock: dto.restroId ? { [dto.restroId]: dto.isAvailable ?? true } : {},
+    ...(dto.restroId ? {} : {
+        restaurantCount: dto.restaurantCount ?? 0,
+        availableRestaurantCount: Math.max(0, (dto.restaurantCount ?? 0) - (dto.unavailableRestaurantCount ?? 0)),
+    }),
     taxAmount: dto.taxPercentage || 0,
     packagingCharges: dto.packagingFees || 0,
-    discountIsAbsolute: true, // Assuming default since API doesn't expose it here explicitly
+    // 2026-11-11: the list now returns the ₹/% flag (was hardcoded ₹). A row with no discount
+    // starts on ₹ - the DB default for that column is % (false), which would surprise the user.
+    discountIsAbsolute: dto.discount ? (dto.isAbsoluteDiscount ?? true) : true,
     status: dto.isActive ? 'active' : 'inactive',
     categoryId: dto.categoryId,
     tags: (dto.tags?.map(t => t.toUpperCase()) || []) as any,
@@ -160,11 +171,15 @@ export const fetchCategoryItems = async (
     page = 1,
     limit = 5,
     searchQuery = '',
-    filters: MenuFilters = {}
+    filters: MenuFilters = {},
+    // 2026-11-11: optional outlet. Without it a brand user gets the brand-wide price row, so the
+    // Item Level Discount page (one outlet's prices) passes it; the menu editor doesn't.
+    restaurantId?: string
 ): Promise<PaginatedItems> => {
     try {
         const queryParams = new URLSearchParams();
         queryParams.append('categoryId', categoryId.toString());
+        if (restaurantId) queryParams.append('restaurantId', restaurantId);
         queryParams.append('page', (page - 1).toString()); // Backend is 0-indexed
         queryParams.append('size', limit.toString());
         
@@ -235,6 +250,13 @@ export const updateMenu = async (updates: Record<string, unknown>[]): Promise<{ 
             // Remove frontend specific fields that shouldn't go to backend
             delete payload.status;
             delete payload.inStock;
+            // 2026-11-11: the backend's names for the dish discount (the old names were ignored,
+            // so discounts never saved). The store always sends the amount and flag together.
+            if (payload.discountAmount !== undefined) {
+                payload.itemDiscount = payload.discountAmount;
+                payload.isAbsoluteDiscount = payload.discountIsAbsolute;
+            }
+            delete payload.discountAmount;
             delete payload.discountIsAbsolute;
             delete payload.price; // Read-only on backend
             delete payload.isCustomisable; // Read-only on backend
@@ -254,6 +276,32 @@ export const updateMenu = async (updates: Record<string, unknown>[]): Promise<{ 
         throw error;
     }
 };
+
+/**
+ * 2026-11-11: price / discount / availability saved straight away (not through the review list -
+ * user decision). restaurantId = that outlet only; undefined = every outlet of the brand.
+ * Only the fields given are sent; the backend needs isAbsoluteDiscount whenever itemDiscount is set.
+ */
+export interface ItemOutletFields {
+    itemPrice?: number;
+    itemDiscount?: number;
+    isAbsoluteDiscount?: boolean;
+    isAvailable?: boolean;
+}
+
+export const patchItemOutletFields = async (
+    itemId: number,
+    restaurantId: string | undefined,
+    fields: ItemOutletFields,
+): Promise<void> => {
+    await api.patch('/api/v1/menu/items', fields, {
+        params: restaurantId ? { itemId, restaurantId } : { itemId },
+    });
+};
+
+/** 2026-11-11: one dish's discount at one outlet (Item Level Discount page). discount 0 removes it. */
+export const updateItemDiscount = (itemId: number, restaurantId: string, discount: number, isAbsolute: boolean) =>
+    patchItemOutletFields(itemId, restaurantId, { itemDiscount: discount, isAbsoluteDiscount: isAbsolute });
 
 /**
  * Creates a new category on the server.

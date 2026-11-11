@@ -6,6 +6,8 @@ import { CategorySidebar } from "../../components/MenuEditor/CategorySidebar";
 import { MenuItemList } from "../../components/MenuEditor/MenuItemList";
 import { ReviewChanges } from "../../components/MenuEditor/ReviewChanges";
 import { useMenu } from "../../hooks/useMenu";
+import { useMenuStore } from "../../store/useMenuStore";
+import { useRestaurantStore } from "../../store/useRestaurantStore";
 import { Loader2, PanelLeftOpen, PanelLeftClose, Menu } from "lucide-react";
 
 import { AddItemPage } from "../../components/MenuEditor/AddItemPage";
@@ -28,6 +30,15 @@ export const MenuEditor = () => {
     useEffect(() => {
         fetchCategories();
     }, [fetchCategories]);
+
+    // 2026-11-11: price and availability are per outlet, so the loaded dishes follow the header's
+    // outlet picker. Runs on mount too: categories stay in memory between visits, and the outlet
+    // may have been switched on another page in the meantime.
+    const selectedAddressId = useRestaurantStore((state) => state.selectedAddressId);
+    const reloadItemsForOutlet = useMenuStore((state) => state.reloadItemsForOutlet);
+    useEffect(() => {
+        reloadItemsForOutlet();
+    }, [selectedAddressId, reloadItemsForOutlet]);
 
     if (isCategoriesLoading && categories.length === 0) {
         return (

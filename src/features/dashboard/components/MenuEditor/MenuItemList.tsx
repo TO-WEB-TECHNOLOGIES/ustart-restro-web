@@ -15,7 +15,11 @@ import { useRestaurantStore } from "../../store/useRestaurantStore";
 import { ALL_LOCATIONS_ID } from "../../../../types/storeTypes";
 import { MenuItemCard } from "./MenuItemCard";
 import { Switch } from "../../../../components/ui/switch";
-import { Modal } from "../../../../components/ui/modal";
+import { toast } from "sonner";
+import { getErrorMessage } from "@/utils/error";
+import { fetchCategoryItems } from "../../api/menuApi";
+import { useItemOutletSave } from "../../hooks/useItemOutletSave";
+import { AllOutletsConfirmDialog } from "./AllOutletsConfirmDialog";
 import { motion } from "framer-motion";
 
 interface MenuItemListProps {
@@ -47,7 +51,6 @@ export const MenuItemList = ({ onOpenSidebar }: MenuItemListProps) => {
     isCurrentCategoryItemsLoading,
     hasMore,
     fetchNextPage,
-    updateMenuItem, // Added to handle bulk updates
   } = useMenu();
 
   const { selectedAddressId } = useRestaurantStore();
@@ -59,58 +62,55 @@ export const MenuItemList = ({ onOpenSidebar }: MenuItemListProps) => {
   // Confirmation Modal State
   const [isStockConfirmOpen, setStockConfirmOpen] = useState(false);
   const [pendingStockValue, setPendingStockValue] = useState<boolean>(false);
+  const [isBulkSaving, setBulkSaving] = useState(false);
+  const { save, outletId } = useItemOutletSave();
 
   /**
-   * Determine if category is "In Stock" based on its items.
-   * Logic: If ANY item in the category is in stock (in any location if aggregate, or in current location if specific), it is true.
+   * Whether the category counts as "in stock": any dish available (at the picked outlet, or at any
+   * outlet under "All Locations"). 2026-11-11: reads the per-outlet data the list now loads.
    */
   const isCategoryInStock = useMemo(() => {
     if (allItems.length === 0) return false;
-
-    return allItems.some((item) => {
-      if (isAggregated) {
-        return Object.values(item.inStock || {}).some((s) => s === true);
-      }
-      return item.inStock[selectedAddressId!] === true;
-    });
-  }, [allItems, isAggregated, selectedAddressId]);
+    return allItems.some((item) =>
+      outletId ? item.inStock[outletId] === true : (item.availableRestaurantCount ?? 0) > 0,
+    );
+  }, [allItems, outletId]);
 
   /**
-   * Handle bulk stock update for the entire category
+   * 2026-11-11: the category switch saves straight away (user decision: stock isn't a review-list
+   * change any more), for the picked outlet or every outlet. It covers every dish of the category,
+   * not only the ones scrolled into view, so the dishes are listed first (100 max, as elsewhere).
+   * There's no category-level endpoint, so it's one PATCH per dish.
    */
-  const handleBulkStockUpdate = () => {
+  const handleBulkStockUpdate = async () => {
     if (!selectedCategoryId) return;
-
-    // Apply Status to all items in current view
-    // Note: In a real app, this would be a single API call to the backend.
-    // Here we iterate over allItems to update the local store state.
-    allItems.forEach((item) => {
-      const newInStock = { ...item.inStock };
-
-      if (isAggregated) {
-        // Set for all locations
-        Object.keys(newInStock).forEach((locId) => {
-          newInStock[locId] = pendingStockValue;
-        });
-        updateMenuItem(
-          selectedCategoryId,
-          item.id,
-          { inStock: newInStock },
-          null,
-        );
+    const value = pendingStockValue;
+    setBulkSaving(true);
+    try {
+      const { items } = await fetchCategoryItems(selectedCategoryId, 1, 100, "", {}, outletId);
+      const results = await Promise.all(items.map((item) =>
+        save(
+          item,
+          { isAvailable: value },
+          outletId
+            ? { inStock: { ...item.inStock, [outletId]: value } }
+            : { availableRestaurantCount: value ? (item.restaurantCount ?? 0) : 0 },
+          true,
+        ),
+      ));
+      const failed = results.filter((ok) => !ok).length;
+      if (failed === 0) {
+        toast.success(t("dashboard.menuEditor.outletSave.bulkSaved", { count: items.length }));
+        setStockConfirmOpen(false);
       } else {
-        // Set for specific location
-        newInStock[selectedAddressId!] = pendingStockValue;
-        updateMenuItem(
-          selectedCategoryId,
-          item.id,
-          { inStock: newInStock },
-          selectedAddressId,
-        );
+        toast.error(t("dashboard.menuEditor.outletSave.bulkFailed", { failed, count: items.length }));
       }
-    });
-
-    setStockConfirmOpen(false);
+    } catch (error) {
+      // Listing the category's dishes failed, so nothing was changed.
+      toast.error(getErrorMessage(error, t("dashboard.menuEditor.outletSave.bulkLoadFailed")));
+    } finally {
+      setBulkSaving(false);
+    }
   };
 
   // Sync staged filters when global filters change (e.g. on clear) or when opening dropdown
@@ -487,34 +487,17 @@ export const MenuItemList = ({ onOpenSidebar }: MenuItemListProps) => {
           )}
         </div>
       </div>
-      {/* Confirmation Modal for Category Stock Update */}
-      <Modal
-        isOpen={isStockConfirmOpen}
-        onClose={() => setStockConfirmOpen(false)}
+      {/* Category stock confirmation (2026-11-11: shadcn Dialog; says when it covers every outlet) */}
+      <AllOutletsConfirmDialog
+        open={isStockConfirmOpen}
+        isLoading={isBulkSaving}
         title={t("dashboard.menuEditor.stockUpdate.confirmTitle")}
-      >
-        <div className="flex flex-col gap-6">
-          <p className="text-slate-600 dark:text-slate-300">
-            {pendingStockValue
-              ? t("dashboard.menuEditor.stockUpdate.markAllInStock")
-              : t("dashboard.menuEditor.stockUpdate.markAllOutOfStock")}
-          </p>
-          <div className="flex justify-end gap-3">
-            <button
-              onClick={() => setStockConfirmOpen(false)}
-              className="px-4 py-2 rounded-xl text-sm font-bold text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
-            >
-              {t("dashboard.menuEditor.stockUpdate.cancelAction")}
-            </button>
-            <button
-              onClick={handleBulkStockUpdate}
-              className={`px-4 py-2 rounded-xl text-sm font-bold text-white transition-opacity hover:opacity-90 ${pendingStockValue ? "bg-green-600" : "bg-red-600"}`}
-            >
-              {t("dashboard.menuEditor.stockUpdate.confirmAction")}
-            </button>
-          </div>
-        </div>
-      </Modal>
+        description={`${pendingStockValue
+          ? t("dashboard.menuEditor.stockUpdate.markAllInStock")
+          : t("dashboard.menuEditor.stockUpdate.markAllOutOfStock")}${isAggregated ? ` ${t("dashboard.menuEditor.outletSave.everyOutlet")}` : ""}`}
+        onConfirm={handleBulkStockUpdate}
+        onClose={() => setStockConfirmOpen(false)}
+      />
     </div>
   );
 };

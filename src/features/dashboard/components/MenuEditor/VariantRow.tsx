@@ -1,12 +1,15 @@
 import { useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { Image as ImageIcon, Pencil, Plus, SlidersHorizontal } from "lucide-react";
+import { Image as ImageIcon, Plus } from "lucide-react";
 import type { MenuItem } from "../../../../types/menuTypes";
 import { useMenuStore } from "../../store/useMenuStore";
+import { useRestaurantStore } from "../../store/useRestaurantStore";
+import { ALL_LOCATIONS_ID } from "@/types/storeTypes";
 import { getVariants } from "../../store/menuItemLookup";
 import { useAuth } from "@/context/AuthContext";
 import { CustomizationPanel } from "./CustomizationPanel";
+import { VariantCardActions } from "./VariantCardActions";
 
 /**
  * 2026-10-26: the expandable row under a menu item card showing the item and its variants
@@ -15,6 +18,8 @@ import { CustomizationPanel } from "./CustomizationPanel";
  * page, for the item and its variants alike - product decision) and Customize (the side panel
  * for the item's and its variants' customizations, opened on that card's tab). Item/variant edits
  * are queued and saved from Review; customizations are saved from the panel.
+ * 2026-11-11: on the Stock / Charges / Taxes tabs the cards show that tab's controls instead of
+ * Edit + Customize (VariantCardActions), matching the parent card.
  */
 interface VariantRowProps {
   parent: MenuItem;
@@ -38,7 +43,15 @@ export const VariantRow = ({ parent }: VariantRowProps) => {
   // Outlet-level users (restroId claim) can only change availability, so they can look at the
   // variants but not add or edit them.
   const canEdit = !user?.restroId;
+  // 2026-11-11: prices are per outlet; under "All Locations" in the dashboard there's no single
+  // price to show (onboarding has no outlet picker and keeps the brand-wide price).
+  const selectedAddressId = useRestaurantStore((state) => state.selectedAddressId);
+  const showPrice = location.pathname.includes("/grow-with-ustart")
+    || (!!selectedAddressId && selectedAddressId !== ALL_LOCATIONS_ID);
   const variants = getVariants(parent, updatedItems);
+  // 2026-11-11: same tab rule as MenuItemCard (last path segment; the onboarding step's
+  // "upload-menu" falls through to the Edit/Customize buttons).
+  const activeTab = location.pathname.split("/").pop() || "edit";
 
   // Same base-path rule as MenuItemList: the onboarding menu step has its own /new route.
   const basePath = location.pathname.includes("/grow-with-ustart")
@@ -53,8 +66,6 @@ export const VariantRow = ({ parent }: VariantRowProps) => {
   const renderCard = (item: MenuItem, isParent: boolean) => {
     const image = item.image || parent.image;
     const isPending = !!updatedItems[item.id];
-    const actionClass =
-      "flex-1 flex items-center justify-center gap-1.5 rounded-lg py-2 text-xs font-bold text-slate-600 dark:text-slate-300 bg-slate-50 dark:bg-slate-800 hover:bg-blue-50 hover:text-[var(--color-primary-blue)] dark:hover:bg-slate-700 dark:hover:text-blue-300 transition-colors";
     return (
       <div
         key={item.id}
@@ -82,26 +93,19 @@ export const VariantRow = ({ parent }: VariantRowProps) => {
           <span className={`w-2.5 h-2.5 rounded-full shrink-0 ${FOOD_DOT[item.foodType] ?? FOOD_DOT.VEG}`} />
           <span className="text-base font-bold text-slate-900 dark:text-white truncate">{item.name}</span>
         </div>
-        <p className="text-sm font-black text-[var(--color-primary-blue)] dark:text-blue-400 mt-1">
+        {showPrice && (
+          <p className="text-sm font-black text-[var(--color-primary-blue)] dark:text-blue-400 mt-1">
           ₹{(item.itemPrice ?? 0).toFixed(2)}
         </p>
-        {canEdit && (
-          // mt-auto keeps the buttons on the bottom edge when a neighbour card is taller.
-          <div className="mt-auto pt-3 flex gap-2">
-            <button
-              type="button"
-              className={actionClass}
-              onClick={() => navigate(`${basePath}/new?edit=${item.id}`)}
-            >
-              <Pencil className="w-3.5 h-3.5" />
-              {t("dashboard.menuEditor.variants.edit")}
-            </button>
-            <button type="button" className={actionClass} onClick={() => setCustomizeRowId(item.id)}>
-              <SlidersHorizontal className="w-3.5 h-3.5" />
-              {t("dashboard.menuEditor.variants.customize")}
-            </button>
-          </div>
         )}
+        {/* 2026-11-11: controls follow the active tab, like the parent card's (VariantCardActions). */}
+        <VariantCardActions
+          item={item}
+          activeTab={activeTab}
+          canEdit={canEdit}
+          onEdit={() => navigate(`${basePath}/new?edit=${item.id}`)}
+          onCustomize={() => setCustomizeRowId(item.id)}
+        />
       </div>
     );
   };

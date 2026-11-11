@@ -1,5 +1,5 @@
 import { createBrowserRouter, Navigate } from "react-router-dom";
-import { lazy as reactLazy, Suspense } from "react";
+import { Suspense } from "react";
 import {
   RequireAuth,
   RequireOnboarding,
@@ -7,27 +7,11 @@ import {
   PublicOnlyRoute,
 } from "./ProtectedRoute";
 import { GlobalErrorBoundary } from "@/pages/GlobalErrorBoundary";
+import { lazyWithRetry } from "@/lib/lazyWithRetry";
 
-// A custom wrapper for lazy loading that automatically retries once on dynamic chunk import failure (due to new deployments)
-const lazy = (componentImport: () => Promise<any>) => {
-  return reactLazy(() =>
-    componentImport().catch((error) => {
-      console.error("Dynamic import chunk load failed:", error);
-      const isRetry = sessionStorage.getItem("lazy-retry-occurred");
-      if (!isRetry) {
-        sessionStorage.setItem("lazy-retry-occurred", "true");
-        // Clear flag after 10 seconds to allow standard future dynamic loads
-        setTimeout(() => sessionStorage.removeItem("lazy-retry-occurred"), 10000);
-        console.log("Failed to load chunk. Reloading page to fetch latest bundle assets...");
-        window.location.reload();
-      } else {
-        console.error("Repeated dynamic import failure. Deferring to Error Boundary.");
-        throw error;
-      }
-      return new Promise(() => {}); // never resolves, page is reloading
-    })
-  );
-};
+// 2026-11-11: pages load through lazyWithRetry (retries the download, reloads once after a deploy,
+// keeps the loading screen meanwhile). It replaced an inline wrapper whose reload guard got stuck.
+const lazy = lazyWithRetry;
 
 // Lazy loading components
 const LandingPage = lazy(() =>
@@ -78,6 +62,17 @@ const PercentageDiscounts = lazy(() =>
 const DealOfTheDay = lazy(() =>
   import("@/features/dashboard/outlets/growth/DealOfTheDay").then((module) => ({
     default: module.DealOfTheDay,
+  })),
+);
+// 2026-11-11: the two Customer Delighters cards that had no page.
+const BogoOffers = lazy(() =>
+  import("@/features/dashboard/outlets/growth/BogoOffers").then((module) => ({
+    default: module.BogoOffers,
+  })),
+);
+const ItemLevelDiscount = lazy(() =>
+  import("@/features/dashboard/outlets/growth/ItemLevelDiscount").then((module) => ({
+    default: module.ItemLevelDiscount,
   })),
 );
 const EliteExclusiveOffers = lazy(() =>
@@ -297,6 +292,14 @@ export const router = createBrowserRouter([
                       {
                         path: "dotd",
                         element: withSuspense(DealOfTheDay),
+                      },
+                      {
+                        path: "bogo",
+                        element: withSuspense(BogoOffers),
+                      },
+                      {
+                        path: "item-discount",
+                        element: withSuspense(ItemLevelDiscount),
                       },
                     ],
                   },

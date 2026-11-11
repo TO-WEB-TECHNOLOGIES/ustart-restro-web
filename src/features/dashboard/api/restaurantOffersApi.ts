@@ -169,3 +169,34 @@ export const updateRestaurantOffer = async (offerId: string, body: UpdateRestaur
     const { data } = await api.patch<RestaurantOfferDTO>(`${BASE}/${offerId}`, body);
     return data;
 };
+
+/**
+ * 2026-11-11: the BOGO page (GET/PUT /restaurant-offers/bogo). One ongoing buy-1-get-1 per outlet;
+ * offerId null = none running. The PUT body is the whole selection - nothing ticked ends it.
+ */
+export interface BogoState {
+    offerId: string | null;
+    status: 'LIVE' | 'PAUSED' | null;
+    allDishes: boolean;
+    categoryIds: number[];
+    itemIds: number[];
+    startingDateTime: string | null;
+    endingDateTime: string | null;
+}
+
+export interface SaveBogoRequest {
+    restroId: string;
+    allDishes: boolean;
+    categoryIds: number[];
+    itemIds: number[];
+}
+
+export const fetchBogo = async (restroId: string): Promise<BogoState> => {
+    const { data } = await api.get<BogoState>(`${BASE}/bogo`, { params: { restroId } });
+    return data;
+};
+
+export const saveBogo = async (body: SaveBogoRequest): Promise<BogoState> => {
+    const { data } = await api.put<BogoState>(`${BASE}/bogo`, body);
+    return data;
+};
