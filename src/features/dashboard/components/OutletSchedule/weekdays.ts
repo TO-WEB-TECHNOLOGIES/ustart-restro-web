@@ -12,13 +12,10 @@ export const WEEKDAY_KEYS = [
     'onboarding.restaurant.complete.schedule.days.saturday',
 ];
 
-/** The 7 weekdays starting from today. */
-export const weekFromToday = (today = new Date()) => Array.from({ length: 7 }, (_, i) => (today.getDay() + i) % 7);
-
-/** The next date (today included) that falls on this weekday, at 00:00. */
-export const nextDateOf = (dayOfWeek: number, today = new Date()) => {
-    const date = new Date(today);
-    date.setHours(0, 0, 0, 0);
-    date.setDate(date.getDate() + ((dayOfWeek - today.getDay() + 7) % 7));
-    return date;
-};
+/**
+ * 2026-11-12 (user request): the day cards are a fixed Sunday → Saturday row, not "the next 7 days
+ * from today". Hours are set per weekday and repeat every week, so a fixed order reads as the
+ * weekly timetable; today is still tagged on its card. Same order as the onboarding schedule
+ * editor and the API's dayOfWeek numbers.
+ */
+export const WEEK_ORDER = [0, 1, 2, 3, 4, 5, 6];

@@ -9,7 +9,8 @@ import { createHolidaySchema, yearEndInputValue } from "./holidayRules";
 import { toInputValue } from "./outletTime";
 
 /**
- * 2026-11-12: "Add a Holiday" inline form (opened by the switch on the day panel). Start and end
+ * 2026-11-12: "Add Holiday" inline form, opened by the Holidays tab's button (moved there from the
+ * Schedule tab's day panel on user request; holidays are dates, not weekdays). Start and end
  * are date + time (native datetime-local, like the offer pages' date inputs), limited by
  * holidayRules (2 h to 30 days, not past, this year) before the API is called; the inputs'
  * min/max already block dates outside this year.
@@ -19,11 +20,12 @@ interface HolidayFormProps {
   /** Initial values ("YYYY-MM-DDTHH:mm"); read once, when the form opens. */
   defaults: { startsAt: string; endsAt: string };
   onDone: () => void;
+  onCancel: () => void;
 }
 
 type Field = "startsAt" | "endsAt" | "reason";
 
-export const HolidayForm = ({ restroId, defaults, onDone }: HolidayFormProps) => {
+export const HolidayForm = ({ restroId, defaults, onDone, onCancel }: HolidayFormProps) => {
   const { t } = useTranslation();
   const k = "dashboard.outletSchedule.holiday.";
   const addHoliday = useAddHoliday();
@@ -60,7 +62,7 @@ export const HolidayForm = ({ restroId, defaults, onDone }: HolidayFormProps) =>
 
   const inputClass = "h-11 rounded-xl text-sm font-medium dark:bg-slate-900 dark:border-slate-700 dark:text-white";
   return (
-    <div className="space-y-4 pt-4 border-t border-slate-100 dark:border-slate-800">
+    <div className="space-y-4">
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         {(["startsAt", "endsAt"] as const).map((field) => (
           <div key={field} className="space-y-1.5">
@@ -96,7 +98,15 @@ export const HolidayForm = ({ restroId, defaults, onDone }: HolidayFormProps) =>
         {errors.reason && <p className="text-xs font-medium text-red-500">{errors.reason}</p>}
       </div>
       <p className="text-xs text-slate-500 dark:text-slate-400">{t(`${k}rules`, { year: now.getFullYear() })}</p>
-      <div className="flex justify-end">
+      <div className="flex justify-end gap-3">
+        <button
+          type="button"
+          disabled={addHoliday.isPending}
+          onClick={onCancel}
+          className="h-11 px-5 rounded-xl border border-slate-200 dark:border-slate-700 text-sm font-bold text-[#1a2b4b] dark:text-white hover:bg-slate-50 dark:hover:bg-slate-800 disabled:opacity-50"
+        >
+          {t(`${k}cancel`)}
+        </button>
         <button
           type="button"
           disabled={addHoliday.isPending}

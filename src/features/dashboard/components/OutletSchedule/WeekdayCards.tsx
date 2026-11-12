@@ -1,11 +1,12 @@
 import { useTranslation } from "react-i18next";
 import type { RestroDay } from "@/types/restaurantTypes";
 import { formatSlotTime } from "./outletTime";
-import { WEEKDAY_KEYS, weekFromToday } from "./weekdays";
+import { WEEKDAY_KEYS, WEEK_ORDER } from "./weekdays";
 
 /**
- * 2026-11-12: the 7 weekdays as a horizontally scrolling row of cards, starting from today (user
- * decision: weekday cards, not dates). Each shows Open/Closed and its first slot (+n more).
+ * 2026-11-12: the 7 weekdays as a horizontally scrolling row of cards in a fixed Sunday → Saturday
+ * order (user request: hours repeat per weekday, so the row shouldn't shift with today). Today
+ * keeps its "Today" tag. Each shows Open/Closed and its first slot (+n more).
  */
 interface WeekdayCardsProps {
   days: RestroDay[] | null;
@@ -20,7 +21,7 @@ export const WeekdayCards = ({ days, selected, onSelect }: WeekdayCardsProps) =>
 
   return (
     <div className="flex gap-3 overflow-x-auto snap-x snap-mandatory pb-2 -mx-1 px-1" role="tablist" aria-label={t(`${k}weekdays`)}>
-      {weekFromToday().map((dow) => {
+      {WEEK_ORDER.map((dow) => {
         const day = days?.find((d) => d.dayOfWeek === dow);
         const open = !!day && !day.isClosed && (day.schedules?.length ?? 0) > 0;
         const first = open ? day!.schedules[0] : null;

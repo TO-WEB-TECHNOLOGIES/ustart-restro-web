@@ -1207,6 +1207,9 @@
         "saveFailed": "Couldn't save the hours",
         "slot": "Slot {{n}}",
         "closedAllDay": "Closed all day",
+        "copyFrom": "Copy from",
+        "copyPlaceholder": "Select a day",
+        "copied": "Copied {{day}}'s hours. Save to apply.",
         "loadFailed": "Couldn't load the opening hours",
         "errors": {
           "noSlots": "Add at least one time slot, or mark the day closed",
@@ -1215,7 +1218,7 @@
         }
       },
       "holiday": {
-        "add": "Add a Holiday",
+        "add": "Add Holiday",
         "addHint": "Close the outlet for a date and time range",
         "startsAt": "Starts",
         "endsAt": "Ends",
@@ -1223,6 +1226,7 @@
         "reasonPlaceholder": "e.g. Diwali, renovation",
         "rules": "A holiday can be 2 hours to 30 days long and must be within {{year}}.",
         "save": "Add holiday",
+        "cancel": "Cancel",
         "added": "Holiday added",
         "failed": "Couldn't add the holiday",
         "noReason": "Holiday",
@@ -1237,7 +1241,7 @@
         }
       },
       "holidays": {
-        "empty": "No upcoming holidays. Add one from the Schedule tab.",
+        "empty": "No upcoming holidays. Use Add Holiday to plan one.",
         "emptyHistory": "No past holidays yet.",
         "history": "History",
         "loadMore": "Load more",

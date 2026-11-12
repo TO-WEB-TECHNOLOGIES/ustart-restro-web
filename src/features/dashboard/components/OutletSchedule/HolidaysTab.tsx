@@ -1,19 +1,32 @@
 import { type ReactNode, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { CalendarOff, Loader2, PauseCircle } from "lucide-react";
+import { CalendarOff, CalendarPlus, Loader2, PauseCircle } from "lucide-react";
 import { toast } from "sonner";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { getErrorMessage } from "@/utils/error";
 import type { Closure } from "../../api/outletStatusApi";
 import { useClosureHistory, useEndClosure, useUpcomingClosures } from "../../hooks/useOutletStatus";
 import { AllOutletsConfirmDialog } from "../MenuEditor/AllOutletsConfirmDialog";
-import { formatDateTime } from "./outletTime";
+import { HolidayForm } from "./HolidayForm";
+import { formatDateTime, toInputValue } from "./outletTime";
 
 /**
  * 2026-11-12: the Holidays tab. Upcoming first (the active pause or holiday on top with "End now",
  * future ones with "Cancel", both confirmed), then a collapsible History (loaded only when opened,
  * paged with "Load more"). Same list look as My Offers' history.
+ * 2026-11-12 (user request): "Add Holiday" lives here now (it was a switch on the Schedule tab),
+ * opening the start/end date-and-time form above the list.
  */
+
+const HOUR_MS = 60 * 60 * 1000;
+
+// Form defaults: from the next full hour, for the 2-hour minimum. Computed when the form opens.
+const holidayDefaults = () => {
+  const start = new Date();
+  start.setMinutes(0, 0, 0);
+  start.setTime(start.getTime() + HOUR_MS);
+  return { startsAt: toInputValue(start), endsAt: toInputValue(new Date(start.getTime() + 2 * HOUR_MS)) };
+};
 export const HolidaysTab = ({ restroId }: { restroId: string }) => {
   const { t } = useTranslation();
   const k = "dashboard.outletSchedule.holidays.";
@@ -22,6 +35,7 @@ export const HolidaysTab = ({ restroId }: { restroId: string }) => {
   const history = useClosureHistory(restroId, historyOpen);
   const endClosure = useEndClosure();
   const [confirming, setConfirming] = useState<Closure | null>(null);
+  const [adding, setAdding] = useState<{ startsAt: string; endsAt: string } | null>(null);
 
   const confirmEnd = async () => {
     if (!confirming) return;
@@ -38,6 +52,27 @@ export const HolidaysTab = ({ restroId }: { restroId: string }) => {
 
   return (
     <div className="space-y-6">
+      {adding ? (
+        <div className="bg-white dark:bg-slate-900 rounded-[24px] border border-slate-100 dark:border-slate-800 shadow-sm p-5 md:p-6 space-y-4">
+          <div>
+            <h3 className="text-lg font-bold text-[#1a2b4b] dark:text-white">{t("dashboard.outletSchedule.holiday.add")}</h3>
+            <p className="text-xs text-slate-500 dark:text-slate-400">{t("dashboard.outletSchedule.holiday.addHint")}</p>
+          </div>
+          <HolidayForm restroId={restroId} defaults={adding} onDone={() => setAdding(null)} onCancel={() => setAdding(null)} />
+        </div>
+      ) : (
+        <div className="flex justify-end">
+          <button
+            type="button"
+            onClick={() => setAdding(holidayDefaults())}
+            className="h-11 px-5 rounded-xl bg-secondary-orange hover:bg-orange-500 text-white text-sm font-bold shadow-lg shadow-secondary-orange/20 flex items-center gap-2"
+          >
+            <CalendarPlus className="w-4 h-4" />
+            {t("dashboard.outletSchedule.holiday.add")}
+          </button>
+        </div>
+      )}
+
       {upcoming.isLoading ? (
         <div className="py-16 flex justify-center"><Loader2 className="w-8 h-8 text-secondary-orange animate-spin" /></div>
       ) : upcoming.isError ? (

@@ -12,7 +12,8 @@ import { TONE_CLASSES, describeStatus } from "./outletTime";
 
 /**
  * 2026-11-12: one outlet on the Outlet Schedule page: name, live state and switch, then two tabs -
- * Schedule (weekday cards → that day's hours, edit, Add a Holiday) and Holidays (upcoming, history).
+ * Schedule (weekday cards → that day's hours and edit, with "Copy from") and Holidays (Add Holiday,
+ * upcoming, history). Holidays moved off the Schedule tab 2026-11-12 (user request).
  * The parent keys it by outlet, so switching outlets starts fresh.
  */
 type ScheduleTab = "schedule" | "holidays";
@@ -21,6 +22,7 @@ export const OutletScheduleView = ({ restroId }: { restroId: string }) => {
   const { t, i18n } = useTranslation();
   const k = "dashboard.outletSchedule.";
   const [tab, setTab] = useState<ScheduleTab>("schedule");
+  // Today is selected first; the cards themselves stay in a fixed Sunday → Saturday order.
   const [selectedDay, setSelectedDay] = useState(() => new Date().getDay());
   const status = useOutletLiveStatus(restroId);
   const schedule = useOutletSchedule(restroId);
@@ -87,6 +89,7 @@ export const OutletScheduleView = ({ restroId }: { restroId: string }) => {
             restroId={restroId}
             dayOfWeek={selectedDay}
             day={schedule.data?.find((d) => d.dayOfWeek === selectedDay) ?? null}
+            days={schedule.data ?? []}
             hasSchedule={!!schedule.data}
             isSetupLocked={item?.isSetupLocked ?? false}
           />

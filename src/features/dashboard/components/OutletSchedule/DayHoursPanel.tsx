@@ -1,38 +1,39 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Loader2, Lock, Pencil } from "lucide-react";
+import { Copy, Loader2, Lock, Pencil } from "lucide-react";
 import { toast } from "sonner";
-import { Switch } from "@/components/ui/switch";
 import { getErrorMessage } from "@/utils/error";
 import type { RestroDay } from "@/types/restaurantTypes";
 import { DayScheduleEditor } from "@/features/onboarding/components/common/DayScheduleEditor";
 import { validateScheduleDay } from "@/features/onboarding/utils/scheduleValidation";
 import { useSaveScheduleDay } from "../../hooks/useOutletStatus";
-import { HolidayForm } from "./HolidayForm";
-import { formatSlotTime, toInputValue } from "./outletTime";
-import { WEEKDAY_KEYS, nextDateOf } from "./weekdays";
+import { formatSlotTime } from "./outletTime";
+import { WEEKDAY_KEYS, WEEK_ORDER } from "./weekdays";
 
 /**
- * 2026-11-12: the selected weekday's hours, an Edit mode (user decision: hours are editable here),
- * and the "Add a Holiday" switch that opens the holiday form in the same card.
+ * 2026-11-12: the selected weekday's hours and an Edit mode (user decision: hours are editable here).
  * Edit reuses the onboarding DayScheduleEditor with just this day and saves only this day
  * (PATCH /schedules), which changes it for every week. Locked while isSetupLocked (the API would
- * answer 403). The parent keys this panel by weekday, so switching days drops an open edit/form.
+ * answer 403). The parent keys this panel by weekday, so switching days drops an open edit.
+ * 2026-11-12 (user request): holidays moved out of this panel to the Holidays tab's "Add Holiday"
+ * button; edit mode gained "Copy from" (another weekday's saved hours into this day's draft, so the
+ * same hours aren't re-entered day by day). Nothing is saved until "Save hours".
  */
 interface DayHoursPanelProps {
   restroId: string;
   dayOfWeek: number;
   day: RestroDay | null;
+  /** All 7 saved days, the source for "Copy from". */
+  days: RestroDay[];
   hasSchedule: boolean;
   isSetupLocked: boolean;
 }
 
-export const DayHoursPanel = ({ restroId, dayOfWeek, day, hasSchedule, isSetupLocked }: DayHoursPanelProps) => {
+export const DayHoursPanel = ({ restroId, dayOfWeek, day, days, hasSchedule, isSetupLocked }: DayHoursPanelProps) => {
   const { t, i18n } = useTranslation();
   const k = "dashboard.outletSchedule.hours.";
   const saveDay = useSaveScheduleDay();
   const [draft, setDraft] = useState<RestroDay | null>(null);
-  const [holidayOpen, setHolidayOpen] = useState(false);
   const open = !!day && !day.isClosed && (day.schedules?.length ?? 0) > 0;
 
   const save = async () => {
@@ -51,22 +52,17 @@ export const DayHoursPanel = ({ restroId, dayOfWeek, day, hasSchedule, isSetupLo
     }
   };
 
-  // Holiday defaults: this weekday's next date, from its opening (or now, if that's passed) to its
-  // closing; a closed day defaults to the whole day.
-  const holidayDefaults = () => {
-    const date = nextDateOf(dayOfWeek);
-    const at = (time: string) => {
-      const [h, m] = time.split(":").map(Number);
-      const d = new Date(date);
-      d.setHours(h, m, 0, 0);
-      return d;
-    };
-    let start = open ? at(day!.schedules[0].startTime) : new Date(date);
-    let end = open ? at(day!.schedules[day!.schedules.length - 1].endTime) : at("23:59");
-    const now = new Date();
-    if (start < now) start = now;
-    if (end.getTime() - start.getTime() < 2 * 60 * 60 * 1000) end = new Date(start.getTime() + 2 * 60 * 60 * 1000);
-    return { startsAt: toInputValue(start), endsAt: toInputValue(end) };
+  // Copy another weekday's saved hours into the draft. Slots are cloned so editing the draft
+  // never mutates the cached schedule objects.
+  const copyFrom = (sourceDow: number) => {
+    const source = days.find((d) => d.dayOfWeek === sourceDow);
+    if (!source || !draft) return;
+    setDraft({
+      ...draft,
+      isClosed: source.isClosed,
+      schedules: (source.schedules ?? []).map((slot) => ({ ...slot })),
+    });
+    toast.success(t(`${k}copied`, { day: t(WEEKDAY_KEYS[sourceDow]) }));
   };
 
   return (
@@ -96,7 +92,34 @@ export const DayHoursPanel = ({ restroId, dayOfWeek, day, hasSchedule, isSetupLo
         <p className="text-sm text-slate-500 dark:text-slate-400">{t(`${k}noSchedule`)}</p>
       ) : draft ? (
         <div className="space-y-4">
-          <DayScheduleEditor days={[draft]} onChange={(days) => setDraft(days[0])} />
+          {/* Copy from: same native select style as the editor's own "Copy schedule from" bar. */}
+          <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
+            <label htmlFor="copy-from-day" className="flex items-center gap-2 text-sm font-semibold text-slate-700 dark:text-slate-300 whitespace-nowrap">
+              <Copy className="w-4 h-4 shrink-0" />
+              {t(`${k}copyFrom`)}
+            </label>
+            <select
+              id="copy-from-day"
+              value=""
+              disabled={saveDay.isPending}
+              onChange={(e) => { if (e.target.value !== "") copyFrom(Number(e.target.value)); }}
+              className="w-full sm:w-56 h-9 rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-950 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-secondary-orange/20 dark:text-slate-100"
+            >
+              <option value="">{t(`${k}copyPlaceholder`)}</option>
+              {WEEK_ORDER.filter((dow) => dow !== dayOfWeek).map((dow) => {
+                const source = days.find((d) => d.dayOfWeek === dow);
+                const isOpen = !!source && !source.isClosed && (source.schedules?.length ?? 0) > 0;
+                return (
+                  <option key={dow} value={dow}>
+                    {t(WEEKDAY_KEYS[dow])}{isOpen
+                      ? ` · ${source!.schedules.map((s) => `${formatSlotTime(s.startTime, i18n.language)}–${formatSlotTime(s.endTime, i18n.language)}`).join(", ")}`
+                      : ` · ${t(`${k}closed`)}`}
+                  </option>
+                );
+              })}
+            </select>
+          </div>
+          <DayScheduleEditor days={[draft]} onChange={(next) => setDraft(next[0])} />
           <p className="text-xs text-slate-500 dark:text-slate-400">{t(`${k}everyWeek`, { day: t(WEEKDAY_KEYS[dayOfWeek]) })}</p>
           <div className="flex justify-end gap-3">
             <button
@@ -132,29 +155,6 @@ export const DayHoursPanel = ({ restroId, dayOfWeek, day, hasSchedule, isSetupLo
       ) : (
         <p className="text-sm font-medium text-slate-500 dark:text-slate-400">{t(`${k}closedAllDay`)}</p>
       )}
-
-      {/* Add a Holiday: the switch opens the form in this same card. */}
-      <div className="pt-4 border-t border-slate-100 dark:border-slate-800">
-        <label className="flex items-center justify-between gap-4 cursor-pointer">
-          <span>
-            <span className="block text-sm font-bold text-[#1a2b4b] dark:text-white">{t("dashboard.outletSchedule.holiday.add")}</span>
-            <span className="block text-xs text-slate-500 dark:text-slate-400">{t("dashboard.outletSchedule.holiday.addHint")}</span>
-          </span>
-          <Switch
-            checked={holidayOpen}
-            onCheckedChange={setHolidayOpen}
-            aria-label={t("dashboard.outletSchedule.holiday.add")}
-            className="scale-75"
-          />
-        </label>
-        {holidayOpen && (
-          <HolidayForm
-            restroId={restroId}
-            defaults={holidayDefaults()}
-            onDone={() => setHolidayOpen(false)}
-          />
-        )}
-      </div>
     </div>
   );
 };
