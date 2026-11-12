@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Copy, Loader2, Lock, Pencil } from "lucide-react";
 import { toast } from "sonner";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { getErrorMessage } from "@/utils/error";
 import type { RestroDay } from "@/types/restaurantTypes";
 import { DayScheduleEditor } from "@/features/onboarding/components/common/DayScheduleEditor";
@@ -92,32 +93,35 @@ export const DayHoursPanel = ({ restroId, dayOfWeek, day, days, hasSchedule, isS
         <p className="text-sm text-slate-500 dark:text-slate-400">{t(`${k}noSchedule`)}</p>
       ) : draft ? (
         <div className="space-y-4">
-          {/* Copy from: same native select style as the editor's own "Copy schedule from" bar. */}
+          {/* Copy from: shadcn Select (added 2026-11-12; replaces the native <select>). Kept at
+              value "" so it acts like a picker: choosing a day copies it and the placeholder
+              comes back, ready to pick again. */}
           <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
             <label htmlFor="copy-from-day" className="flex items-center gap-2 text-sm font-semibold text-slate-700 dark:text-slate-300 whitespace-nowrap">
               <Copy className="w-4 h-4 shrink-0" />
               {t(`${k}copyFrom`)}
             </label>
-            <select
-              id="copy-from-day"
-              value=""
-              disabled={saveDay.isPending}
-              onChange={(e) => { if (e.target.value !== "") copyFrom(Number(e.target.value)); }}
-              className="w-full sm:w-56 h-9 rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-950 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-secondary-orange/20 dark:text-slate-100"
-            >
-              <option value="">{t(`${k}copyPlaceholder`)}</option>
-              {WEEK_ORDER.filter((dow) => dow !== dayOfWeek).map((dow) => {
-                const source = days.find((d) => d.dayOfWeek === dow);
-                const isOpen = !!source && !source.isClosed && (source.schedules?.length ?? 0) > 0;
-                return (
-                  <option key={dow} value={dow}>
-                    {t(WEEKDAY_KEYS[dow])}{isOpen
-                      ? ` · ${source!.schedules.map((s) => `${formatSlotTime(s.startTime, i18n.language)}–${formatSlotTime(s.endTime, i18n.language)}`).join(", ")}`
-                      : ` · ${t(`${k}closed`)}`}
-                  </option>
-                );
-              })}
-            </select>
+            <Select value="" disabled={saveDay.isPending} onValueChange={(value) => copyFrom(Number(value))}>
+              <SelectTrigger id="copy-from-day" className="w-full sm:w-72 rounded-xl bg-white dark:bg-slate-950 border-slate-200 dark:border-slate-700 text-[#1a2b4b] dark:text-slate-100">
+                <SelectValue placeholder={t(`${k}copyPlaceholder`)} />
+              </SelectTrigger>
+              <SelectContent position="popper" className="bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700">
+                {WEEK_ORDER.filter((dow) => dow !== dayOfWeek).map((dow) => {
+                  const source = days.find((d) => d.dayOfWeek === dow);
+                  const isOpen = !!source && !source.isClosed && (source.schedules?.length ?? 0) > 0;
+                  return (
+                    <SelectItem key={dow} value={String(dow)} className="text-[#1a2b4b] dark:text-slate-100">
+                      <span className="font-semibold">{t(WEEKDAY_KEYS[dow])}</span>
+                      <span className="text-xs text-slate-500 dark:text-slate-400">
+                        {isOpen
+                          ? source!.schedules.map((s) => `${formatSlotTime(s.startTime, i18n.language)}–${formatSlotTime(s.endTime, i18n.language)}`).join(", ")
+                          : t(`${k}closed`)}
+                      </span>
+                    </SelectItem>
+                  );
+                })}
+              </SelectContent>
+            </Select>
           </div>
           <DayScheduleEditor days={[draft]} onChange={(next) => setDraft(next[0])} />
           <p className="text-xs text-slate-500 dark:text-slate-400">{t(`${k}everyWeek`, { day: t(WEEKDAY_KEYS[dayOfWeek]) })}</p>

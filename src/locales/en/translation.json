@@ -1193,6 +1193,8 @@
       },
       "hours": {
         "weekdays": "Days of the week",
+        "scrollPrev": "Previous days",
+        "scrollNext": "Next days",
         "today": "Today",
         "open": "Open",
         "closed": "Closed",

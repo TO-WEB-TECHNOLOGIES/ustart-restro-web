@@ -1192,6 +1192,8 @@
       },
       "hours": {
         "weekdays": "हफ़्ते के दिन",
+        "scrollPrev": "पिछले दिन",
+        "scrollNext": "अगले दिन",
         "today": "आज",
         "open": "खुला",
         "closed": "बंद",
