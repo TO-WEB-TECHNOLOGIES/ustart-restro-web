@@ -64,6 +64,7 @@ export const EditOutletPage = () => {
       ) : (
         <AddRestaurantForm
           isEditMode
+          scrollable={false}
           initialData={outlet}
           showBankSection={false}
           showLimits

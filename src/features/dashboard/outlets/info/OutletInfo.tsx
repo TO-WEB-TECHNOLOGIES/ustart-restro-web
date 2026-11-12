@@ -67,7 +67,8 @@ export const OutletInfo = () => {
             </button>
           </div>
         ) : (
-          <>
+          // 2026-11-12 (user request): clear space under the outlet cards.
+          <section className="space-y-5 pb-12">
             <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5">
               {items.map((outlet) => <OutletCard key={outlet.restroId} outlet={outlet} plan={plans.data?.percentage} />)}
               {!user?.restroId && <AddOutletCard />}
@@ -85,7 +86,7 @@ export const OutletInfo = () => {
                 </button>
               </div>
             )}
-          </>
+          </section>
         )}
       </div>
     </div>

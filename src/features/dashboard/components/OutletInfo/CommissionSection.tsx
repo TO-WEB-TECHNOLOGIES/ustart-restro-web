@@ -10,12 +10,15 @@ import { FixedPlanLines } from "./FixedPlanLines";
 /**
  * 2026-11-12: the brand's commission plans (shown on each outlet page and in Brand Details; one set
  * for the whole brand): the chosen percentage plan, plus all of USTART's fixed small-order plans
- * as read-only commission lines (FixedPlanLines, 2026-11-12). "Change" (brand-level logins while the brand is ACTIVE or UPDATE_APPROVAL_PENDING -
- * the backend's rules) or "View details" (everyone else) opens CommissionPlanDialog.
+ * as read-only commission lines (FixedPlanLines, 2026-11-12). "Change" (brand-level logins while
+ * the brand is ACTIVE or UPDATE_APPROVAL_PENDING - the backend's rules) or "View details" (everyone
+ * else) opens CommissionPlanDialog.
+ * 2026-11-12: `editable` - plans belong to the brand, not an outlet, so an outlet page passes
+ * editable={false}: View details only, with a note that the plan is changed in Brand Details.
  */
 const PLAN_EDITABLE = ["ACTIVE", "UPDATE_APPROVAL_PENDING"];
 
-export const CommissionSection = () => {
+export const CommissionSection = ({ editable = true }: { editable?: boolean }) => {
   const { t } = useTranslation();
   const k = "dashboard.outletInfo.";
   const { user } = useAuth();
@@ -26,8 +29,10 @@ export const CommissionSection = () => {
 
   const isBrandUser = !user?.restroId;
   const brandAllows = !!brand.data && PLAN_EDITABLE.includes(brand.data.status);
-  const canChange = isBrandUser && brandAllows;
-  const hint = !isBrandUser ? t(`${k}plans.brandUsersOnly`) : brand.data && !brandAllows ? t(`${k}plans.notYet`) : null;
+  const canChange = editable && isBrandUser && brandAllows;
+  const hint = !editable ? t(`${k}plans.setForBrand`)
+    : !isBrandUser ? t(`${k}plans.brandUsersOnly`)
+    : brand.data && !brandAllows ? t(`${k}plans.notYet`) : null;
   const percentage = plans.data?.percentage ?? null;
   const fixed = plans.data?.fixed ?? [];
 

@@ -1169,6 +1169,7 @@
         "view": "View"
       },
       "plans": {
+        "setForBrand": "The plan is set for the whole brand. Change it in Brand Details (All Locations).",
         "flatTitle": "Flat commission (small orders)",
         "flatCommission": "Commission {{amount}}",
         "band": {
@@ -1439,6 +1440,15 @@
         "noSchedule": "No opening hours set"
       },
       "toggle": {
+        "why": {
+          "closedOpensAt": "Closed as per today's hours. Opens {{time}}. Change the hours in Outlet Schedule.",
+          "closed": "Closed as per its opening hours. Change the hours in Outlet Schedule.",
+          "noSchedule": "No opening hours are set. Add them in Outlet Schedule to switch the outlet on.",
+          "OUTLET_REVIEW": "This outlet is waiting for USTART's approval (new or edited details). It can be switched on once approved.",
+          "BRAND_REVIEW": "Your brand's changes are waiting for USTART's approval. All outlets are offline until then.",
+          "ON_HOLD": "USTART has put this outlet on hold. Contact support to reactivate it.",
+          "notLive": "This outlet isn't live yet."
+        },
         "label": "Taking orders at {{name}}",
         "paused": "{{name}} is paused",
         "resumed": "{{name}} is taking orders again",
@@ -1512,7 +1522,8 @@
         "cancel": "Cancel",
         "cancelHoliday": "Cancel holiday",
         "keep": "Keep it",
-        "pause": "Paused from the header",
+        "pause": "Deactivated unexpectedly",
+        "endedEarlyAt": "ended early at {{time}}",
         "confirmEndTitle": "End this now?",
         "confirmEndText": "The outlet opens again as per its hours.",
         "confirmCancelTitle": "Cancel this holiday?",

@@ -129,7 +129,8 @@ export const OutletDetailView = ({ restroId, showBack = false }: OutletDetailVie
           )}
         </InfoSection>
 
-        <CommissionSection />
+        {/* 2026-11-12: read-only here - the plan is the brand's, changed in Brand Details. */}
+        <CommissionSection editable={false} />
 
         <InfoSection icon={ShieldCheck} title={t(`${k}sections.identity`)}>
           <div className="grid grid-cols-2 gap-4">

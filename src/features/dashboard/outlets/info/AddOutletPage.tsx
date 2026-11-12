@@ -42,7 +42,7 @@ export const AddOutletPage = () => {
   return (
     <OutletFormPage backTo={INFO_PATH} backLabel={t(`${k}back`)} title={t(`${k}add.title`)} subtitle={t(`${k}add.subtitle`)}>
       {ready ? (
-        <AddRestaurantForm onCancel={() => navigate(INFO_PATH)} onSuccess={onSuccess} />
+        <AddRestaurantForm scrollable={false} onCancel={() => navigate(INFO_PATH)} onSuccess={onSuccess} />
       ) : (
         <div className="py-24 flex justify-center"><Loader2 className="w-8 h-8 text-secondary-orange animate-spin" /></div>
       )}

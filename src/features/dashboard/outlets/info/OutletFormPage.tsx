@@ -15,8 +15,11 @@ interface OutletFormPageProps {
 }
 
 export const OutletFormPage = ({ backTo, backLabel, title, subtitle, children }: OutletFormPageProps) => (
-  // 2026-11-12: clear space under the form's buttons (see Outlet Info's PAGE_CLASS).
-  <div className="flex-1 min-h-[calc(100vh-64px)] flex flex-col pb-16 bg-[#f6f8f7] dark:bg-slate-950 transition-colors duration-300">
+  // 2026-11-12 (user reports: background ended halfway; then the form was clipped): the form is
+  // rendered with scrollable={false}, so this shell grows with it - flex 1 0 auto: at least the
+  // height <main> gives it (full screen on load), never shrinking below its content - and <main>
+  // does the scrolling. The background therefore always covers the whole form.
+  <div className="flex-[1_0_auto] flex flex-col bg-[#f6f8f7] dark:bg-slate-950 transition-colors duration-300">
     <div className="px-6 md:px-10 pt-6 md:pt-8 space-y-2">
       <Link to={backTo} className="inline-flex items-center gap-2 text-sm font-bold text-slate-500 dark:text-slate-400 hover:text-secondary-orange">
         <ArrowLeft className="w-4 h-4" />

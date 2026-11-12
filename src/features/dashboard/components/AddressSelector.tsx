@@ -5,12 +5,24 @@ import { useRestaurantStore } from '../store/useRestaurantStore';
 import { useTranslation } from 'react-i18next';
 import { useAddressSearch } from '../hooks/useDashboardData';
 import { ALL_LOCATIONS_ID } from '@/types/storeTypes';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '@/context/AuthContext';
+import { INFO_PATH } from './OutletInfo/OutletCards';
 
 export const AddressSelector = () => {
     const [isOpen, setIsOpen] = useState(false);
     const dropdownRef = useRef<HTMLDivElement>(null);
     const { addresses, selectedAddressId, setSelectedAddressId } = useRestaurantStore();
     const { t } = useTranslation();
+    // 2026-11-12 (user request): "Add Location" opens the full-page add-outlet form (Outlet Info).
+    // Outlet-level logins can't add outlets (that page sends them back), so they don't get the button.
+    const navigate = useNavigate();
+    const { user } = useAuth();
+    const canAddOutlet = !user?.restroId;
+    const addOutlet = () => {
+        setIsOpen(false);
+        navigate(`${INFO_PATH}/new`);
+    };
 
     const {
         query,
@@ -58,9 +70,11 @@ export const AddressSelector = () => {
     };
 
     if (addresses.length === 0 && !isSearching) {
+        if (!canAddOutlet) return null;
         return (
             <Button
                 variant="outline"
+                onClick={addOutlet}
                 className="h-10 px-3 md:px-4 border-dashed border-slate-300 dark:border-slate-700 bg-transparent hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-500 dark:text-slate-400 flex items-center gap-2 w-auto min-w-[140px] sm:w-[200px] justify-center transition-all"
             >
                 <MapPin className="w-4 h-4" />
@@ -200,11 +214,13 @@ export const AddressSelector = () => {
                         </div>
                     )}
 
+                    {canAddOutlet && (
                     <div className="px-3 pt-2 mt-2 border-t border-slate-50 dark:border-slate-700">
-                        <button className="w-full py-2 text-xs font-bold text-center text-primary-blue dark:text-blue-400 hover:text-secondary-orange transition-colors border border-dashed border-slate-200 dark:border-slate-700 rounded-lg hover:border-secondary-orange hover:bg-orange-50/30 dark:hover:bg-orange-900/20 flex items-center justify-center gap-2">
+                        <button type="button" onClick={addOutlet} className="w-full py-2 text-xs font-bold text-center text-primary-blue dark:text-blue-400 hover:text-secondary-orange transition-colors border border-dashed border-slate-200 dark:border-slate-700 rounded-lg hover:border-secondary-orange hover:bg-orange-50/30 dark:hover:bg-orange-900/20 flex items-center justify-center gap-2">
                             {t('dashboard.addNewLocation', '+ Add New Location')}
                         </button>
                     </div>
+                    )}
                 </div>
             )}
         </div>

@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
+import { persist, createJSONStorage } from 'zustand/middleware';
 import type { StatMetric } from '../api/mockDashboard';
 import { type Address, type RestaurantDetails, type RestaurantStatus } from '@/types/storeTypes';
 
@@ -46,6 +46,13 @@ const initialState = {
     },
 };
 
+// 2026-11-12: drop the copy older builds kept in localStorage (it moved to sessionStorage above).
+try {
+    localStorage.removeItem('restaurant-storage-v5');
+} catch {
+    // storage unavailable (private mode etc.) - nothing to clean up
+}
+
 export const useRestaurantStore = create<RestaurantState>()(
     persist(
         (set) => ({
@@ -76,6 +83,10 @@ export const useRestaurantStore = create<RestaurantState>()(
         }),
         {
             name: 'restaurant-storage-v5', // Incrementing version to invalidate old state with orders
+            // 2026-11-12 (user request): sessionStorage, like the menu editor's store - the header's
+            // location choice survives a refresh of the tab, but not a new tab or closing the browser,
+            // and the brand's outlet list no longer lingers in localStorage after the session.
+            storage: createJSONStorage(() => sessionStorage),
         }
     )
 );

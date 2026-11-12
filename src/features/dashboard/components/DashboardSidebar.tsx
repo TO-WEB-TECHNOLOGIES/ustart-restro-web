@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 import { useTheme } from "@/context/ThemeContext";
 import { useAuth } from "@/context/AuthContext";
 import { useRestaurantStore } from "../store/useRestaurantStore";
+import { useBrandDetail } from "../hooks/useOutletInfo";
 import {
   LayoutDashboard,
   UtensilsCrossed,
@@ -121,9 +122,14 @@ export const DashboardSidebar = ({
     fetchDetails();
   }, [user, restaurantName, setRestaurantName]);
 
-  const partnershipText = useMemo(() => {
-    return restaurantName ? `${restaurantName}` : "";
-  }, [restaurantName]);
+  // 2026-11-12 (user request): the brand's company name next to the logo. Read from the cached brand
+  // query (GET /api/v1/brands), so a Brand Details edit shows here at once; until it loads, or if it
+  // fails, the previous restaurant / user name is shown.
+  const brand = useBrandDetail(!!user?.brandId);
+  const partnershipText = useMemo(
+    () => brand.data?.companyName || brand.data?.brandName || restaurantName || "",
+    [brand.data?.companyName, brand.data?.brandName, restaurantName],
+  );
 
   const { hasPendingOrders, pendingCount } = usePendingOrders();
 

@@ -2,11 +2,12 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import { Switch } from "@/components/ui/switch";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { getErrorMessage } from "@/utils/error";
 import type { OutletStatusItem } from "../../api/outletStatusApi";
 import { usePauseOutlet, useResumeOutlet } from "../../hooks/useOutletStatus";
 import { AllOutletsConfirmDialog } from "../MenuEditor/AllOutletsConfirmDialog";
-import { describeStatus, formatWhen } from "./outletTime";
+import { formatWhen } from "./outletTime";
 
 /**
  * 2026-11-12: the open/closed switch for one outlet (header, home card, All Locations sidebar).
@@ -14,7 +15,10 @@ import { describeStatus, formatWhen } from "./outletTime";
  * - OFF while open → confirm, then pause until the current opening hours end;
  * - ON while paused → resume straight away;
  * - ON during a holiday → confirm, then end the holiday now (all of it);
- * - disabled while closed by the timetable, not live, or without hours (title says why).
+ * - disabled while closed by the timetable, not live, or without hours.
+ * 2026-11-12 (user request): hovering (or focusing) a disabled switch shows a tooltip with the reason -
+ * closed by today's hours (and when it opens), no hours set, or not live: outlet awaiting approval,
+ * brand awaiting approval, or on hold (`notLiveReason` from the API). Replaces the plain title.
  */
 interface OutletToggleProps {
   item: OutletStatusItem;
@@ -55,19 +59,42 @@ export const OutletToggle = ({ item, className }: OutletToggleProps) => {
   };
 
   const closure = status.activeClosure;
+  // Why the switch can't be used (null when it can).
+  const disabledReason = canToggle ? null
+    : status.state === "CLOSED_BY_SCHEDULE"
+      ? status.opensAt
+        ? t(`${k}why.closedOpensAt`, { time: formatWhen(status.opensAt, i18n.language) })
+        : t(`${k}why.closed`)
+      : status.state === "NO_SCHEDULE" ? t(`${k}why.noSchedule`)
+      : t(`${k}why.${item.notLiveReason ?? "notLive"}`);
+
+  const control = (
+    <Switch
+      checked={status.isOpen}
+      onCheckedChange={onChange}
+      disabled={!canToggle || busy}
+      aria-label={t(`${k}label`, { name: item.restroName })}
+      className={className ?? "scale-75 data-[state=checked]:bg-emerald-500"}
+    />
+  );
   return (
     // The wrapper stops clicks (the switch's, and the dialog's - React portals still bubble through
     // the component tree) reaching a clickable sidebar row. It can't go on the Switch itself, whose
     // own onClick a passed one would replace.
     <span className="inline-flex" onClick={(e) => e.stopPropagation()}>
-      <Switch
-        checked={status.isOpen}
-        onCheckedChange={onChange}
-        disabled={!canToggle || busy}
-        aria-label={t(`${k}label`, { name: item.restroName })}
-        title={canToggle ? undefined : describeStatus(t, status, i18n.language).label}
-        className={className ?? "scale-75 data-[state=checked]:bg-emerald-500"}
-      />
+      {disabledReason ? (
+        // A disabled <button> gets no pointer events, so the tooltip hangs on a focusable wrapper.
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <span tabIndex={0} aria-label={disabledReason} className="inline-flex cursor-not-allowed rounded-full focus:outline-none focus-visible:ring-2 focus-visible:ring-secondary-orange">
+              {control}
+            </span>
+          </TooltipTrigger>
+          <TooltipContent side="bottom" className="max-w-64 bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900 [&_svg]:bg-slate-900 [&_svg]:fill-slate-900 dark:[&_svg]:bg-slate-100 dark:[&_svg]:fill-slate-100">
+            {disabledReason}
+          </TooltipContent>
+        </Tooltip>
+      ) : control}
       <AllOutletsConfirmDialog
         open={pending !== null}
         isLoading={busy}

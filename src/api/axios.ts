@@ -88,7 +88,7 @@ api.interceptors.response.use(
                 // in-progress signup should survive this.
                 setAccessToken(null);
                 localStorage.removeItem('order-storage');
-                localStorage.removeItem('restaurant-storage-v5');
+                sessionStorage.removeItem('restaurant-storage-v5'); // 2026-11-12: moved from localStorage
                 localStorage.removeItem('ustart-addon-storage');
                 sessionStorage.removeItem('menu-editor-storage');
 

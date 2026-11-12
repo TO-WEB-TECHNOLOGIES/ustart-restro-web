@@ -702,3 +702,43 @@ MenuEditor (outlet — handles edit/stock/taxes/charges/new/review paths)
 - New `FixedPlanLines`: one line per fixed-plan order band, commission only ("≤ ₹149 · Commission ₹9", "₹150 – ≤ ₹249 · Commission ₹X", "₹250 & above · …"). It replaces the table on the commission card and the full term grids for fixed plans in the dialog, where it sits above the percentage slider.
 - `wholeRupees()` (`outletInfoFormat.ts`) shows whole rupees with no decimals. A band's lower bound rounds up (149.01 → ₹150) and its upper bound rounds down, so neighbouring bands read cleanly. `TierVariables` (the percentage plan's terms) uses it too.
 - Percentages come from JSON numbers (6.00 arrives as 6), so they show without decimals unless a plan really has a fractional rate.
+
+### 2026-11-12 — Sidebar shows the company name; space under outlet cards
+- `DashboardSidebar` shows the brand's `companyName` next to the logo, falling back to `brandName`, then the old restaurant/user name. It reads the cached `useBrandDetail` query (only when the token has a `brandId`), so a Brand Details edit shows there at once.
+- Outlet Info: the outlet cards and "Load more" sit in a section with `pb-12`.
+
+### 2026-11-12 — Plan read-only on outlet pages; location choice in sessionStorage
+- **Commission:** plans belong to the brand (backend: one active PERCENTAGE assignment per brand, and `/tiers/assign` is brand-level only). The outlet page's `CommissionSection` is `editable={false}`, so it offers View details only, with a note to change the plan in Brand Details (All Locations).
+- **`useRestaurantStore`** (header location choice, address list) now persists to **sessionStorage** (`createJSONStorage`), the same key as before.
+  - Before, it went to localStorage by default.
+  - The old localStorage copy is removed when the module loads.
+  - The axios forced-logout path now clears the sessionStorage key.
+  - I couldn't find anything that cleared the choice on refresh before this change: localStorage already survived it, and the "All Locations" auto-select only runs when nothing is selected. If a reset still happens, reproduce it with exact steps.
+
+### 2026-11-12 — Pause label; an entry ended early keeps its planned end
+- The holidays list labels a header pause "Deactivated unexpectedly" (was "Paused from the header").
+- A holiday or pause ended early stays **one** History row: "start – planned end · ended early at X".
+  - The backend's V19 `restro_closures.planned_ends_at` keeps the planned end, because ending early overwrites `ends_at` with now. The closures API returns `plannedEndsAt` and `endedEarlyAt`.
+  - Entries ended early before V19 have no planned end saved, so they show the range up to the early end.
+
+### 2026-11-12 — Reason tooltip on a disabled outlet switch
+- `OutletToggle` wraps a disabled switch in a shadcn **Tooltip** (`components/ui/tooltip.tsx`: the CLI source on the installed `radix-ui` package, `cn` from `@/lib/utils`).
+  - The trigger is a focusable `<span>`, because a disabled `<button>` gets no pointer events.
+- Reasons:
+  - closed by today's hours, with when it opens;
+  - no hours set;
+  - not live: `notLiveReason` from `/outlet-status` (`OUTLET_REVIEW` / `BRAND_REVIEW` / `ON_HOLD`).
+- Because the switch is the shared `OutletToggle`, this applies in the header, on the home card and in the Outlet Schedule sidebar. It replaces the old native `title`.
+
+### 2026-11-12 — Address selector "Add Location" opens the add-outlet page
+- Both "Add Location" buttons in `AddressSelector` (the empty-state one and the one in the dropdown) had no action. They now close the dropdown and go to `/dashboard/info/new`.
+- They're hidden for outlet-level logins (token with `restroId`), which can't add outlets.
+
+### 2026-11-12 — Add/Edit outlet page: one scroll area
+- On `/dashboard/info/new` and `/edit`, the dashboard's `<main>` scrolled the whole page behind the form, and the form's grey background ended after about one screen.
+- Cause: `AddRestaurantForm` scrolls inside itself (an `overflow-y-auto` child), which needs a bounded height. The shell had `min-h-[calc(100vh-64px)]`, and the form root, a flex child, grew to its content.
+- Fix:
+  - `OutletFormPage` is `flex-1 min-h-0` with no min-height, so it fills exactly the space under the header.
+  - The form root got `min-h-0`, so only the form scrolls.
+  - On phones `<main>` isn't height-capped, so the form grows and the page scrolls as usual.
+  - Onboarding's `CompleteSetup` panel is unaffected: it was already bounded.

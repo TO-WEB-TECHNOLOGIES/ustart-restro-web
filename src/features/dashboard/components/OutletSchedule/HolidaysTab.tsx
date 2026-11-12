@@ -182,8 +182,16 @@ const ClosureRow = ({ closure, action }: { closure: Closure; action?: ReactNode 
             {t(`${k}state.${closure.state}`)}
           </span>
         </div>
+        {/* 2026-11-12 (user request): an entry ended early stays one row - its planned range, then
+            when it was actually ended. Older entries have no planned end saved, so they show the
+            range up to the early end. */}
         <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-          {formatDateTime(closure.startsAt, i18n.language)} – {formatDateTime(closure.endsAt, i18n.language)}
+          {formatDateTime(closure.startsAt, i18n.language)} – {formatDateTime(closure.plannedEndsAt ?? closure.endsAt, i18n.language)}
+          {closure.state === "ENDED_EARLY" && (
+            <span className="text-amber-700 dark:text-amber-400">
+              {" · "}{t(`${k}endedEarlyAt`, { time: formatDateTime(closure.endedEarlyAt ?? closure.endsAt, i18n.language) })}
+            </span>
+          )}
         </p>
       </div>
       {action}

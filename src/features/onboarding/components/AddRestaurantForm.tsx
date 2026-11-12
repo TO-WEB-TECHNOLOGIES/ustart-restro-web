@@ -83,6 +83,10 @@ interface AddRestaurantFormProps {
   showBankSection?: boolean;
   // showLimits: adds the order/COD limits section (partner-editable since 2026-11-12).
   showLimits?: boolean;
+  // scrollable (default true): the form scrolls inside itself, for onboarding's fixed-height panel.
+  // false (dashboard full page): it just grows with its content and the page scrolls - an inner
+  // scroll box there clipped the form (its container has no fixed height).
+  scrollable?: boolean;
   // showManagerSection=false: hides the outlet-manager section and sends no manager fields. The
   // PATCH re-runs manager reassignment whenever isUserManaging is sent, and the dashboard edit
   // doesn't manage the manager (contacts are edited separately there).
@@ -103,6 +107,7 @@ export const AddRestaurantForm = ({
   showBankSection = true,
   showLimits = false,
   showManagerSection = true,
+  scrollable = true,
   confirmBeforeSave,
 }: AddRestaurantFormProps) => {
   const { t } = useTranslation();
@@ -563,9 +568,11 @@ export const AddRestaurantForm = ({
   };
 
   return (
-    <div className="flex-1 flex flex-col relative h-full bg-[#f6f8f7] dark:bg-slate-950 animate-in slide-in-from-right duration-300">
+    // 2026-11-12: two layouts (see `scrollable`). Onboarding: fills its panel and scrolls inside.
+    // Dashboard: no height or overflow of its own - it grows with the content.
+    <div className={`${scrollable ? "flex-1 flex flex-col h-full" : "flex flex-col"} relative bg-[#f6f8f7] dark:bg-slate-950 animate-in slide-in-from-right duration-300`}>
       {/* Content */}
-      <div className="flex-1 overflow-y-auto px-6 md:px-10 py-8 scroll-smooth">
+      <div className={`${scrollable ? "flex-1 overflow-y-auto scroll-smooth" : ""} px-6 md:px-10 py-8`}>
         <form
           onSubmit={handleSubmit(onSubmit, (errors) => {
             console.error("Validation Errors:", errors);

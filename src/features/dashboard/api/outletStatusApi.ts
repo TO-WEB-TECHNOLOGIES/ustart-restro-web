@@ -32,6 +32,8 @@ export interface OutletStatusItem {
     restroName: string;
     isSetupLocked: boolean;
     status: OutletLiveStatus;
+    /** 2026-11-12: why a NOT_LIVE outlet can't be open (null when live). */
+    notLiveReason?: 'OUTLET_REVIEW' | 'BRAND_REVIEW' | 'ON_HOLD' | null;
 }
 
 export interface OutletStatusPage {
@@ -54,6 +56,10 @@ export interface Closure {
     state: ClosureState;
     startsAt: string;
     endsAt: string;
+    /** 2026-11-12: ENDED_EARLY only - the planned end (null for ones ended before this was kept). */
+    plannedEndsAt?: string | null;
+    /** 2026-11-12: ENDED_EARLY only - when it was ended. */
+    endedEarlyAt?: string | null;
     reason: string | null;
     cancelledAt: string | null;
     createdAt: string;
