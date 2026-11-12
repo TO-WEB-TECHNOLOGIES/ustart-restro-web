@@ -628,3 +628,6 @@ MenuEditor (outlet — handles edit/stock/taxes/charges/new/review paths)
 - **Arrows:** `WeekdayCards` has permanent ‹ › buttons on both ends, because overlay scrollbars (macOS, touch devices) are often invisible. Each button is enabled only when there are more cards that way: `onScroll` and a `ResizeObserver` update the state, and the observer's first callback gives the initial state, so the effect never calls `setState` directly (react-hooks `set-state-in-effect`). The selected card (today) is scrolled into view on mount with `block: "nearest"`, so the page doesn't jump.
 - **Select:** "Copy from" uses the newly added shadcn `Select` (`components/ui/select.tsx`). It's kept at `value=""` so it works as a picker: the placeholder comes back after each copy.
 - **Lesson (again):** `npx shadcn add select` wrote `import { cn } from "cn"`. It's now `@/lib/utils`, matching dialog/tabs/accordion. `checkbox.tsx` and `sheet.tsx` still import from `"cn"`; they build because the CLI also added the `cn` package to `package.json`, but they're inconsistent. Left as they were.
+
+### 2026-11-12 — Header "Create Offer" opens Quick Setup
+- The home-page header's "Create Offer" button had no `onClick`. It now goes to `/dashboard/growth/quick-setup` (user request).

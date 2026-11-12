@@ -90,7 +90,10 @@ export const DashboardHeader = ({ user, onMenuClick }: DashboardHeaderProps) => 
                             >
                                 {t('common.header.manageMenu')}
                             </Button>
+                            {/* 2026-11-12 (user request): Create Offer had no action; it opens Quick Setup,
+                                the fastest way to launch an offer. */}
                             <Button
+                                onClick={() => navigate('/dashboard/growth/quick-setup')}
                                 className="bg-secondary-orange hover:bg-secondary-orange/90 dark:bg-brown dark:hover:bg-brown/90 text-white font-bold gap-2 h-10 px-5 shadow-sm shadow-orange-100 dark:shadow-none"
                             >
                                 <Plus className="w-4 h-4" />
