@@ -28,6 +28,7 @@ export const DashboardHeader = ({ user, onMenuClick }: DashboardHeaderProps) => 
         if (pathname.includes('/reports')) return t('common.titles.reports');
         if (pathname.includes('/settings')) return t('common.titles.settings');
         if (pathname.includes('/dashboard/status')) return t('common.titles.schedule'); // 2026-11-12
+        if (pathname.includes('/dashboard/info')) return t('common.titles.outletInfo'); // 2026-11-12
         return t('common.titles.overview');
     };
 

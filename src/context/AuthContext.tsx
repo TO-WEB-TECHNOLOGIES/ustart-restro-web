@@ -9,6 +9,7 @@ import { queryClient } from '@/api/queryClient';
 import { ADDON_LIBRARY_KEY } from '@/features/dashboard/hooks/useAddonLibrary';
 import { RESTAURANT_OFFERS_KEY } from '@/features/dashboard/hooks/useRestaurantOffers';
 import { OUTLET_STATUS_KEY } from '@/features/dashboard/hooks/useOutletStatus';
+import { OUTLET_INFO_KEY } from '@/features/dashboard/hooks/useOutletInfo';
 import { useMenuStore } from '@/features/dashboard/store/useMenuStore';
 
 interface User {
@@ -213,6 +214,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         queryClient.removeQueries({ queryKey: [RESTAURANT_OFFERS_KEY] });
         // 2026-11-12: outlet status / holidays / hours are one brand's data too.
         queryClient.removeQueries({ queryKey: [OUTLET_STATUS_KEY] });
+        // 2026-11-12: Outlet Info (details, contacts, masked bank accounts, commission plan) too.
+        queryClient.removeQueries({ queryKey: [OUTLET_INFO_KEY] });
 
         Object.keys(sessionStorage).forEach((key) => {
             if (key.startsWith('draft_settings_')) {

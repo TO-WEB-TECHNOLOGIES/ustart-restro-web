@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, useRef } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
   type AddRestaurantValues,
@@ -12,7 +12,8 @@ import { MenuImagesPicker } from "./common/MenuImagesPicker";
 import { FoodTypeButton } from "./common/FoodTypeSelector";
 import { LocationPicker } from "./common/LocationPicker";
 import { ManagerDetails } from "./common/ManagerDetails";
-import { ImageCropModal } from "./common/ImageCropModal";
+import { CroppedImageUpload } from "./common/CroppedImageUpload";
+import { DocumentFileBox } from "./common/DocumentFileBox";
 import { SameAsBrandCheckbox } from "./common/SameAsBrandCheckbox";
 import ReactSelect from "react-select";
 import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
@@ -21,15 +22,10 @@ import {
   Loader2,
   ArrowRight,
   Utensils,
-  Upload,
-  Trash2,
-  FileText,
-  Image as ImageIcon,
   CreditCard,
-  PencilLine,
-  Plus,
   User,
   Store,
+  IndianRupee,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -59,12 +55,12 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 // <input>: native `required` would pop browser validation bubbles over the zod messages.
 const FloatingInput = ({ label, error, placeholder, required, ...props }: any) => (
   <div className="space-y-1.5">
-    <Label className="text-xs font-bold uppercase tracking-widest pl-1">
+    <Label className="text-xs font-bold uppercase tracking-widest pl-1 dark:text-slate-300">
       {label}
       {required && <RequiredMark />}
     </Label>
     <input
-      className="block px-3 py-2.5 w-full text-base text-gray-900 bg-white rounded-xl border border-gray-200 focus:outline-none focus:ring-1 focus:ring-[#FF9F43] focus:border-[#FF9F43] transition-all"
+      className="block px-3 py-2.5 w-full text-base text-gray-900 dark:text-white bg-white dark:bg-slate-900 rounded-xl border border-gray-200 dark:border-slate-700 focus:outline-none focus:ring-1 focus:ring-[#FF9F43] focus:border-[#FF9F43] transition-all"
       placeholder={placeholder || label}
       {...props}
     />
@@ -81,6 +77,19 @@ interface AddRestaurantFormProps {
   isEditMode?: boolean;
   initialData?: any; // the raw restaurant data from GET
   onDirtyStateChange?: (isDirty: boolean) => void;
+  // 2026-11-12 (dashboard Outlet Info page). All default to the onboarding behaviour.
+  // showBankSection=false: bank accounts are managed separately there, so the section is hidden
+  // and no bank fields are sent (the PATCH only touches bank data when bankDetails is sent).
+  showBankSection?: boolean;
+  // showLimits: adds the order/COD limits section (partner-editable since 2026-11-12).
+  showLimits?: boolean;
+  // showManagerSection=false: hides the outlet-manager section and sends no manager fields. The
+  // PATCH re-runs manager reassignment whenever isUserManaging is sent, and the dashboard edit
+  // doesn't manage the manager (contacts are edited separately there).
+  showManagerSection?: boolean;
+  // Asked after validation, before anything is uploaded or saved; resolve false to stay on the
+  // form. Used to warn that saving sends the outlet for approval (offline until approved).
+  confirmBeforeSave?: () => Promise<boolean>;
 }
 
 const STORAGE_KEY = "add_restaurant_form_data";
@@ -91,22 +100,18 @@ export const AddRestaurantForm = ({
   isEditMode = false,
   initialData = null,
   onDirtyStateChange,
+  showBankSection = true,
+  showLimits = false,
+  showManagerSection = true,
+  confirmBeforeSave,
 }: AddRestaurantFormProps) => {
   const { t } = useTranslation();
   const { user } = useAuth();
-  const {
-    isSaving,
-    setIsSaving,
-    primaryPreview,
-    setPrimaryPreview,
-    menuPreviews,
-    setMenuPreviews,
-  } = useOutletStore();
+  // 2026-11-12: only the saving flag still lives in the outlet store; the outlet photo and menu
+  // photos now render straight from the form values (CroppedImageUpload / MenuImagesPicker).
+  const { isSaving, setIsSaving } = useOutletStore();
   const { associatedUsers } = useOnboardingStore();
 
-  const primaryInputRef = useRef<HTMLInputElement>(null);
-  const menuInputRef = useRef<HTMLInputElement>(null);
-  const fssaiInputRef = useRef<HTMLInputElement>(null);
 
   // Fetch associated users for manager selection
   const [managers, setManagers] = useState<
@@ -248,7 +253,9 @@ export const AddRestaurantForm = ({
       },
       cuisines: initialData.cuisineIds || [],
 
-      isUserManaging: initialData.isAssociated ?? true,
+      // 2026-11-12: with the manager section hidden nothing manager-related is sent, so default to
+      // "I manage it" - otherwise the manager-details rule could fail on fields the user can't see.
+      isUserManaging: showManagerSection ? (initialData.isAssociated ?? true) : true,
       managerId: initialData.associatedUserId || "",
       managerName: initialData.managerName || "",
       managerMobile: initialData.managerMobile || "",
@@ -272,6 +279,11 @@ export const AddRestaurantForm = ({
       primaryImage: initialData.primaryImage,
       menuImages: initialData.deliveryMenuImages || [],
       diningMenuImages: initialData.diningMenuImages || [],
+      // 2026-11-12: limits as strings for the text inputs (detail API returns numbers).
+      minOrderValue: initialData.minOrderValue != null ? String(initialData.minOrderValue) : "",
+      maxOrderValue: initialData.maxOrderValue != null ? String(initialData.maxOrderValue) : "",
+      minCodValue: initialData.minCodValue != null ? String(initialData.minCodValue) : "",
+      maxCodValue: initialData.maxCodValue != null ? String(initialData.maxCodValue) : "",
     };
   };
 
@@ -349,81 +361,9 @@ export const AddRestaurantForm = ({
     return () => subscription.unsubscribe();
   }, [watch, isEditMode]);
 
-  // 2026-10-20: outlet images are cropped to 16:9 before use - the same ImageCropModal and
-  // aspect as onboarding's single-branch outlet image, so every outlet image has one aspect
-  // ratio (the brand logo is the square one). The 1MB limit applies to the CROPPED file, which
-  // is what actually gets uploaded.
-  const [primaryCrop, setPrimaryCrop] = useState<{ file: File; imageSrc: string } | null>(null);
-
-  const handlePrimaryImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      setPrimaryCrop({ file, imageSrc: URL.createObjectURL(file) });
-    }
-    // Reset so picking the same file again (e.g. after cancelling the crop) still fires.
-    e.target.value = "";
-  };
-
-  const closePrimaryCrop = () => {
-    if (primaryCrop) URL.revokeObjectURL(primaryCrop.imageSrc);
-    setPrimaryCrop(null);
-  };
-
-  const handlePrimaryCropped = (croppedFile: File) => {
-    closePrimaryCrop();
-    if (croppedFile.size > 1024 * 1024) {
-      toast.error(
-        t("onboarding.restaurant.complete.setupForm.fileTooLarge", { name: croppedFile.name, size: 1 }),
-      );
-      return;
-    }
-    setPrimaryPreview(URL.createObjectURL(croppedFile));
-    setValue("primaryImage", croppedFile);
-  };
-
-  const handleMenuImagesChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(e.target.files || []);
-    const validFiles = files.filter((file) => {
-      if (file.size > 2 * 1024 * 1024) {
-        toast.error(`${file.name} exceeds 2MB limit`);
-        return false;
-      }
-      return true;
-    });
-
-    if (validFiles.length > 0) {
-      const newPreviews = validFiles.map((f) => URL.createObjectURL(f));
-      setMenuPreviews((prev) => [...prev, ...newPreviews]);
-      const currentImages = watch("menuImages") || [];
-      setValue("menuImages", [...currentImages, ...validFiles]);
-    }
-  };
-
-  const removeMenuImage = (index: number) => {
-    setMenuPreviews((prev) => {
-      const url = prev[index];
-      URL.revokeObjectURL(url);
-      return prev.filter((_, i) => i !== index);
-    });
-    const currentImages = watch("menuImages") || [];
-    setValue(
-      "menuImages",
-      currentImages.filter((_: any, i: number) => i !== index),
-    );
-  };
-
-  const handleFssaiChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      if (file.size > 5 * 1024 * 1024) {
-        toast.error("File size must be less than 5MB");
-        return;
-      }
-      setValue("fssaiCertificate", file);
-    }
-  };
-
   const onSubmit = async (data: AddRestaurantValues) => {
+    // 2026-11-12: optional confirmation (dashboard edit) before any upload or API call.
+    if (confirmBeforeSave && !(await confirmBeforeSave())) return;
     setIsSaving(true);
     try {
       // 1. Prepare Address (Pipe-separated: Line1 | Line2 | Landmark | City | State | PostalCode)
@@ -520,17 +460,19 @@ export const AddRestaurantForm = ({
         primaryImage: primaryImageKey,
         deliveryMenuImages: menuImageKeys,
         diningMenuImages: offersDineIn ? diningMenuImageKeys : undefined,
-        isUserManaging: data.isUserManaging,
-        managerId: !data.isUserManaging ? data.managerId : undefined,
-        managerName: !data.isUserManaging ? data.managerName : undefined,
-        managerMobile: !data.isUserManaging ? data.managerMobile : undefined,
-        managerEmail: !data.isUserManaging ? data.managerEmail : undefined,
-        managerWhatsapp: !data.isUserManaging
+        // 2026-11-12: manager fields only when the section is shown (see showManagerSection).
+        isUserManaging: showManagerSection ? data.isUserManaging : undefined,
+        managerId: showManagerSection && !data.isUserManaging ? data.managerId : undefined,
+        managerName: showManagerSection && !data.isUserManaging ? data.managerName : undefined,
+        managerMobile: showManagerSection && !data.isUserManaging ? data.managerMobile : undefined,
+        managerEmail: showManagerSection && !data.isUserManaging ? data.managerEmail : undefined,
+        managerWhatsapp: showManagerSection && !data.isUserManaging
           ? data.managerWhatsapp
           : undefined,
-        bankAccountType: data.bankAccountType,
+        // 2026-11-12: no bank fields at all when the section is hidden (dashboard edit).
+        bankAccountType: showBankSection ? data.bankAccountType : undefined,
         bankDetails:
-          data.bankAccountType === "OTHER"
+          showBankSection && data.bankAccountType === "OTHER"
             ? {
                 bankAccountNumber: data.bankDetails?.accountNumber || "",
                 ifscCode: data.bankDetails?.ifscCode || "",
@@ -546,6 +488,13 @@ export const AddRestaurantForm = ({
         fssaiNumber: data.fssaiNumber,
         fssaiExpiryDate: data.fssaiExpiryDate,
         panNumber: data.panSameAsBrand ? undefined : data.panNumber,
+        // 2026-11-12: limits only from the dashboard edit page; an emptied box isn't sent.
+        ...(showLimits && {
+          minOrderValue: data.minOrderValue ? Number(data.minOrderValue) : undefined,
+          maxOrderValue: data.maxOrderValue ? Number(data.maxOrderValue) : undefined,
+          minCodValue: data.minCodValue ? Number(data.minCodValue) : undefined,
+          maxCodValue: data.maxCodValue ? Number(data.maxCodValue) : undefined,
+        }),
         // Create only - the backend ignores these on update, and the edit flow never sets them.
         ...(!isEditMode && {
           panSameAsBrand: !!data.panSameAsBrand,
@@ -614,7 +563,7 @@ export const AddRestaurantForm = ({
   };
 
   return (
-    <div className="flex-1 flex flex-col relative h-full bg-[#f6f8f7] animate-in slide-in-from-right duration-300">
+    <div className="flex-1 flex flex-col relative h-full bg-[#f6f8f7] dark:bg-slate-950 animate-in slide-in-from-right duration-300">
       {/* Content */}
       <div className="flex-1 overflow-y-auto px-6 md:px-10 py-8 scroll-smooth">
         <form
@@ -645,9 +594,9 @@ export const AddRestaurantForm = ({
             {/* 1. Restaurant Details */}
             <AccordionItem
               value="details"
-              className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden border-none"
+              className="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-800 overflow-hidden border-none"
             >
-              <AccordionTrigger className="p-6 bg-gray-50/50 hover:no-underline border-b border-gray-50 [&>svg]:w-5 [&>svg]:h-5">
+              <AccordionTrigger className="p-6 bg-gray-50/50 dark:bg-slate-800/50 hover:no-underline border-b border-gray-50 dark:border-slate-800 dark:text-white [&>svg]:w-5 [&>svg]:h-5">
                 <h2 className="text-lg font-bold flex items-center gap-2">
                   <Utensils className="w-5 h-5" />
                   {t(
@@ -1187,107 +1136,43 @@ export const AddRestaurantForm = ({
                   )}
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-2">
+                    {/* 2026-11-12: the shared image box - shows the current photo, a click picks a new
+                        one and crops it to 16:9 (1MB on the cropped file, as before), and clicking the
+                        preview enlarges it. Replaces this form's own box, which couldn't enlarge. */}
+                    <Controller
+                      control={control}
+                      name="primaryImage"
+                      render={({ field }) => (
+                        <CroppedImageUpload
+                          value={field.value as File | string | undefined}
+                          onChange={(file) => field.onChange(file)}
+                          aspect={16 / 9}
+                          maxFileSizeMb={1}
+                          label={t("onboarding.restaurant.complete.setupForm.primaryImage")}
+                          uploadText={t("onboarding.restaurant.complete.setupForm.uploadPhoto")}
+                          uploadSubtext={t("onboarding.restaurant.complete.setupForm.imgSpecs", "Max 1MB, JPG/PNG")}
+                          error={errors.primaryImage?.message as string | undefined}
+                        />
+                      )}
+                    />
                     <div>
-                      <h3 className="text-base font-semibold uppercase tracking-wide mb-3">
-                        {t(
-                          "onboarding.restaurant.complete.setupForm.primaryImage",
-                        )}<RequiredMark />
+                      <h3 className="text-base font-semibold uppercase tracking-wide mb-3 dark:text-zinc-100">
+                        {t("onboarding.restaurant.complete.setupForm.deliveryMenu")}
                       </h3>
-                      <input
-                        type="file"
-                        ref={primaryInputRef}
-                        onChange={handlePrimaryImageChange}
-                        accept="image/*"
-                        className="hidden"
-                      />
-                      <div
-                        onClick={() => primaryInputRef.current?.click()}
-                        className="border-2 border-dashed border-gray-300 rounded-xl p-2 flex flex-col items-center justify-center bg-gray-50 hover:bg-white hover:border-[#FF9F43] transition-all cursor-pointer aspect-video overflow-hidden relative"
-                      >
-                        {primaryPreview ? (
-                          <>
-                            <img
-                              src={primaryPreview}
-                              alt="Primary Preview"
-                              className="w-full h-full object-cover rounded-lg"
-                            />
-                            <div className="absolute inset-0 bg-black/40 opacity-0 hover:opacity-100 transition-opacity flex items-center justify-center">
-                              <PencilLine className="w-6 h-6 text-white" />
-                            </div>
-                          </>
-                        ) : (
-                          <>
-                            <Upload className="w-8 h-8 mb-2" />
-                            <span className="text-base font-medium">
-                              {t(
-                                "onboarding.restaurant.complete.setupForm.uploadPhoto",
-                              )}
-                            </span>
-                            <span className="text-xs mt-1">
-                              {t(
-                                "onboarding.restaurant.complete.setupForm.imgSpecs",
-                                "Max 1MB, JPG/PNG",
-                              )}
-                            </span>
-                          </>
-                        )}
-                      </div>
-                    </div>
-                    <div>
-                      <h3 className="text-base font-semibold  uppercase tracking-wide mb-3">
-                        {t(
-                          "onboarding.restaurant.complete.setupForm.deliveryMenu",
-                        )}
-                      </h3>
-                      <input
-                        type="file"
-                        ref={menuInputRef}
-                        onChange={handleMenuImagesChange}
-                        accept="image/*"
-                        multiple
-                        className="hidden"
-                      />
-                      <div className="flex gap-3 h-40 overflow-x-auto pb-1 custom-scrollbar pr-2">
-                        {menuPreviews.map((url, index) => (
-                          <div
-                            key={index}
-                            className="h-full aspect-[3/4] border border-gray-200 rounded-xl relative group overflow-hidden bg-gray-100 flex-shrink-0"
-                          >
-                            <img
-                              src={url}
-                              alt={`Menu ${index + 1}`}
-                              className="w-full h-full object-cover"
-                            />
-                            <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-all">
-                              <button
-                                type="button"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  removeMenuImage(index);
-                                }}
-                                className="text-white hover:text-red-400"
-                              >
-                                <Trash2 className="w-5 h-5" />
-                              </button>
-                            </div>
-                          </div>
-                        ))}
-                        <div
-                          onClick={() => menuInputRef.current?.click()}
-                          className={`border-2 border-dashed border-gray-300 rounded-xl p-2 flex flex-col items-center justify-center bg-gray-50 hover:bg-white hover:border-[#FF9F43] transition-all cursor-pointer flex-shrink-0 ${menuPreviews.length > 0 ? "aspect-[3/4] h-full" : "w-full h-full"}`}
-                        >
-                          <Plus
-                            className={`${menuPreviews.length > 0 ? "w-6 h-6" : "w-8 h-8"} mb-2`}
+                      {/* 2026-11-12: same picker as the dine-in menu - current photos shown, new
+                          ones cropped at 3:4, click a tile to replace it, expand icon to enlarge. */}
+                      <Controller
+                        control={control}
+                        name="menuImages"
+                        render={({ field }) => (
+                          <MenuImagesPicker
+                            images={field.value || []}
+                            onChange={field.onChange}
+                            label={t("onboarding.restaurant.complete.setupForm.deliveryMenu")}
+                            error={errors.menuImages?.message as string | undefined}
                           />
-                          <span
-                            className={`${menuPreviews.length > 0 ? "text-xs" : "text-base"} font-medium text-center px-2`}
-                          >
-                            {t(
-                              "onboarding.restaurant.complete.setupForm.addPage",
-                            )}
-                          </span>
-                        </div>
-                      </div>
+                        )}
+                      />
                     </div>
                   </div>
 
@@ -1317,9 +1202,9 @@ export const AddRestaurantForm = ({
             {/* 2. Government Details */}
             <AccordionItem
               value="government"
-              className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden border-none"
+              className="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-800 overflow-hidden border-none"
             >
-              <AccordionTrigger className="p-6 bg-gray-50/50 hover:no-underline border-b border-gray-50 [&>svg]:w-5 [&>svg]:h-5">
+              <AccordionTrigger className="p-6 bg-gray-50/50 dark:bg-slate-800/50 hover:no-underline border-b border-gray-50 dark:border-slate-800 dark:text-white [&>svg]:w-5 [&>svg]:h-5">
                 <h2 className="text-lg font-bold flex items-center gap-2">
                   <Store className="w-5 h-5" />
                   {t(
@@ -1441,133 +1326,18 @@ export const AddRestaurantForm = ({
                     )}
                   </div>
 
-                  <div>
-                    <h3 className="text-base font-semibold uppercase tracking-wide mb-3">
-                      {t(
-                        "onboarding.restaurant.complete.setupForm.fssaiLicense",
-                      )}<RequiredMark />
-                    </h3>
-                    <input
-                      type="file"
-                      ref={fssaiInputRef}
-                      onChange={handleFssaiChange}
-                      accept="image/*,.pdf"
-                      className="hidden"
-                    />
-                    {watch("fssaiCertificate") ? (
-                      <div className="flex items-center justify-between p-4 border border-green-200 rounded-xl bg-green-50/50">
-                        <div className="flex items-center gap-3">
-                          <div className="h-10 w-10 bg-green-100 rounded-full flex items-center justify-center text-green-600 ">
-                            {(() => {
-                              const cert = watch("fssaiCertificate");
-                              return cert instanceof File &&
-                                cert.type === "application/pdf" ? (
-                                <FileText className="w-6 h-6" />
-                              ) : (
-                                <ImageIcon className="w-6 h-6" />
-                              );
-                            })()}
-                          </div>
-                          <div>
-                            <p className="text-base font-medium truncate max-w-[200px]">
-                              {(() => {
-                                const cert = watch("fssaiCertificate");
-                                return cert instanceof File
-                                  ? cert.name
-                                  : typeof cert === "string"
-                                    ? cert.split("/").pop()
-                                    : "";
-                              })()}
-                            </p>
-                            <p className="text-xs">
-                              {(() => {
-                                const cert = watch("fssaiCertificate");
-                                return cert instanceof File
-                                  ? `${(cert.size / (1024 * 1024)).toFixed(2)} MB`
-                                  : "";
-                              })()}
-                            </p>
-                          </div>
-                        </div>
-                        <button
-                          type="button"
-                          onClick={() => fssaiInputRef.current?.click()}
-                          className="text-base font-medium"
-                        >
-                          {t("onboarding.restaurant.complete.setupForm.change")}
-                        </button>
-                      </div>
-                    ) : (
-                      <button
-                        type="button"
-                        onClick={() => fssaiInputRef.current?.click()}
-                        className="w-full flex items-center justify-center gap-2 p-8 border-2 border-dashed border-gray-300 rounded-xl bg-gray-50 hover:bg-white hover:border-[#FF9F43] transition-all group"
-                      >
-                        <Upload className="w-5 h-5 group-hover:text-[#FF9F43] transition-colors" />
-                        <span className="text-base font-medium">
-                          {t(
-                            "onboarding.restaurant.complete.setupForm.uploadFssai",
-                          )}
-                        </span>
-                      </button>
-                    )}
-                  </div>
-                </div>
-              </AccordionContent>
-            </AccordionItem>
-
-            <AccordionItem
-              value="management"
-              className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden border-none"
-            >
-              <AccordionTrigger className="p-6 bg-gray-50/50 hover:no-underline border-b border-gray-50 [&>svg]:w-5 [&>svg]:h-5">
-                <h2 className="text-lg font-bold flex items-center gap-2">
-                  <User className="w-5 h-5" />
-                  {t(
-                    "onboarding.restaurant.complete.setupForm.management.outletTitle",
-                    "Outlet Manager Details",
-                  )}
-                </h2>
-              </AccordionTrigger>
-              <AccordionContent className="p-0">
-                <div className="p-6 md:p-8 space-y-6">
+                  {/* 2026-11-12: shared document box - thumbnail (click to enlarge) for an image,
+                      clean name + View for a PDF, Change to replace. */}
                   <Controller
                     control={control}
-                    name="isUserManaging"
+                    name="fssaiCertificate"
                     render={({ field }) => (
-                      <ManagerDetails
-                        isUserManaging={field.value}
-                        onToggleManaging={field.onChange}
-                        managerDetails={{
-                          userId: watch("managerId"),
-                          name: watch("managerName"),
-                          email: watch("managerEmail"),
-                          mobile: watch("managerMobile"),
-                          whatsapp: watch("managerWhatsapp"),
-                        }}
-                        managersList={managers as any}
-                        onSelectManagerFromList={(mgr) => {
-                          setValue("managerId", mgr.userId);
-                          setValue("managerName", mgr.name);
-                          setValue("managerEmail", mgr.email);
-                          setValue("managerMobile", mgr.mobile);
-                          setValue("managerWhatsapp", mgr.whatsapp);
-                        }}
-                        user={user || undefined}
-                        onSaveManager={(mgmt) => {
-                          setValue("managerId", mgmt.userId);
-                          setValue("managerName", mgmt.name);
-                          setValue("managerEmail", mgmt.email);
-                          setValue("managerMobile", mgmt.mobile);
-                          setValue("managerWhatsapp", mgmt.whatsapp);
-                        }}
-                        onRemoveManager={() => {
-                          setValue("managerId", "");
-                          setValue("managerName", "");
-                          setValue("managerEmail", "");
-                          setValue("managerMobile", "");
-                          setValue("managerWhatsapp", "");
-                        }}
+                      <DocumentFileBox
+                        value={field.value as File | string | undefined}
+                        onChange={(file) => field.onChange(file)}
+                        label={t("onboarding.restaurant.complete.setupForm.fssaiLicense")}
+                        emptyText={t("onboarding.restaurant.complete.setupForm.uploadFssai")}
+                        error={errors.fssaiCertificate?.message as string | undefined}
                       />
                     )}
                   />
@@ -1575,116 +1345,210 @@ export const AddRestaurantForm = ({
               </AccordionContent>
             </AccordionItem>
 
-            {/* 3. Bank Details */}
-            <AccordionItem
-              value="bank"
-              className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden border-none"
-            >
-              <AccordionTrigger className="p-6 bg-gray-50/50 hover:no-underline border-b border-gray-50 [&>svg]:w-5 [&>svg]:h-5">
-                <h2 className="text-lg font-bold flex items-center gap-2">
-                  <CreditCard className="w-5 h-5" />
-                  {t("onboarding.restaurant.complete.setupForm.bank.title")}
-                </h2>
-              </AccordionTrigger>
-              <AccordionContent className="p-0">
-                <div className="p-6 md:p-8 space-y-8">
-                  <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-6">
-                    <div className="space-y-1">
-                      <Label className="text-base font-semibold uppercase tracking-wide">
-                        {t(
-                          "onboarding.restaurant.complete.setupForm.bank.subtitle",
-                        )}
-                      </Label>
-                    </div>
-
+            {showManagerSection && (
+              <AccordionItem
+                value="management"
+                className="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-800 overflow-hidden border-none"
+              >
+                <AccordionTrigger className="p-6 bg-gray-50/50 dark:bg-slate-800/50 hover:no-underline border-b border-gray-50 dark:border-slate-800 dark:text-white [&>svg]:w-5 [&>svg]:h-5">
+                  <h2 className="text-lg font-bold flex items-center gap-2">
+                    <User className="w-5 h-5" />
+                    {t(
+                      "onboarding.restaurant.complete.setupForm.management.outletTitle",
+                      "Outlet Manager Details",
+                    )}
+                  </h2>
+                </AccordionTrigger>
+                <AccordionContent className="p-0">
+                  <div className="p-6 md:p-8 space-y-6">
                     <Controller
                       control={control}
-                      name="bankAccountType"
+                      name="isUserManaging"
                       render={({ field }) => (
-                        <Tabs
-                          value={field.value}
-                          onValueChange={field.onChange}
-                          className="w-full sm:w-auto"
-                        >
-                          <TabsList className="flex w-full sm:w-auto inline-flex bg-white p-1.5 rounded-2xl gap-1.5 h-12 border border-slate-200">
-                            <TabsTrigger
-                              value="BRAND"
-                              className="flex-1 sm:flex-none px-8 rounded-xl data-[state=active]:bg-white data-[state=active]:text-[#0F2441] data-[state=active]:shadow-sm font-bold text-base transition-all"
-                            >
-                              {t(
-                                "onboarding.restaurant.complete.setupForm.bank.sameAsBrand",
-                              )}
-                            </TabsTrigger>
-                            <TabsTrigger
-                              value="OTHER"
-                              className="flex-1 sm:flex-none px-8 rounded-xl data-[state=active]:bg-white data-[state=active]:shadow-sm font-bold text-base transition-all"
-                            >
-                              {t(
-                                "onboarding.restaurant.complete.setupForm.bank.other",
-                              )}
-                            </TabsTrigger>
-                          </TabsList>
-                        </Tabs>
+                        <ManagerDetails
+                          isUserManaging={field.value}
+                          onToggleManaging={field.onChange}
+                          managerDetails={{
+                            userId: watch("managerId"),
+                            name: watch("managerName"),
+                            email: watch("managerEmail"),
+                            mobile: watch("managerMobile"),
+                            whatsapp: watch("managerWhatsapp"),
+                          }}
+                          managersList={managers as any}
+                          onSelectManagerFromList={(mgr) => {
+                            setValue("managerId", mgr.userId);
+                            setValue("managerName", mgr.name);
+                            setValue("managerEmail", mgr.email);
+                            setValue("managerMobile", mgr.mobile);
+                            setValue("managerWhatsapp", mgr.whatsapp);
+                          }}
+                          user={user || undefined}
+                          onSaveManager={(mgmt) => {
+                            setValue("managerId", mgmt.userId);
+                            setValue("managerName", mgmt.name);
+                            setValue("managerEmail", mgmt.email);
+                            setValue("managerMobile", mgmt.mobile);
+                            setValue("managerWhatsapp", mgmt.whatsapp);
+                          }}
+                          onRemoveManager={() => {
+                            setValue("managerId", "");
+                            setValue("managerName", "");
+                            setValue("managerEmail", "");
+                            setValue("managerMobile", "");
+                            setValue("managerWhatsapp", "");
+                          }}
+                        />
                       )}
                     />
                   </div>
+                </AccordionContent>
+              </AccordionItem>
+            )}
 
-                  {watch("bankAccountType") === "OTHER" && (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 animate-in fade-in slide-in-from-top-4 duration-500">
-                      <FloatingInput
-                        required
-                        label={t(
-                          "onboarding.restaurant.complete.setupForm.bank.accountNumber",
+            {/* 2026-11-12: order / COD limits (dashboard edit only, showLimits). */}
+            {showLimits && (
+              <AccordionItem
+                value="limits"
+                className="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-800 overflow-hidden border-none"
+              >
+                <AccordionTrigger className="p-6 bg-gray-50/50 dark:bg-slate-800/50 hover:no-underline border-b border-gray-50 dark:border-slate-800 [&>svg]:w-5 [&>svg]:h-5">
+                  <h2 className="text-lg font-bold flex items-center gap-2 dark:text-white">
+                    <IndianRupee className="w-5 h-5" />
+                    {t("dashboard.outletInfo.limits.title")}
+                  </h2>
+                </AccordionTrigger>
+                <AccordionContent className="p-0">
+                  <div className="p-6 md:p-8 space-y-4">
+                    <p className="text-sm text-slate-500 dark:text-slate-400">{t("dashboard.outletInfo.limits.hint")}</p>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      {(["minOrderValue", "maxOrderValue", "minCodValue", "maxCodValue"] as const).map((field) => (
+                        <FloatingInput
+                          key={field}
+                          inputMode="numeric"
+                          label={t(`dashboard.outletInfo.limits.${field}`)}
+                          {...register(field)}
+                          error={errors[field]?.message}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                </AccordionContent>
+              </AccordionItem>
+            )}
+
+            {/* 3. Bank Details (hidden on the dashboard edit page - showBankSection) */}
+            {showBankSection && (
+              <AccordionItem
+                value="bank"
+                className="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-800 overflow-hidden border-none"
+              >
+                <AccordionTrigger className="p-6 bg-gray-50/50 dark:bg-slate-800/50 hover:no-underline border-b border-gray-50 dark:border-slate-800 dark:text-white [&>svg]:w-5 [&>svg]:h-5">
+                  <h2 className="text-lg font-bold flex items-center gap-2">
+                    <CreditCard className="w-5 h-5" />
+                    {t("onboarding.restaurant.complete.setupForm.bank.title")}
+                  </h2>
+                </AccordionTrigger>
+                <AccordionContent className="p-0">
+                  <div className="p-6 md:p-8 space-y-8">
+                    <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-6">
+                      <div className="space-y-1">
+                        <Label className="text-base font-semibold uppercase tracking-wide">
+                          {t(
+                            "onboarding.restaurant.complete.setupForm.bank.subtitle",
+                          )}
+                        </Label>
+                      </div>
+
+                      <Controller
+                        control={control}
+                        name="bankAccountType"
+                        render={({ field }) => (
+                          <Tabs
+                            value={field.value}
+                            onValueChange={field.onChange}
+                            className="w-full sm:w-auto"
+                          >
+                            <TabsList className="flex w-full sm:w-auto inline-flex bg-white p-1.5 rounded-2xl gap-1.5 h-12 border border-slate-200">
+                              <TabsTrigger
+                                value="BRAND"
+                                className="flex-1 sm:flex-none px-8 rounded-xl data-[state=active]:bg-white data-[state=active]:text-[#0F2441] data-[state=active]:shadow-sm font-bold text-base transition-all"
+                              >
+                                {t(
+                                  "onboarding.restaurant.complete.setupForm.bank.sameAsBrand",
+                                )}
+                              </TabsTrigger>
+                              <TabsTrigger
+                                value="OTHER"
+                                className="flex-1 sm:flex-none px-8 rounded-xl data-[state=active]:bg-white data-[state=active]:shadow-sm font-bold text-base transition-all"
+                              >
+                                {t(
+                                  "onboarding.restaurant.complete.setupForm.bank.other",
+                                )}
+                              </TabsTrigger>
+                            </TabsList>
+                          </Tabs>
                         )}
-                        {...register("bankDetails.accountNumber")}
-                        error={errors.bankDetails?.accountNumber?.message}
-                      />
-                      <FloatingInput
-                        required
-                        label={t(
-                          "onboarding.restaurant.complete.setupForm.bank.holderName",
-                        )}
-                        {...register("bankDetails.accountHolderName")}
-                        error={errors.bankDetails?.accountHolderName?.message}
-                      />
-                      <FloatingInput
-                        required
-                        label={t(
-                          "onboarding.restaurant.complete.setupForm.bank.bankName",
-                        )}
-                        {...register("bankDetails.bankName")}
-                        error={errors.bankDetails?.bankName?.message}
-                      />
-                      <FloatingInput
-                        required
-                        label={t(
-                          "onboarding.restaurant.complete.setupForm.bank.branch",
-                        )}
-                        {...register("bankDetails.bankBranch")}
-                        error={errors.bankDetails?.bankBranch?.message}
-                      />
-                      <FloatingInput
-                        required
-                        label={t(
-                          "onboarding.restaurant.complete.setupForm.bank.ifsc",
-                        )}
-                        {...register("bankDetails.ifscCode")}
-                        error={errors.bankDetails?.ifscCode?.message}
                       />
                     </div>
-                  )}
-                </div>
-              </AccordionContent>
-            </AccordionItem>
+
+                    {watch("bankAccountType") === "OTHER" && (
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 animate-in fade-in slide-in-from-top-4 duration-500">
+                        <FloatingInput
+                          required
+                          label={t(
+                            "onboarding.restaurant.complete.setupForm.bank.accountNumber",
+                          )}
+                          {...register("bankDetails.accountNumber")}
+                          error={errors.bankDetails?.accountNumber?.message}
+                        />
+                        <FloatingInput
+                          required
+                          label={t(
+                            "onboarding.restaurant.complete.setupForm.bank.holderName",
+                          )}
+                          {...register("bankDetails.accountHolderName")}
+                          error={errors.bankDetails?.accountHolderName?.message}
+                        />
+                        <FloatingInput
+                          required
+                          label={t(
+                            "onboarding.restaurant.complete.setupForm.bank.bankName",
+                          )}
+                          {...register("bankDetails.bankName")}
+                          error={errors.bankDetails?.bankName?.message}
+                        />
+                        <FloatingInput
+                          required
+                          label={t(
+                            "onboarding.restaurant.complete.setupForm.bank.branch",
+                          )}
+                          {...register("bankDetails.bankBranch")}
+                          error={errors.bankDetails?.bankBranch?.message}
+                        />
+                        <FloatingInput
+                          required
+                          label={t(
+                            "onboarding.restaurant.complete.setupForm.bank.ifsc",
+                          )}
+                          {...register("bankDetails.ifscCode")}
+                          error={errors.bankDetails?.ifscCode?.message}
+                        />
+                      </div>
+                    )}
+                  </div>
+                </AccordionContent>
+              </AccordionItem>
+            )}
           </Accordion>
 
           {/* Footer Actions */}
-          <div className="flex flex-col sm:flex-row items-center justify-end gap-4 pt-8 border-t border-gray-100 pb-10">
+          <div className="flex flex-col sm:flex-row items-center justify-end gap-4 pt-8 border-t border-gray-100 dark:border-slate-800 pb-10">
             <Button
               type="button"
               variant="ghost"
               onClick={onCancel}
-              className="font-semibold text-base hover:bg-gray-100 transition-colors"
+              className="font-semibold text-base hover:bg-gray-100 dark:text-slate-200 dark:hover:bg-slate-800 transition-colors"
             >
               {t("onboarding.restaurant.complete.setupForm.management.cancel")}
             </Button>
@@ -1705,18 +1569,6 @@ export const AddRestaurantForm = ({
           </div>
         </form>
       </div>
-
-      {primaryCrop && (
-        <ImageCropModal
-          isOpen
-          imageSrc={primaryCrop.imageSrc}
-          fileName={primaryCrop.file.name}
-          fileType={primaryCrop.file.type}
-          aspect={16 / 9}
-          onCancel={closePrimaryCrop}
-          onCropped={handlePrimaryCropped}
-        />
-      )}
     </div>
   );
 };

@@ -1,5 +1,7 @@
 import { Navigate, Outlet } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
+// 2026-11-12: ACTIVE or UPDATE_APPROVAL_PENDING (a brand edit awaiting approval) both use the dashboard.
+import { isDashboardStatus } from '@/utils/jwt';
 
 export const RequireAuth = () => {
     const { isAuthenticated, isInitialized } = useAuth();
@@ -21,7 +23,7 @@ export const RequireOnboarding = () => {
         return null;
     }
 
-    if (!isOnboardingComplete || status !== 'ACTIVE') {
+    if (!isOnboardingComplete || !isDashboardStatus(status)) {
         return <Navigate to="/grow-with-ustart" replace />;
     }
     return <Outlet />;
@@ -35,7 +37,7 @@ export const RequirePending = () => {
     }
 
     // If already active, go to dashboard
-    if (isOnboardingComplete && status === 'ACTIVE') {
+    if (isOnboardingComplete && isDashboardStatus(status)) {
         return <Navigate to="/dashboard" replace />;
     }
     return <Outlet />;
@@ -49,7 +51,7 @@ export const PublicOnlyRoute = () => {
     }
 
     if (isAuthenticated) {
-        if (isOnboardingComplete && status === 'ACTIVE') {
+        if (isOnboardingComplete && isDashboardStatus(status)) {
             return <Navigate to="/dashboard" replace />;
         } else {
             return <Navigate to="/grow-with-ustart" replace />;

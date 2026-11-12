@@ -107,6 +107,14 @@ export const addRestaurantSchema = z
     managerEmail: z.string().email("Invalid email format").optional().or(z.literal("")),
     managerWhatsapp: z.string().regex(/^\d{10}$/, "WhatsApp must be 10 digits").optional().or(z.literal("")),
 
+    // 2026-11-12: order / COD limits in whole rupees, only on the dashboard's outlet edit page
+    // (AddRestaurantForm showLimits). Strings because they come from text inputs; empty = not
+    // shown/sent. The backend applies the same min ≤ max checks.
+    minOrderValue: z.string().regex(/^\d*$/, "Whole rupees only").optional(),
+    maxOrderValue: z.string().regex(/^\d*$/, "Whole rupees only").optional(),
+    minCodValue: z.string().regex(/^\d*$/, "Whole rupees only").optional(),
+    maxCodValue: z.string().regex(/^\d*$/, "Whole rupees only").optional(),
+
     // Bank Details
     bankAccountType: z.enum(["BRAND", "OTHER"]),
     bankDetails: z
@@ -166,6 +174,15 @@ export const addRestaurantSchema = z
       message: "All bank details are required",
       path: ["bankDetails.accountNumber"],
     },
+  )
+  // 2026-11-12: limits - min ≤ max when both are filled (same rule as the backend).
+  .refine(
+    (data) => !data.minOrderValue || !data.maxOrderValue || Number(data.minOrderValue) <= Number(data.maxOrderValue),
+    { message: "Must be at least the minimum order value", path: ["maxOrderValue"], ...alwaysCheck },
+  )
+  .refine(
+    (data) => !data.minCodValue || !data.maxCodValue || Number(data.minCodValue) <= Number(data.maxCodValue),
+    { message: "Must be at least the minimum COD value", path: ["maxCodValue"], ...alwaysCheck },
   )
   .refine((data) => !data.usesPos || !!data.posProvider, {
     message: "Select a POS provider",

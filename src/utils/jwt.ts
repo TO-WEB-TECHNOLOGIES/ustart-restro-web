@@ -11,3 +11,11 @@ export const decodeToken = (token: string): any => {
         return null;
     }
 };
+
+/**
+ * 2026-11-12: brand statuses that may use the dashboard. UPDATE_APPROVAL_PENDING is a live brand
+ * whose Brand Details edit is waiting for approval: its outlets are offline (backend), but the
+ * partner must keep the dashboard - before this, the next token refresh sent them to onboarding.
+ */
+export const isDashboardStatus = (status?: string | null) =>
+    status === 'ACTIVE' || status === 'UPDATE_APPROVAL_PENDING';

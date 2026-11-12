@@ -34,10 +34,12 @@ export const OutletListSidebar = ({ selectedId, onSelect, onClose, isCollapsed }
     return () => clearTimeout(timer);
   }, [query]);
 
-  // Nothing picked yet: show the first outlet.
+  // Nothing picked yet: show the first outlet. Depends on the first id only - `outlets` is a new
+  // array every render, which would re-run this effect each time (react-hooks/exhaustive-deps).
+  const firstId = outlets[0]?.restroId;
   useEffect(() => {
-    if (!selectedId && outlets.length > 0) onSelect(outlets[0].restroId);
-  }, [selectedId, outlets, onSelect]);
+    if (!selectedId && firstId) onSelect(firstId);
+  }, [selectedId, firstId, onSelect]);
 
   return (
     <div className={`w-full h-full bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 flex flex-col overflow-hidden transition-opacity duration-200 ${isCollapsed ? "opacity-0 pointer-events-none" : "opacity-100"}`}>

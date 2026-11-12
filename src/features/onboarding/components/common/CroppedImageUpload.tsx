@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Image as ImageIcon } from "lucide-react";
+import { toast } from "sonner";
 import { Label } from "@/components/ui/label";
 import { RequiredMark } from "@/components/ui/required-mark";
 import { FileDisplay } from "./FileDisplay";
@@ -15,6 +16,8 @@ import { ImageCropModal } from "./ImageCropModal";
  * to "outlet image always, PLUS a logo for multi-branch brands" - the same box is now rendered
  * twice (16:9 outlet image, square logo), so its pick/crop/preview state lives here once instead
  * of being duplicated per field in RestaurantInfo.
+ * 2026-11-12: also the dashboard's image box (outlet photo, brand logo/cover): `required` (default
+ * true - onboarding unchanged) and `maxFileSizeMb` (checked on the cropped file).
  */
 interface CroppedImageUploadProps {
   value: File | string | undefined;
@@ -25,6 +28,8 @@ interface CroppedImageUploadProps {
   uploadText: string;
   uploadSubtext: string;
   error?: string;
+  required?: boolean;
+  maxFileSizeMb?: number;
 }
 
 const isLoadableUrl = (value: string) => /^(https?:|blob:|data:|\/)/.test(value);
@@ -37,6 +42,8 @@ export const CroppedImageUpload = ({
   uploadText,
   uploadSubtext,
   error,
+  required = true,
+  maxFileSizeMb,
 }: CroppedImageUploadProps) => {
   const { t } = useTranslation();
   const inputRef = useRef<HTMLInputElement>(null);
@@ -74,7 +81,7 @@ export const CroppedImageUpload = ({
     <div className="space-y-2">
       <Label className="font-semibold text-slate-700 dark:text-zinc-200">
         {label}
-        <RequiredMark />
+        {required && <RequiredMark />}
       </Label>
       {/* "Change" opens the picker directly via the box's own click. */}
       <div
@@ -137,7 +144,11 @@ export const CroppedImageUpload = ({
           aspect={aspect}
           onCancel={closeCrop}
           onCropped={(croppedFile) => {
-            onChange(croppedFile);
+            if (maxFileSizeMb && croppedFile.size > maxFileSizeMb * 1024 * 1024) {
+              toast.error(t("dashboard.outletInfo.images.tooLarge", { size: maxFileSizeMb }));
+            } else {
+              onChange(croppedFile);
+            }
             closeCrop();
           }}
         />

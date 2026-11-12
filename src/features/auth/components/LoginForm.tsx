@@ -12,7 +12,7 @@ import { mobileSchema, otpSchema, type MobileFormValues } from '@/features/auth/
 import { authService } from '@/features/auth/api/authService';
 import { useAuth } from '@/context/AuthContext';
 import { useNavigate } from 'react-router-dom';
-import { decodeToken } from '@/utils/jwt';
+import { decodeToken, isDashboardStatus } from '@/utils/jwt';
 import { toast } from 'sonner';
 import { getErrorMessage } from '@/utils/error';
 
@@ -139,7 +139,7 @@ export const LoginForm = () => {
             if (decoded && decoded.status === 'APPROVAL_PENDING') {
                 navigate('/grow-with-ustart/verification');
                 return;
-            } else if (decoded && decoded.isOnboardingComplete && decoded.status === 'ACTIVE') {
+            } else if (decoded && decoded.isOnboardingComplete && isDashboardStatus(decoded.status)) {
                 navigate('/dashboard');
                 return;
             } else {

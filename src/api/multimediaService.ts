@@ -6,7 +6,9 @@ export type RequirementType =
     | 'restaurant_fssai' 
     | 'restaurant_delivery_menu'
     | 'restaurant_dining_menu' // 2026-10-19: outlet dining menu photos
-    | 'menu_item';
+    | 'menu_item'
+    | 'brand_logo' // 2026-11-12: Brand Details (Outlet Info) logo and cover photo
+    | 'brand_primary_image';
 
 export interface PresignedUrlRequest {
     fileNames: string[];

@@ -36,6 +36,28 @@ const OutletSchedule = lazy(() =>
     default: module.OutletSchedule,
   })),
 );
+// 2026-11-12: Outlet Info (sidebar Support → Outlet Info, /dashboard/info, which used to fall
+// through to Coming Soon): outlet cards / details, full-page add and edit.
+const OutletInfo = lazy(() =>
+  import("@/features/dashboard/outlets/info/OutletInfo").then((module) => ({
+    default: module.OutletInfo,
+  })),
+);
+const OutletDetailPage = lazy(() =>
+  import("@/features/dashboard/outlets/info/OutletDetailPage").then((module) => ({
+    default: module.OutletDetailPage,
+  })),
+);
+const AddOutletPage = lazy(() =>
+  import("@/features/dashboard/outlets/info/AddOutletPage").then((module) => ({
+    default: module.AddOutletPage,
+  })),
+);
+const EditOutletPage = lazy(() =>
+  import("@/features/dashboard/outlets/info/EditOutletPage").then((module) => ({
+    default: module.EditOutletPage,
+  })),
+);
 // 2026-11-11: My Offers - active offers + history (sidebar Growth → Offers, which had no route).
 const MyOffers = lazy(() =>
   import("@/features/dashboard/outlets/offers/MyOffers").then((module) => ({
@@ -281,6 +303,15 @@ export const router = createBrowserRouter([
               {
                 path: "status",
                 element: withSuspense(OutletSchedule),
+              },
+              {
+                path: "info",
+                children: [
+                  { index: true, element: withSuspense(OutletInfo) },
+                  { path: "new", element: withSuspense(AddOutletPage) },
+                  { path: ":restroId", element: withSuspense(OutletDetailPage) },
+                  { path: ":restroId/edit", element: withSuspense(EditOutletPage) },
+                ],
               },
               {
                 path: "growth",

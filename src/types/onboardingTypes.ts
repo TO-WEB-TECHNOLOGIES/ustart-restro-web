@@ -82,7 +82,7 @@ export interface OnboardingData {
 }
 
 export interface OnboardingStatusResponse {
-    status: 'APPROVAL_PENDING' | 'ACTION_REQUIRED' | 'APPROVED' | 'REJECTED' | 'ACTIVE' | 'BLOCKED' | 'ON_HOLD' | 'APPROVED_BUT_MENU_PENDING';
+    status: 'APPROVAL_PENDING' | 'ACTION_REQUIRED' | 'APPROVED' | 'REJECTED' | 'ACTIVE' | 'BLOCKED' | 'ON_HOLD' | 'APPROVED_BUT_MENU_PENDING' | 'UPDATE_APPROVAL_PENDING'; // 2026-11-12: brand edit awaiting approval
     isEditLocked: boolean;
     message: string;
     reason?: string;

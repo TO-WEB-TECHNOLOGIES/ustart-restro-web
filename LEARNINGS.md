@@ -631,3 +631,74 @@ MenuEditor (outlet — handles edit/stock/taxes/charges/new/review paths)
 
 ### 2026-11-12 — Header "Create Offer" opens Quick Setup
 - The home-page header's "Create Offer" button had no `onClick`. It now goes to `/dashboard/growth/quick-setup` (user request).
+
+### 2026-11-12 — Outlet Info page (cards, outlet detail and edit, add outlet, POCs, bank accounts)
+- **Routes** (`/dashboard/info`, which was Coming Soon):
+  - `info`: with **All Locations**, cards showing status, full address and commission plan, plus "Add Outlet" (hidden for outlet-level logins); with **one outlet**, its details.
+  - `info/:restroId`: an outlet's details.
+  - `info/new`: full-page `AddRestaurantForm`.
+  - `info/:restroId/edit`: full-page edit.
+- **Data:** `api/outletInfoApi.ts`, `hooks/useOutletInfo.ts` (prefix `OUTLET_INFO_KEY`, cleared at logout).
+  - The commission plan is the brand's active PERCENTAGE assignment (`/tiers/assignments`) joined with `/tiers` for the %.
+  - Cuisine names come from one `getCuisines({size: 200})` call, under key `['cuisineNames']`. Not `['cuisines', …]`: the form's infinite search query uses that prefix, and the two query types would collide.
+- **Components:** `components/OutletInfo/`: `OutletCards`, `OutletDetailView`, `InfoSection`, `StatusChip`, `PocSection` / `PocFormDialog`, `BankSection` / `BankFormDialog`, `FormField`.
+- **`AddRestaurantForm` opt-in props** (onboarding is unchanged by default):
+  - `showBankSection` (bank accounts are managed separately on the dashboard);
+  - `showManagerSection` (when hidden, no manager fields are sent: the PATCH re-runs manager reassignment whenever `isUserManaging` is sent);
+  - `showLimits` (four limit fields in the schema, with min ≤ max checks);
+  - `confirmBeforeSave` (a promise answered by a shadcn confirmation dialog).
+  - Edit mode now loads the outlet's current photos into the shared outlet-store previews. Before, it never did, so removing a photo by index went to the wrong one.
+  - I added dark-mode classes to the form's section shells and inputs. Inner onboarding pieces (`LocationPicker`, `MenuImagesPicker`, `FoodTypeSelector`, react-select) are still mostly light-only: a known gap, now visible in dark mode on the dashboard.
+- **User decisions:**
+  - An outlet edit, or a PRIMARY bank change, sends an ACTIVE outlet to `UPDATE_APPROVAL_PENDING`, and it goes offline until approved, so both ask for confirmation first.
+  - Contacts and SECONDARY bank changes never change the status.
+  - The brand logo is read-only on the outlet page.
+  - Limits are partner-editable.
+- **Found and fixed:** both edit flows sent unchanged images back as their 15-minute presigned URLs, and the backend stored those URLs in place of the S3 keys, so photos broke after an edit. The old `EditRestaurantModal` did this for menu lists. Fixed on the backend with `S3Service.toKey`.
+- **Bank form:** the account number is typed twice, because a wrong digit sends payouts to someone else. It's never shown in full (last 4 only).
+
+### 2026-11-12 — Commission plan picker, Brand Details, editable/enlargeable image boxes
+- **Commission plan:** `CommissionSection` and `CommissionPlanDialog` (shadcn Dialog) appear on every outlet page and in Brand Details.
+  - Only PERCENTAGE plans are offered (`/tiers` filtered); saving calls `POST /tiers/assign`.
+  - One plan covers every outlet of the brand.
+  - Change is shown only to brand-level logins while the brand is ACTIVE or UPDATE_APPROVAL_PENDING, which are the backend's rules (otherwise it answers 403).
+  - `useAssignPlan` writes the chosen plan into the one commission query, so the cards, outlet pages and Brand Details all update with no refetch or reload.
+- **Instant updates:** POC and bank saves now `setQueryData` from the response before a background re-sync, and so does the brand save, through `useSaveBrand` (PATCH returns `brand`).
+- **Brand Details** (`BrandDetailsSection` and `BrandEditForm`, above the cards under All Locations):
+  - It's read from `GET /api/v1/brands` and edited inline.
+  - Only changed fields are sent (`brandForm.changedText`). The address is split and rejoined in onboarding's pipe order.
+  - New images are uploaded as `brand_logo`, `brand_primary_image` and `restaurant_fssai`.
+  - Saving a live brand asks for confirmation first, because it sends the brand for approval and every outlet shows "Not live" until an admin approves (user decision).
+- **Routing:** `isDashboardStatus()` (`utils/jwt.ts`) lets UPDATE_APPROVAL_PENDING use the dashboard. Before, the next token refresh would have sent a partner whose brand edit was pending back to onboarding.
+- **Image boxes:**
+  - `CroppedImageUpload` gained `required` and `maxFileSizeMb`; it's now `AddRestaurantForm`'s outlet photo box, which can enlarge.
+  - `MenuImagesPicker` crops at 3:4 (user decision). Multi-picks crop one after another, clicking a tile replaces it, and an expand icon enlarges it.
+  - `AddRestaurantForm`'s delivery menu now uses `MenuImagesPicker` too. The old grid kept previews in the shared outlet store, aligned by index; the form values are now the single source.
+  - New `DocumentFileBox` for FSSAI: an image shows a thumbnail that enlarges; a PDF shows a clean file name and View.
+  - On the outlet page, all images enlarge in an `ImagePreviewDialog` instead of opening a new tab.
+- **Known:** `ImageCropModal` still uses the legacy custom `Modal` (CLAUDE.local.md §2 migration list). The `useOutletStore` preview fields are now unused by `AddRestaurantForm` but kept (`resetForm` still resets them).
+
+### 2026-11-12 — Commission plan slider, fixed plans read-only, bottom padding
+- **Picker:** `CommissionPlanDialog` is now a shadcn **Slider** (user request) over the percentage plans, ordered by %, with a clickable % label under each stop.
+  - The selected stop shows the plan's full terms in `TierVariables`: commission, order range, base delivery fee and per-km fee, combined-fee cap, payment-gateway fee, per-call fee and GST.
+  - **Fixed plans** (USTART's mandatory small-order plans, a flat ₹ per order) are listed read-only beneath, and in short on the section.
+  - Logins that can't change the plan get "View details" and the same dialog read-only.
+- **Data:** `getCommissionPlans()` returns `{ percentage, fixed }` (`ActivePlan` with the full tier, or `tier: null` for a retired plan). `useAssignPlan` swaps only `percentage` in the cache.
+- **`components/ui/slider.tsx`:** the shadcn new-york source on the already-installed `radix-ui` package, the same way `select.tsx` was set up, with `cn` from `@/lib/utils`. `npx shadcn add slider` would produce the same file.
+- **Bottom padding:** the Outlet Info pages (`PAGE_CLASS`) and the add/edit form shell now have `pb-24`/`pb-28` repeated per breakpoint, because `md:p-6`/`lg:p-10` would otherwise override a bare `pb-*`.
+  - The root cause is `DashboardLayout`: the main area is full height under the header inside an `overflow-hidden` shell, so the bottom of a page can sit below the visible area.
+  - I left the layout alone because changing it affects every page, and noted it here.
+
+### 2026-11-12 — Layout bottom cut-off fixed; all fixed plans shown
+- **`DashboardLayout`:** from `sm` up, the shell is capped at the screen height (`sm:max-h-screen overflow-hidden`), but the content column could grow with its content. The bottom of every dashboard page, by about the header's height, was clipped and couldn't be scrolled to.
+  - Fix: the column is `sm:h-screen`, and `<main>` has `min-h-0`, so it shrinks and scrolls inside the column.
+  - This affects every dashboard page: pages that looked "stuck to the bottom" now show their own bottom padding.
+  - Outlet Info's extra padding was reduced to `pb-16` / `lg:pb-20`.
+- **Fixed plans:** `getCommissionPlans().fixed` is now every FIXED plan from `/tiers`, not just the brand's assignments, since they apply to all brands.
+  - In the dialog they sit above the slider.
+  - On the commission card they're a read-only table: plan, order value, flat ₹ per order.
+
+### 2026-11-12 — Flat plans as commission-only lines; no decimals
+- New `FixedPlanLines`: one line per fixed-plan order band, commission only ("≤ ₹149 · Commission ₹9", "₹150 – ≤ ₹249 · Commission ₹X", "₹250 & above · …"). It replaces the table on the commission card and the full term grids for fixed plans in the dialog, where it sits above the percentage slider.
+- `wholeRupees()` (`outletInfoFormat.ts`) shows whole rupees with no decimals. A band's lower bound rounds up (149.01 → ₹150) and its upper bound rounds down, so neighbouring bands read cleanly. `TierVariables` (the percentage plan's terms) uses it too.
+- Percentages come from JSON numbers (6.00 arrives as 6), so they show without decimals unless a plan really has a fractional rate.
