@@ -591,3 +591,9 @@ MenuEditor (outlet — handles edit/stock/taxes/charges/new/review paths)
   `vite:preloadError` (shared JS/CSS chunk preload) with the same guarded reload.
 - Not covered: a page that crashes while its *data* is loading (e.g. reading an undefined API
   field) — that's a bug in that page and needs its own loading state.
+
+### 2026-11-12 — Offer page tweaks: item-discount variants, Flat Deals dates, Elite label
+- **Item Level Discount:** a dish's variants now sit in an always-open, indented and bordered sub-list ("Variants (n)") under the dish, so they don't look like separate dishes (user choice: no toggle). The old `md:pl-10` indent showed only on wide screens; the sub-list container now does the indenting.
+- **Flat Deals:** the date pickers now block what the backend would reject: start `min` = local today, end `min` = start + 15 days (`minOfferEndDate` / `MIN_OFFER_DAYS` in `offerPayloads.ts`, using local-date arithmetic). The zod 15-day check stays for typed-in dates. Its message said "more than 15 days" although exactly 15 passes; it now says "at least" (en/hi).
+- **Elite Exclusive:** the duration chip now reads "Minimum: 15 Days" (it said "Recommended", but 15 days is a hard rule). The locale key is still `recommendedDuration`, to avoid churn.
+- **Not changed:** Percentage and Elite still compute their own `minEndDate` with `toISOString`. That gives the right date in IST, because the date-only string parses as UTC midnight, but it could switch to `minOfferEndDate` later.

@@ -44,6 +44,22 @@ export const localToday = (): string => {
     return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
 };
 
+/** Offers must run at least this many days (the backend's rule and the form's zod check). */
+export const MIN_OFFER_DAYS = 15;
+
+/**
+ * 2026-11-12: earliest end date (YYYY-MM-DD) for a start date, for the end picker's `min`, so a
+ * shorter offer can't be picked at all instead of only failing on submit. Local-date arithmetic
+ * (no toISOString) for the same UTC reason as localToday.
+ */
+export const minOfferEndDate = (startDate: string): string => {
+    if (!startDate) return '';
+    const [y, m, d] = startDate.split('-').map(Number);
+    const end = new Date(y, m - 1, d + MIN_OFFER_DAYS);
+    const pad = (n: number) => String(n).padStart(2, '0');
+    return `${end.getFullYear()}-${pad(end.getMonth() + 1)}-${pad(end.getDate())}`;
+};
+
 export const startOfDay = (date: string) => `${date}T00:00:00`;
 export const endOfDay = (date: string) => `${date}T23:59:59`;
 

@@ -20,7 +20,7 @@ import { createFlatDealsSchema, type FlatDealsFormValues } from "./validations";
 // 2026-11-02: wired to the backend (was mock data): the value grid is a frontend constant and the
 // offer is created through POST /restaurant-offers for the outlet(s) picked in the header.
 import { FLAT_DISCOUNT_GRID } from "./offerConfig";
-import { buildFlatOffer, localToday, useOfferOutletIds } from "./offerPayloads";
+import { buildFlatOffer, localToday, minOfferEndDate, useOfferOutletIds } from "./offerPayloads";
 import { useCreateRestaurantOffer } from "../../hooks/useRestaurantOffers";
 import { getErrorMessage } from "@/utils/error";
 
@@ -57,6 +57,9 @@ export const FlatDeals = () => {
   });
 
   const mov = watch("movType");
+  // 2026-11-12: the pickers block a past start and an end under 15 days (the zod check still
+  // catches typed-in dates); Percentage and Elite already had the end-date limit.
+  const startDate = watch("startDate");
   const isMovSelected = !!mov;
   const currentDiscounts = mov ? offersData[mov] || [] : [];
 
@@ -300,7 +303,8 @@ export const FlatDeals = () => {
                       render={({ field }) => (
                         <input 
                           {...field}
-                          type="date" 
+                          type="date"
+                          min={localToday()}
                           className="w-full h-14 bg-slate-50 dark:bg-slate-800/50 border-none rounded-xl px-4 text-slate-600 dark:text-slate-300 focus:ring-2 focus:ring-secondary-orange/20 outline-none"
                         />
                       )}
@@ -324,7 +328,8 @@ export const FlatDeals = () => {
                       render={({ field }) => (
                         <input 
                           {...field}
-                          type="date" 
+                          type="date"
+                          min={minOfferEndDate(startDate)}
                           className="w-full h-14 bg-slate-50 dark:bg-slate-800/50 border-none rounded-xl px-4 text-slate-600 dark:text-slate-300 focus:ring-2 focus:ring-secondary-orange/20 outline-none"
                         />
                       )}

@@ -843,7 +843,7 @@
             "custom": "कस्टम",
             "above": "से ऊपर",
             "duration": "अवधि",
-            "recommendedDuration": "अनुशंसित: 15 दिन",
+            "recommendedDuration": "न्यूनतम: 15 दिन",
             "startDate": "प्रारंभ तिथि",
             "endDate": "समाप्ति तिथि",
             "activate": "एलीट ऑफर सक्रिय करें",
@@ -990,6 +990,7 @@
         "type": "डिस्काउंट का प्रकार",
         "discountFor": "{{name}} पर डिस्काउंट",
         "finalPrice": "अंतिम कीमत",
+        "variants": "वेरिएंट ({{count}})",
         "errors": {
           "invalidNumber": "0 या कोई धनात्मक संख्या डालें",
           "maxPercent": "प्रतिशत 100 से ज़्यादा नहीं हो सकता",
@@ -1039,7 +1040,7 @@
             "minDiscount": "छूट कम से कम ₹10 होनी चाहिए",
             "minMov": "न्यूनतम ऑर्डर मूल्य कम से कम ₹100 होना चाहिए",
             "ratioRange": "छूट ऑर्डर मूल्य के 2% से 70% के बीच होनी चाहिए",
-            "durationRange": "ऑफर की अवधि 15 दिनों होनी चाहिए",
+            "durationRange": "ऑफर की अवधि कम से कम 15 दिन होनी चाहिए",
             "targetCustomerRequired": "कृपया लक्षित ग्राहक चुनें"
           },
           "targetCustomerSelection": {

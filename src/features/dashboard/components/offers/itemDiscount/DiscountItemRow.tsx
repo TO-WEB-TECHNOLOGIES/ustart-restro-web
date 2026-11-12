@@ -27,7 +27,7 @@ export const DiscountItemRow = ({ item, edit, isVariant = false, onChange }: Dis
   return (
     <div className={`flex flex-col md:flex-row md:flex-wrap md:items-center gap-3 py-3 px-3 -mx-3 rounded-2xl transition-colors ${edit
       ? "bg-orange-50/70 dark:bg-orange-500/10"
-      : ""} ${isVariant ? "md:pl-10" : ""}`}>
+      : ""}`}>
       <DishThumb item={item} showDescription={!isVariant} />
 
       <div className="flex items-center gap-3 md:justify-end shrink-0">

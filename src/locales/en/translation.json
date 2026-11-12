@@ -844,7 +844,7 @@
             "custom": "Custom",
             "above": "Above",
             "duration": "Duration",
-            "recommendedDuration": "Recommended: 15 Days",
+            "recommendedDuration": "Minimum: 15 Days",
             "startDate": "Start Date",
             "endDate": "End Date",
             "activate": "Activate Elite Offer",
@@ -990,6 +990,7 @@
         "type": "Discount type",
         "discountFor": "Discount for {{name}}",
         "finalPrice": "Final price",
+        "variants": "Variants ({{count}})",
         "errors": {
           "invalidNumber": "Enter 0 or a positive number",
           "maxPercent": "A percentage can't be more than 100",
@@ -1040,7 +1041,7 @@
             "minMov": "Minimum order value must be at least ₹100",
             "maxDiscountLimit": "Max discount cannot be more than Minimum Order Value",
             "ratioRange": "Discount must be between 2% and 70% of the order value",
-            "durationRange": "Offer duration must be more than 15 days",
+            "durationRange": "Offer duration must be at least 15 days",
             "targetCustomerRequired": "Please select a target customer"
           },
           "targetCustomerSelection": {
