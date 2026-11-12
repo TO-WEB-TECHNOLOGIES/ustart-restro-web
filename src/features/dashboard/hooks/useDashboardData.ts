@@ -7,84 +7,13 @@ import {
     type OutletStatus
 } from '../api/mockDashboard';
 import { useRestaurantStore } from '../store/useRestaurantStore';
-import { ALL_LOCATIONS_ID, type RestaurantStatus } from '@/types/storeTypes';
 
 export type { StatMetric, Order, OutletStatus };
 
 const EMPTY_ARRAY: any[] = [];
 
-export const useOutletStatus = () => {
-    const selectedAddressId = useRestaurantStore(state => state.selectedAddressId);
-    const setLoading = useRestaurantStore(state => state.setLoading);
-    const [aggregateData, setAggregateData] = useState<{ openCount: number; closedCount: number } | null>(null);
-    const [error, setError] = useState<string | null>(null);
-
-    const storeStatus = useRestaurantStore(
-        useShallow(state =>
-            selectedAddressId && state.statuses[selectedAddressId]
-                ? state.statuses[selectedAddressId]
-                : 'open'
-        )
-    );
-    const isLoading = useRestaurantStore(
-        useShallow(state => selectedAddressId ? state.loading.status[selectedAddressId] : false)
-    );
-    const updateStoreStatus = useRestaurantStore(state => state.updateStatus);
-
-    // Derived status object for components
-    const status: OutletStatus = {
-        isOpen: storeStatus === 'open',
-        openCount: selectedAddressId === ALL_LOCATIONS_ID ? aggregateData?.openCount : undefined,
-        closedCount: selectedAddressId === ALL_LOCATIONS_ID ? aggregateData?.closedCount : undefined
-    };
-
-    useEffect(() => {
-        if (!selectedAddressId) return;
-
-        const revalidate = async () => {
-            setError(null);
-            setLoading('status', selectedAddressId, true);
-            try {
-                const remoteStatus = await mockDashboardService.getOutletStatus(selectedAddressId);
-
-                if ('openCount' in remoteStatus && remoteStatus.openCount !== undefined) {
-                    setAggregateData({
-                        openCount: remoteStatus.openCount ?? 0,
-                        closedCount: remoteStatus.closedCount ?? 0
-                    });
-                } else {
-                    const mappedStatus: RestaurantStatus = remoteStatus.isOpen ? 'open' : 'closed';
-                    updateStoreStatus(selectedAddressId, mappedStatus);
-                }
-            } catch (err) {
-                console.error("Failed to revalidate status", err);
-                setError("Failed to load status. Please try again.");
-            } finally {
-                setLoading('status', selectedAddressId, false);
-            }
-        };
-        revalidate();
-    }, [selectedAddressId]);
-
-    const toggleStatus = async () => {
-        if (!selectedAddressId) return;
-
-        setError(null);
-        setLoading('status', selectedAddressId, true);
-        try {
-            const newStatus = await mockDashboardService.updateOutletStatus(selectedAddressId, !status.isOpen);
-            console.log(selectedAddressId, newStatus.isOpen)
-            updateStoreStatus(selectedAddressId, newStatus.isOpen ? 'open' : 'closed');
-        } catch (err) {
-            console.error("Failed to update status", err);
-            setError("Failed to update status. Please try again.");
-        } finally {
-            setLoading('status', selectedAddressId, false);
-        }
-    };
-
-    return { status, toggleStatus, isLoading, error };
-};
+// 2026-11-12: useOutletStatus (mock open/closed) removed; the header and home card read the real
+// status through hooks/useOutletStatus.ts.
 
 export const useStats = () => {
     const selectedAddressId = useRestaurantStore(state => state.selectedAddressId);

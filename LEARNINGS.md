@@ -597,3 +597,23 @@ MenuEditor (outlet — handles edit/stock/taxes/charges/new/review paths)
 - **Flat Deals:** the date pickers now block what the backend would reject: start `min` = local today, end `min` = start + 15 days (`minOfferEndDate` / `MIN_OFFER_DAYS` in `offerPayloads.ts`, using local-date arithmetic). The zod 15-day check stays for typed-in dates. Its message said "more than 15 days" although exactly 15 passes; it now says "at least" (en/hi).
 - **Elite Exclusive:** the duration chip now reads "Minimum: 15 Days" (it said "Recommended", but 15 days is a hard rule). The locale key is still `recommendedDuration`, to avoid churn.
 - **Not changed:** Percentage and Elite still compute their own `minEndDate` with `toISOString`. That gives the right date in IST, because the date-only string parses as UTC midnight, but it could switch to `minOfferEndDate` later.
+
+### 2026-11-12 — Outlet Schedule page, live outlet status, pause and holidays
+- **Backend:** `/api/v1/outlet-status` (see backend `docs/integration-docs/outlet-status.md`). The status is computed per request from the weekly hours, holidays and pauses: `OPEN | CLOSED_BY_SCHEDULE | PAUSED | ON_HOLIDAY | NOT_LIVE | NO_SCHEDULE`, plus `closesAt`/`opensAt`. It's never pushed, so status queries re-fetch every 60 s.
+- **Data:** `api/outletStatusApi.ts`, `hooks/useOutletStatus.ts` (prefix `OUTLET_STATUS_KEY`, removed at logout). Every write invalidates the whole prefix. Hours still use the existing `/schedules` API (`useOutletSchedule`, `useSaveScheduleDay`, which PATCHes one day).
+- **Header and home:** `components/OutletStatus.tsx` is rewired; the mock `useOutletStatus`, `getOutletStatus`/`updateOutletStatus` and `MOCK_STATUSES` are removed. The compact status now shows on every page, home included, still `lg`-only. Under "All Locations" it shows counts from `/summary` plus a "Manage schedule" link.
+- **Toggle rules** (`components/OutletSchedule/OutletToggle.tsx`):
+  - OFF while open: confirm, then pause until the current hours end.
+  - ON while paused: resume.
+  - ON during a holiday: confirm, then end the whole holiday.
+  - Disabled otherwise.
+  - The switch and its dialog sit in a `<span>` that stops click propagation. It can't go on the fake `Switch` itself, whose own `onClick` a passed one would *replace* (the props spread comes after). React portals also bubble through the component tree.
+- **Outlet Schedule page** (`/dashboard/status`, path kept; the sidebar label is now "Outlet Schedule"):
+  - weekday cards (user choice: weekdays, not dates);
+  - a day panel that edits that weekday through the onboarding `DayScheduleEditor`, passing a one-day array (list layout, so there's no copy-to-all);
+  - an "Add a Holiday" switch that opens `HolidayForm` (datetime-local inputs);
+  - a Holidays tab with an upcoming list plus a collapsible History (Accordion, loaded when opened).
+  - "All Locations" shows `OutletListSidebar` (server-side search, paged, a toggle per row), laid out like the menu editor's sidebar.
+- **Holiday rules** (`holidayRules.ts`, mirrors the backend's `HolidayRules`): 2 h to 30 days, not in the past (1 minute of grace), start and end within the current year. The inputs' `min`/`max` also limit dates to this year.
+- **Reused:** `AllOutletsConfirmDialog` gained optional `confirmLabel`/`cancelLabel`, with defaults unchanged. `scheduleValidation.ts` gained `validateScheduleDay` for checking a single day.
+- **Not done:** the `statuses` and `loading.status` fields in `useRestaurantStore` are now unused (pre-existing; left in place). The fake `switch.tsx` is still used; replacing it needs `npx shadcn add switch` (CLAUDE.local.md §2).

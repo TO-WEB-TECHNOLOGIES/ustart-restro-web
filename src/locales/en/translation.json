@@ -47,7 +47,8 @@
       "menu": "Menu Management",
       "orders": "Orders Overview",
       "reports": "Analytics & Reports",
-      "settings": "Settings"
+      "settings": "Settings",
+      "schedule": "Outlet Schedule"
     },
     "units": {
       "people": "People",
@@ -712,7 +713,7 @@
         "menu": "Menu",
         "orders": "Orders",
         "history": "Order History",
-        "status": "Outlet Status",
+        "status": "Outlet Schedule",
         "reporting": "Reporting",
         "offers": "Offers",
         "ads": "Ads",
@@ -1156,6 +1157,121 @@
           "title": "Item Level Discount",
           "description": "Promote special items or best-sellers with extra discounts specifically for your fans."
         }
+      }
+    },
+    "outletSchedule": {
+      "title": "Outlet Schedule",
+      "subtitle": "Opening hours, holidays and whether you're taking orders right now.",
+      "manage": "Manage schedule",
+      "retry": "Try again",
+      "tabs": {
+        "schedule": "Schedule",
+        "holidays": "Holidays"
+      },
+      "state": {
+        "open": "Open",
+        "openUntil": "Open · till {{time}}",
+        "pausedUntil": "Paused till {{time}}",
+        "holidayUntil": "Holiday till {{time}}",
+        "closed": "Closed",
+        "closedOpens": "Closed · opens {{time}}",
+        "notLive": "Outlet not live",
+        "noSchedule": "No opening hours set"
+      },
+      "toggle": {
+        "label": "Taking orders at {{name}}",
+        "paused": "{{name}} is paused",
+        "resumed": "{{name}} is taking orders again",
+        "failed": "Couldn't change the outlet status",
+        "pauseTitle": "Pause {{name}}?",
+        "pauseText": "The outlet stops taking orders until {{time}}, when today's hours end. Switch it back on any time before that.",
+        "pauseConfirm": "Pause",
+        "endHolidayTitle": "End the holiday now?",
+        "endHolidayText": "\"{{reason}}\" runs until {{time}}. Ending it now opens the outlet as per its hours, and the rest of the holiday is removed.",
+        "endHolidayConfirm": "End holiday",
+        "cancel": "Cancel"
+      },
+      "hours": {
+        "weekdays": "Days of the week",
+        "today": "Today",
+        "open": "Open",
+        "closed": "Closed",
+        "edit": "Edit hours",
+        "locked": "Timings were submitted during registration and can't be changed during setup.",
+        "lockedShort": "Locked during setup",
+        "noSchedule": "Opening hours haven't been set up for this outlet yet.",
+        "everyWeek": "This changes the hours for every {{day}}.",
+        "cancel": "Cancel",
+        "save": "Save hours",
+        "saved": "{{day}} hours saved",
+        "saveFailed": "Couldn't save the hours",
+        "slot": "Slot {{n}}",
+        "closedAllDay": "Closed all day",
+        "loadFailed": "Couldn't load the opening hours",
+        "errors": {
+          "noSlots": "Add at least one time slot, or mark the day closed",
+          "closeBeforeOpen": "Close time must be after open time",
+          "overlap": "Time slots can't overlap"
+        }
+      },
+      "holiday": {
+        "add": "Add a Holiday",
+        "addHint": "Close the outlet for a date and time range",
+        "startsAt": "Starts",
+        "endsAt": "Ends",
+        "reason": "Reason (optional)",
+        "reasonPlaceholder": "e.g. Diwali, renovation",
+        "rules": "A holiday can be 2 hours to 30 days long and must be within {{year}}.",
+        "save": "Add holiday",
+        "added": "Holiday added",
+        "failed": "Couldn't add the holiday",
+        "noReason": "Holiday",
+        "errors": {
+          "required": "Choose a start and an end",
+          "past": "The start can't be in the past",
+          "endBeforeStart": "The end must be after the start",
+          "tooShort": "A holiday must be at least 2 hours long",
+          "tooLong": "A holiday can't be longer than 30 days",
+          "currentYear": "A holiday must start and end within {{year}}",
+          "reasonTooLong": "Keep the reason under 200 characters"
+        }
+      },
+      "holidays": {
+        "empty": "No upcoming holidays. Add one from the Schedule tab.",
+        "emptyHistory": "No past holidays yet.",
+        "history": "History",
+        "loadMore": "Load more",
+        "loadFailed": "Couldn't load holidays",
+        "endNow": "End now",
+        "cancel": "Cancel",
+        "cancelHoliday": "Cancel holiday",
+        "keep": "Keep it",
+        "pause": "Paused from the header",
+        "confirmEndTitle": "End this now?",
+        "confirmEndText": "The outlet opens again as per its hours.",
+        "confirmCancelTitle": "Cancel this holiday?",
+        "confirmCancelText": "It won't close the outlet. You'll still see it in History.",
+        "toast": {
+          "ended": "Ended",
+          "cancelled": "Holiday cancelled",
+          "failed": "Couldn't update the holiday"
+        },
+        "state": {
+          "ACTIVE": "Active now",
+          "UPCOMING": "Upcoming",
+          "ENDED": "Ended",
+          "ENDED_EARLY": "Ended early",
+          "CANCELLED": "Cancelled"
+        }
+      },
+      "sidebar": {
+        "title": "Outlets",
+        "open": "Show outlets",
+        "close": "Hide outlets",
+        "search": "Search outlets...",
+        "loadFailed": "Couldn't load outlets",
+        "empty": "No outlets found",
+        "loadMore": "Load more"
       }
     },
     "outletStatus": "Outlet Status",

@@ -27,6 +27,7 @@ export const DashboardHeader = ({ user, onMenuClick }: DashboardHeaderProps) => 
         if (pathname.includes('/orders')) return t('common.titles.orders');
         if (pathname.includes('/reports')) return t('common.titles.reports');
         if (pathname.includes('/settings')) return t('common.titles.settings');
+        if (pathname.includes('/dashboard/status')) return t('common.titles.schedule'); // 2026-11-12
         return t('common.titles.overview');
     };
 
@@ -76,8 +77,11 @@ export const DashboardHeader = ({ user, onMenuClick }: DashboardHeaderProps) => 
             </div>
 
             <div className="flex items-center gap-1.5 md:gap-4 shrink-0 px-1">
-                <div className="hidden lg:flex gap-3">
-                    {isDashboardHome ? (
+                {/* 2026-11-12: the outlet status (and its switch) shows on every page, home included;
+                    the home page adds its two quick actions after it. */}
+                <div className="hidden lg:flex items-center gap-3">
+                    <OutletStatus compact />
+                    {isDashboardHome && (
                         <>
                             <Button
                                 variant="outline"
@@ -93,8 +97,6 @@ export const DashboardHeader = ({ user, onMenuClick }: DashboardHeaderProps) => 
                                 {t('common.header.createOffer')}
                             </Button>
                         </>
-                    ) : (
-                        <OutletStatus compact />
                     )}
                 </div>
 

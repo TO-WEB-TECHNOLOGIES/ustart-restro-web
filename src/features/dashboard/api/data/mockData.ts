@@ -205,11 +205,6 @@ export const MOCK_ORDERS: Order[] = [
     }
 ];
 
-export const MOCK_STATUSES: Record<string, boolean> = {
-    'addr_123': true,  // Mumbai - Open
-    'addr_456': false, // Pune - Closed
-    'addr_789': true   // Delhi - Open
-};
 
 export const ALL_ADDRESSES = [
     { id: 'addr_123', label: 'Main Branch', address: '123 Food Street, Mumbai' },

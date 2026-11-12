@@ -29,6 +29,13 @@ const Orders = lazy(() =>
     default: module.Orders,
   })),
 );
+// 2026-11-12: Outlet Schedule (sidebar Operations → Outlet Schedule, path /dashboard/status, which
+// used to fall through to Coming Soon). The path is kept so existing links still work.
+const OutletSchedule = lazy(() =>
+  import("@/features/dashboard/outlets/operations/OutletSchedule").then((module) => ({
+    default: module.OutletSchedule,
+  })),
+);
 // 2026-11-11: My Offers - active offers + history (sidebar Growth → Offers, which had no route).
 const MyOffers = lazy(() =>
   import("@/features/dashboard/outlets/offers/MyOffers").then((module) => ({
@@ -270,6 +277,10 @@ export const router = createBrowserRouter([
               {
                 path: "offers",
                 element: withSuspense(MyOffers),
+              },
+              {
+                path: "status",
+                element: withSuspense(OutletSchedule),
               },
               {
                 path: "growth",

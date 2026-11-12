@@ -49,3 +49,18 @@ export const validateScheduleDays = (days: RestroDay[]): string | null => {
  */
 export const createDefaultScheduleDays = (): RestroDay[] =>
     Array.from({ length: 7 }, (_, dayOfWeek) => ({ dayOfWeek, isClosed: true, schedules: [] }));
+
+/**
+ * 2026-11-12: the per-day checks of validateScheduleDays for editing one day on its own (Outlet
+ * Schedule page) - no "at least one open day" rule, since a single closed day is valid. Returns an
+ * i18n key suffix (dashboard.outletSchedule.hours.errors.*) or null.
+ */
+export const validateScheduleDay = (day: RestroDay): 'noSlots' | 'closeBeforeOpen' | 'overlap' | null => {
+    if (day.isClosed) return null;
+    if (!day.schedules?.length) return 'noSlots';
+    if (day.schedules.some((s) => s.startTime && s.endTime && ensureTimeFormat(s.startTime) >= ensureTimeFormat(s.endTime))) {
+        return 'closeBeforeOpen';
+    }
+    if (hasOverlappingTimeSlots(day.schedules)) return 'overlap';
+    return null;
+};

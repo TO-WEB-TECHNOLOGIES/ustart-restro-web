@@ -1,5 +1,5 @@
-import type { StatMetric, OutletStatus } from '../../../types/dashboardTypes';
-import { MOCK_STATS, MOCK_STATUSES, delay } from './data/mockData';
+import type { StatMetric } from '../../../types/dashboardTypes';
+import { MOCK_STATS, delay } from './data/mockData';
 
 export const dashboardApi = {
     getStats: async (addressId: string): Promise<StatMetric[]> => {
@@ -34,30 +34,5 @@ export const dashboardApi = {
         return MOCK_STATS[addressId] || MOCK_STATS['addr_123'];
     },
 
-    getOutletStatus: async (addressId: string): Promise<OutletStatus | { openCount: number; closedCount: number; isOpen: boolean }> => {
-        await delay(300);
-        console.log(`Fetching status for address: ${addressId}`);
-
-        if (addressId === 'all') {
-            const openCount = Object.values(MOCK_STATUSES).filter(s => s).length;
-            const closedCount = Object.values(MOCK_STATUSES).filter(s => !s).length;
-            return {
-                isOpen: openCount > 0,
-                openCount,
-                closedCount
-            } as any;
-        }
-
-        return {
-            isOpen: MOCK_STATUSES[addressId] !== undefined ? MOCK_STATUSES[addressId] : true
-        };
-    },
-
-    updateOutletStatus: async (addressId: string, isOpen: boolean): Promise<OutletStatus> => {
-        await delay(300);
-        console.log(`Updating status for address: ${addressId} to ${isOpen}`);
-        return {
-            isOpen
-        };
-    },
+    // 2026-11-12: getOutletStatus / updateOutletStatus (mock) removed - see api/outletStatusApi.ts.
 };

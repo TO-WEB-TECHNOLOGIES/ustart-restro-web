@@ -8,6 +8,7 @@ import { useRestaurantStore } from '@/features/dashboard/store/useRestaurantStor
 import { queryClient } from '@/api/queryClient';
 import { ADDON_LIBRARY_KEY } from '@/features/dashboard/hooks/useAddonLibrary';
 import { RESTAURANT_OFFERS_KEY } from '@/features/dashboard/hooks/useRestaurantOffers';
+import { OUTLET_STATUS_KEY } from '@/features/dashboard/hooks/useOutletStatus';
 import { useMenuStore } from '@/features/dashboard/store/useMenuStore';
 
 interface User {
@@ -210,6 +211,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         queryClient.removeQueries({ queryKey: [ADDON_LIBRARY_KEY] });
         // 2026-11-02: growth screens' templates/bundles (one brand's view) must not leak to the next login.
         queryClient.removeQueries({ queryKey: [RESTAURANT_OFFERS_KEY] });
+        // 2026-11-12: outlet status / holidays / hours are one brand's data too.
+        queryClient.removeQueries({ queryKey: [OUTLET_STATUS_KEY] });
 
         Object.keys(sessionStorage).forEach((key) => {
             if (key.startsWith('draft_settings_')) {
