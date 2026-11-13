@@ -49,7 +49,9 @@
       "reports": "Analytics & Reports",
       "settings": "Settings",
       "schedule": "Outlet Schedule",
-      "outletInfo": "Outlet Info"
+      "outletInfo": "Outlet Info",
+      "offers": "My Offers",
+      "growth": "Grow with Offers"
     },
     "units": {
       "people": "People",
@@ -1161,6 +1163,88 @@
       }
     },
     "outletInfo": {
+      "verify": {
+        "verified": "{{value}} verified",
+        "sendMobile": "Verify {{value}} - send a code",
+        "sendEmail": "Verify {{value}} - send a code",
+        "sentMobile": "Code sent to {{value}}",
+        "sentEmail": "Code sent to {{value}}",
+        "sendFailed": "Couldn't send the code",
+        "verifyFailed": "Couldn't verify the code",
+        "enterCode": "Ask the person for the 4-digit code sent to {{value}}",
+        "verify": "Verify",
+        "resend": "Send again",
+        "resendIn": "Send again in {{seconds}}s",
+        "required": "Verify the mobile number (and email) with the person before saving."
+      },
+      "people": {
+        "offConfirm": "Remove access",
+        "offText": "They won't be able to log in to the dashboard here until you switch it back on.",
+        "offTitle": "Remove {{name}}'s access?",
+        "lockLast": "At least one manager must stay active.",
+        "lockYou": "You can't switch off your own access.",
+        "accessLabel": "Dashboard access for {{name}}",
+        "accessOff": "{{name}} no longer has dashboard access",
+        "accessOn": "{{name}} can use the dashboard again",
+        "title": "Managers & contacts",
+        "brandTitle": "Brand managers & contacts",
+        "add": "Add person",
+        "loadFailed": "Couldn't load managers and contacts",
+        "empty": "No managers or contacts yet.",
+        "you": "You",
+        "deactivated": "Access off",
+        "editNamed": "Edit {{name}}",
+        "whereBrand": "the brand",
+        "whereOutlet": "this outlet",
+        "addTitle": "Add to {{where}}",
+        "editManager": "Edit manager",
+        "editPoc": "Edit contact",
+        "verifyHint": "We'll send a code to their mobile (and email). Ask them for it to confirm it's really them.",
+        "tabs": {
+          "MANAGER": "Manager",
+          "POC": "POC"
+        },
+        "kinds": {
+          "OUTLET_MANAGER": {
+            "label": "Outlet Manager",
+            "help": "Can log in to the USTART partner dashboard for this outlet."
+          },
+          "BRAND_MANAGER": {
+            "label": "Brand Manager",
+            "help": "Can log in to the USTART partner dashboard for every outlet of the brand."
+          },
+          "OUTLET_POC": {
+            "label": "Outlet POC",
+            "help": "Called about outages and issues at this outlet. Can't log in to the dashboard."
+          },
+          "BRAND_POC": {
+            "label": "Brand POC",
+            "help": "Called about outages and issues across the brand. Can't log in to the dashboard."
+          }
+        }
+      },
+      "managers": {
+        "name": "Name",
+        "role": "Role",
+        "mobile": "Mobile number (their login)",
+        "email": "Email",
+        "defaultBrandRole": "Brand Manager",
+        "defaultOutletRole": "Outlet Manager",
+        "accessBrand": "This person will be able to log in and manage every outlet of your brand.",
+        "accessOutlet": "This person will be able to log in and manage this outlet.",
+        "active": "Dashboard access",
+        "activeHint": "Turn off to remove their access without deleting them.",
+        "saved": "Manager saved",
+        "failed": "Couldn't save the manager",
+        "cancel": "Cancel",
+        "save": "Save manager",
+        "errors": {
+          "name": "Enter a name",
+          "role": "Enter a role",
+          "mobile": "Enter a 10-digit mobile number",
+          "email": "Enter a valid email"
+        }
+      },
       "outletsHeading": "Outlets",
       "images": {
         "tooLarge": "The cropped image is over {{size}}MB. Try a smaller photo.",
@@ -1382,6 +1466,14 @@
         }
       },
       "bank": {
+        "madePrimary": "Primary account switched",
+        "makePrimaryText": "Payouts will go to this account; the current primary becomes the secondary.",
+        "makePrimaryTitle": "Make A/c ending {{last4}} the primary account?",
+        "makePrimary": "Make primary",
+        "brandTitle": "Brand bank accounts",
+        "addBrandPrimary": "Add primary account",
+        "brandPrimaryNote": "Changing the brand's primary account sends your brand for USTART's approval. All outlets will be offline until it's approved.",
+        "brandConfirmPrimaryText": "Outlets using the brand account are paid into it, so USTART reviews the change. All outlets will be offline and won't take orders until it's approved.",
         "title": "Bank accounts",
         "primary": "Primary",
         "secondary": "Secondary",

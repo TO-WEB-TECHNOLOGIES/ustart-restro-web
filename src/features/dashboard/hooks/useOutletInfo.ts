@@ -5,7 +5,8 @@ import { useOnboardingStore } from '@/features/onboarding/store/useOnboardingSto
 import { masterDataService } from '@/features/onboarding/api/masterData';
 import {
     outletInfoApi, type BankAccountRequest, type BrandUpdate, type CommissionPlans, type CommissionTier,
-    type OutletBankAccount, type OutletPoc, type PocRequest,
+    type Manager, type ManagerRequest, type OutletBankAccount, type OutletPoc, type People, type PeopleScope,
+    type PocRequest,
 } from '../api/outletInfoApi';
 import { OUTLET_STATUS_KEY } from './useOutletStatus';
 
@@ -36,11 +37,9 @@ export const useOutletDetail = (restroId: string | undefined) =>
         staleTime: 60_000,
     });
 
-export const useOutletPocs = (restroId: string) =>
-    useQuery({ queryKey: [OUTLET_INFO_KEY, 'pocs', restroId], queryFn: () => outletInfoApi.getPocs(restroId) });
-
-export const useOutletBankAccounts = (restroId: string) =>
-    useQuery({ queryKey: [OUTLET_INFO_KEY, 'banks', restroId], queryFn: () => outletInfoApi.getBankAccounts(restroId) });
+// 2026-11-12: `enabled` so BankSection can call the outlet and brand hooks and use one (by scope).
+export const useOutletBankAccounts = (restroId: string, enabled = true) =>
+    useQuery({ queryKey: [OUTLET_INFO_KEY, 'banks', restroId], queryFn: () => outletInfoApi.getBankAccounts(restroId), enabled });
 
 /** Per brand, so one fetch serves every card; plans change rarely. */
 export const useCommissionPlans = () =>
@@ -68,22 +67,6 @@ export const useRefreshOutletInfo = () => {
         queryClient.invalidateQueries({ queryKey: [OUTLET_INFO_KEY] }),
         queryClient.invalidateQueries({ queryKey: [OUTLET_STATUS_KEY] }),
     ]);
-};
-
-export const useSavePoc = (restroId: string) => {
-    const queryClient = useQueryClient();
-    return useMutation({
-        mutationFn: ({ pocId, request }: { pocId?: string; request: PocRequest }) =>
-            pocId ? outletInfoApi.updatePoc(restroId, pocId, request) : outletInfoApi.addPoc(restroId, request),
-        // 2026-11-12: show the saved contact at once from the response, then re-sync in the background.
-        onSuccess: (saved) => {
-            queryClient.setQueryData<OutletPoc[]>([OUTLET_INFO_KEY, 'pocs', restroId], (list = []) =>
-                list.some((p) => p.pocId === saved.pocId)
-                    ? list.map((p) => (p.pocId === saved.pocId ? saved : p))
-                    : [saved, ...list]);
-            void queryClient.invalidateQueries({ queryKey: [OUTLET_INFO_KEY, 'pocs', restroId] });
-        },
-    });
 };
 
 export const useSaveBankAccount = (restroId: string) => {
@@ -175,5 +158,82 @@ export const useAssignPlan = () => {
                 percentage: { tierId: tier.tierId, tierName: tier.tierName, tier },
             }));
         },
+    });
+};
+
+/** 2026-11-12: cache key of an outlet's or the brand's people. */
+const peopleKey = (scope: PeopleScope) =>
+    scope.kind === 'outlet' ? [OUTLET_INFO_KEY, 'people', scope.restroId] : [OUTLET_INFO_KEY, 'people', 'brand'];
+
+/** Managers (dashboard access) and POCs (contact only) of one outlet - its own - or of the brand. */
+export const usePeople = (scope: PeopleScope) =>
+    useQuery({ queryKey: peopleKey(scope), queryFn: () => outletInfoApi.getPeople(scope) });
+
+/** Puts a saved row into the people list at once (no refetch), then re-syncs in the background. */
+const upsertPerson = <T,>(list: T[], saved: T, same: (row: T) => boolean) =>
+    list.some(same) ? list.map((row) => (same(row) ? saved : row)) : [...list, saved];
+
+export const useSaveManager = (scope: PeopleScope) => {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: ({ userId, request }: { userId?: string; request: ManagerRequest }) =>
+            outletInfoApi.saveManager(scope, userId, request),
+        onSuccess: (saved: Manager) => {
+            queryClient.setQueryData<People>(peopleKey(scope), (people) => people && {
+                ...people,
+                managers: upsertPerson(people.managers, saved, (m) => m.userId === saved.userId),
+            });
+            void queryClient.invalidateQueries({ queryKey: peopleKey(scope) });
+        },
+    });
+};
+
+/** Outlet POCs (existing endpoints) or brand POCs, into the same people list. */
+export const useSavePersonPoc = (scope: PeopleScope) => {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: ({ pocId, request }: { pocId?: string; request: PocRequest }) =>
+            scope.kind === 'outlet'
+                ? (pocId ? outletInfoApi.updatePoc(scope.restroId, pocId, request) : outletInfoApi.addPoc(scope.restroId, request))
+                : outletInfoApi.saveBrandPoc(pocId, request),
+        onSuccess: (saved: OutletPoc) => {
+            queryClient.setQueryData<People>(peopleKey(scope), (people) => people && {
+                ...people,
+                pocs: upsertPerson(people.pocs, saved, (p) => p.pocId === saved.pocId),
+            });
+            void queryClient.invalidateQueries({ queryKey: peopleKey(scope) });
+        },
+    });
+};
+
+export const useBrandBankAccounts = (enabled = true) =>
+    useQuery({ queryKey: [OUTLET_INFO_KEY, 'banks', 'brand'], queryFn: outletInfoApi.getBrandBankAccounts, enabled });
+
+/** Brand account saves; a PRIMARY change sends the brand for approval, so everything is refreshed. */
+export const useSaveBrandBankAccount = () => {
+    const queryClient = useQueryClient();
+    const refresh = useRefreshOutletInfo();
+    return useMutation({
+        mutationFn: ({ bankDetailId, request }: { bankDetailId?: string; request: BankAccountRequest }) =>
+            outletInfoApi.saveBrandBankAccount(bankDetailId, request),
+        onSuccess: (result) => {
+            queryClient.setQueryData<OutletBankAccount[]>([OUTLET_INFO_KEY, 'banks', 'brand'], (list = []) =>
+                upsertPerson(list, result.account, (a) => a.bankDetailId === result.account.bankDetailId));
+            return result.sentForApproval
+                ? refresh()
+                : queryClient.invalidateQueries({ queryKey: [OUTLET_INFO_KEY, 'banks', 'brand'] });
+        },
+    });
+};
+
+/**
+ * 2026-11-13: swap a SECONDARY in as the PRIMARY (outlet or brand). Both accounts change and the
+ * outlet / brand may now await approval, so the bank list and statuses are refreshed.
+ */
+export const useMakePrimaryBankAccount = (scope: PeopleScope) => {
+    const refresh = useRefreshOutletInfo();
+    return useMutation({
+        mutationFn: (bankDetailId: string) => outletInfoApi.makePrimaryBankAccount(scope, bankDetailId),
+        onSuccess: () => refresh(),
     });
 };

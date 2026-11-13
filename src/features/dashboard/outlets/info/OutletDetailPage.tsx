@@ -7,7 +7,8 @@ export const OutletDetailPage = () => {
   const { restroId } = useParams<{ restroId: string }>();
   return (
     <div className={PAGE_CLASS}>
-      <div className="max-w-6xl mx-auto">
+      {/* 2026-11-12 (user request): full width like Orders / the header - was a centred max-w column. */}
+      <div className="w-full max-w-[1600px]">
         <OutletDetailView key={restroId} restroId={restroId!} showBack />
       </div>
     </div>

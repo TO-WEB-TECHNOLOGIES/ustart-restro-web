@@ -8,8 +8,8 @@ import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogTitle } from "@/components/ui/dialog";
 import { getErrorMessage } from "@/utils/error";
-import type { BankAccountType, OutletBankAccount } from "../../api/outletInfoApi";
-import { useSaveBankAccount } from "../../hooks/useOutletInfo";
+import type { BankAccountType, OutletBankAccount, PeopleScope } from "../../api/outletInfoApi";
+import { useSaveBankAccount, useSaveBrandBankAccount } from "../../hooks/useOutletInfo";
 import { AllOutletsConfirmDialog } from "../MenuEditor/AllOutletsConfirmDialog";
 import { FormField } from "./FormField";
 
@@ -41,7 +41,8 @@ const createBankSchema = (t: TFunction) => {
 type BankValues = z.infer<ReturnType<typeof createBankSchema>>;
 
 interface BankFormDialogProps {
-  restroId: string;
+  /** 2026-11-12: an outlet's accounts or (brand) the brand's own. */
+  scope: PeopleScope;
   accountType: BankAccountType;
   /** null = add an account of accountType; an account = edit it. */
   account: OutletBankAccount | null;
@@ -50,10 +51,13 @@ interface BankFormDialogProps {
   onClose: () => void;
 }
 
-export const BankFormDialog = ({ restroId, accountType, account, willGoForApproval, onClose }: BankFormDialogProps) => {
+export const BankFormDialog = ({ scope, accountType, account, willGoForApproval, onClose }: BankFormDialogProps) => {
   const { t } = useTranslation();
   const k = "dashboard.outletInfo.bank.";
-  const save = useSaveBankAccount(restroId);
+  // Both hooks are called (rules of hooks); the scope picks which one saves.
+  const outletSave = useSaveBankAccount(scope.kind === "outlet" ? scope.restroId : "");
+  const brandSave = useSaveBrandBankAccount();
+  const save = scope.kind === "outlet" ? outletSave : brandSave;
   const schema = useMemo(() => createBankSchema(t), [t]);
   const [pending, setPending] = useState<BankValues | null>(null);
   const { register, handleSubmit, formState: { errors } } = useForm<BankValues>({
@@ -124,7 +128,7 @@ export const BankFormDialog = ({ restroId, accountType, account, willGoForApprov
           </form>
           {accountType === "PRIMARY" && willGoForApproval && (
             <p className="text-xs font-medium text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-500/10 rounded-xl px-4 py-3">
-              {t(`${k}primaryNote`)}
+              {t(scope.kind === "brand" ? `${k}brandPrimaryNote` : `${k}primaryNote`)}
             </p>
           )}
           <DialogFooter className="flex-col sm:flex-row gap-3">
@@ -153,7 +157,7 @@ export const BankFormDialog = ({ restroId, accountType, account, willGoForApprov
         open={pending !== null}
         isLoading={save.isPending}
         title={t(`${k}confirmPrimaryTitle`)}
-        description={t(`${k}confirmPrimaryText`)}
+        description={t(scope.kind === "brand" ? `${k}brandConfirmPrimaryText` : `${k}confirmPrimaryText`)}
         confirmLabel={t(`${k}confirmPrimary`)}
         cancelLabel={t(`${k}cancel`)}
         onConfirm={() => pending && send(pending)}

@@ -29,6 +29,10 @@ export const DashboardHeader = ({ user, onMenuClick }: DashboardHeaderProps) => 
         if (pathname.includes('/settings')) return t('common.titles.settings');
         if (pathname.includes('/dashboard/status')) return t('common.titles.schedule'); // 2026-11-12
         if (pathname.includes('/dashboard/info')) return t('common.titles.outletInfo'); // 2026-11-12
+        // 2026-11-12: Offers and Growth had no title here (fell back to "Overview"); their pages no
+        // longer repeat it as an in-page heading.
+        if (pathname.includes('/dashboard/offers')) return t('common.titles.offers');
+        if (pathname.includes('/dashboard/growth')) return t('common.titles.growth');
         return t('common.titles.overview');
     };
 

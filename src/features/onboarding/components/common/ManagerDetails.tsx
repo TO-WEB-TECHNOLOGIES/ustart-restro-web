@@ -8,6 +8,7 @@ import { Modal } from "@/components/ui/modal";
 import { Input } from "@/components/ui/input";
 import { type ManagerInfo } from "../../store/useOnboardingStore";
 import { restaurantService } from "@/api/restaurantService";
+import { VerifyContactField } from "@/features/dashboard/components/OutletInfo/VerifyContactField";
 
 interface ManagerDetailsProps {
   isUserManaging: boolean;
@@ -40,6 +41,12 @@ export const ManagerDetails = ({
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isEditingExisting, setIsEditingExisting] = useState(false);
   const [isWhatsAppSame, setIsWhatsAppSame] = useState(false);
+  // 2026-11-12 (user request, ARCHITECTURE_REVIEW M35): a new manager gets dashboard access, so their
+  // mobile and email are OTP-verified with them first (the backend refuses otherwise). Values
+  // verified while this form is mounted ("M:<mobile>", "E:<email>"); a saved manager (userId) only
+  // re-verifies a changed email.
+  const [verified, setVerified] = useState<Set<string>>(new Set());
+  const markVerified = (key: string) => setVerified((set) => new Set(set).add(key));
 
   // Local state for the modal form
   const [newManager, setNewManager] = useState<Partial<ManagerInfo>>({
@@ -116,7 +123,11 @@ export const ManagerDetails = ({
     }
 
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (newManager.email && !emailRegex.test(newManager.email)) {
+    // 2026-11-12: email is required for a new manager (the backend always required it).
+    if (!newManager.email && !newManager.userId) {
+      newErrors.email = t("dashboard.outletInfo.managers.errors.email");
+      isValid = false;
+    } else if (newManager.email && !emailRegex.test(newManager.email)) {
       newErrors.email = t(
         "onboarding.restaurant.validation.invalidEmail",
         "Invalid email format",
@@ -145,8 +156,17 @@ export const ManagerDetails = ({
     return isValid;
   };
 
+  const mobileValue = (newManager.mobile || "").trim();
+  const emailValue = (newManager.email || "").trim().toLowerCase();
+  const savedUser = !!newManager.userId;
+  const mobileVerified = savedUser || verified.has(`M:${mobileValue}`);
+  const emailVerified = (savedUser && emailValue === (managerDetails.email || "").toLowerCase())
+    || (savedUser && emailValue === "")
+    || verified.has(`E:${emailValue}`);
+
   const handleSave = async () => {
     if (!validate()) return;
+    if (!mobileVerified || !emailVerified) return;
 
     const managerData = {
       isUserManaging: false,
@@ -353,6 +373,7 @@ export const ManagerDetails = ({
           <div className="space-y-1.5">
             <Label className="text-[10px] font-bold uppercase tracking-widest pl-1">
               {t("onboarding.restaurant.complete.setupForm.management.email")}
+              {!newManager.userId && <RequiredMark />}
             </Label>
             <Input
               type="email"
@@ -369,6 +390,15 @@ export const ManagerDetails = ({
               <p className="text-red-500 text-[10px] pl-1 font-medium">
                 {errors.email}
               </p>
+            )}
+            {emailValue !== "" && (
+              <VerifyContactField
+                channel="EMAIL"
+                value={emailValue}
+                valid={/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailValue)}
+                verified={emailVerified}
+                onVerified={(v) => markVerified(`E:${v}`)}
+              />
             )}
           </div>
 
@@ -394,6 +424,15 @@ export const ManagerDetails = ({
               <p className="text-red-500 text-[10px] pl-1 font-medium">
                 {errors.mobile}
               </p>
+            )}
+            {!savedUser && (
+              <VerifyContactField
+                channel="MOBILE"
+                value={mobileValue}
+                valid={/^\d{10}$/.test(mobileValue)}
+                verified={mobileVerified}
+                onVerified={(v) => markVerified(`M:${v}`)}
+              />
             )}
           </div>
 
@@ -444,6 +483,9 @@ export const ManagerDetails = ({
             )}
           </div>
 
+          {(!mobileVerified || !emailVerified) && (
+            <p className="text-[11px] text-slate-500 px-1">{t("dashboard.outletInfo.verify.required")}</p>
+          )}
           <div className="pt-4 flex gap-3">
             <button
               type="button"
@@ -455,7 +497,7 @@ export const ManagerDetails = ({
             <button
               type="button"
               onClick={handleSave}
-              disabled={!newManager.name || !newManager.mobile}
+              disabled={!newManager.name || !newManager.mobile || !mobileVerified || !emailVerified}
               className="flex-[2] h-12 px-8 rounded-2xl bg-[#0F2441] text-white text-sm font-bold shadow-lg shadow-[#0F2441]/20 hover:scale-[1.02] active:scale-95 disabled:opacity-50 disabled:grayscale transition-all"
             >
               {t(

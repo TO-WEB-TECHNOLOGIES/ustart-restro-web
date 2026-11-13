@@ -742,3 +742,53 @@ MenuEditor (outlet — handles edit/stock/taxes/charges/new/review paths)
   - The form root got `min-h-0`, so only the form scrolls.
   - On phones `<main>` isn't height-capped, so the form grows and the page scrolls as usual.
   - Onboarding's `CompleteSetup` panel is unaffected: it was already bounded.
+
+### 2026-11-12 — Add/Edit outlet page, second fix (supersedes the entry above)
+- Bounding the shell to make the form's inner scroll box work didn't hold: the form was clipped (its scroll box got no definite height), and the page still didn't fill the screen on load.
+- `AddRestaurantForm` now has a `scrollable` prop:
+  - **true** (default, onboarding's fixed panel): unchanged.
+  - **false** (dashboard add/edit): no height or overflow of its own, so it grows with its content.
+- `OutletFormPage` is `flex-[1_0_auto]`: at least the full height `<main>` gives it, never shrinking below its content. `<main>` does the scrolling, so the background always covers the whole form.
+- The earlier `min-h-0` on the form root was removed, so onboarding has its original classes.
+- **Lesson:** don't nest a scroll container inside the dashboard's `<main>`; let `<main>` scroll and size the page with `flex: 1 0 auto`.
+
+### 2026-11-13 — Page widths match Orders; headings moved to the dashboard header
+- **Width:** Growth (Create Offers, Customer Delighters, Flat Deals, Deal of the Day, Elite Exclusive, Percentage, Quick Setup, and the BOGO / item-discount shell `OfferMenuPageShell`), My Offers, Outlet Schedule and Outlet Info now use Orders' layout: `w-full max-w-[1600px]` with `p-4 md:p-6`, so content lines up with the header. They used to be centred columns, `max-w-3xl`…`max-w-7xl` with `lg:p-10`.
+  - Quick Setup's sticky bar no longer bleeds to the old `lg` padding.
+  - Create Offers and Customer Delighters headings are left-aligned and the pages top-aligned (they used to be vertically centred).
+- **Headers:** `DashboardHeader` has titles for `/dashboard/offers` ("My Offers") and `/dashboard/growth` ("Grow with Offers"); both used to fall back to "Overview".
+  - My Offers dropped its in-page title and subtitle. Create Offer now sits in one row with the Active / History tabs.
+  - Outlet Info dropped its heading and subheading above Brand Details.
+  - `dashboard.offers.myOffers.title/subtitle` and `dashboard.outletInfo.title/subtitle` are now unused but kept.
+
+### 2026-11-13 — Managers & POCs with labels, brand people and bank accounts, OTP verification of contacts
+- **People:**
+  - `PeopleSection` (replaces `PocSection`) shows managers and POCs. On an outlet page: only that outlet's own (user request), from `GET /restaurants/{id}/people`. Under All Locations, with scope brand: the brand's, from `GET /brands/people`.
+  - `PersonRoleLabel` is a chip (Outlet / Brand Manager, Outlet / Brand POC) with an ⓘ shadcn Tooltip:
+    - managers can log in to the dashboard, for the outlet or for every outlet;
+    - POCs are called for outages and can't log in.
+  - Add opens `PersonFormDialog` with **Manager / POC** tabs (user request). Only brand-level logins see the Manager tab and can edit managers.
+- **OTP:**
+  - `VerifyContactField` sends a code to the person (`POST /contact-verification/send`). The partner types what the person reads out (`/verify`).
+  - Forms track the verified values (`"M:…"`/`"E:…"`) and keep Save disabled until the mobile is verified, and the email when given (always for managers). An unchanged existing contact needs no code.
+  - It's also in the add-outlet manager modal (`ManagerDetails`), where email is now required for a new manager.
+- **Brand bank:** `BankSection` / `BankFormDialog` take `scope`.
+  - For the brand, every listed account is the brand's, and `canEdit` is limited to brand-level logins.
+  - A PRIMARY change confirms that the whole brand goes for approval.
+  - Hooks gained `enabled` so both scopes' hooks can be called and one used.
+- **Removed** (orphaned by the above): `PocSection.tsx`, `useOutletPocs`, `useSavePoc`.
+- **Lesson:** use `useWatch` rather than `watch()` in new react-hook-form code. `watch()` triggers the React-compiler lint warning `react-hooks/incompatible-library`.
+
+### 2026-11-13 — Make primary, manager access switch, full-width verification, OTP provider
+- **Bank:** the own SECONDARY account has **Make primary** (outlet and brand), which is confirmed first.
+  - Backend `POST …/bank-accounts/{id}/make-primary` swaps the two rows' details. It can't swap their types, because (owner, account_type) is unique; and the brand PRIMARY row's id is what "same as brand" outlets are mapped to.
+  - An outlet that used the brand's account gets its secondary promoted, and the brand mapping is removed.
+  - It counts as a primary change, so it goes through approval.
+- **Managers:** each card has an access switch (brand-level logins only). Turning it off is confirmed. It's disabled, with a tooltip, for yourself and for the last active manager. The backend now keeps one active manager per outlet too, not just per brand.
+  - `ManagerRequest.email` is optional on edit (a blank value keeps the current one), so the switch works for older managers who have no email.
+- **Verification rows** moved out of the half-width grid columns, which they overflowed, into full-width rows under the inputs, one block each. Their messages now name the number or email.
+- **Provider:** contact-verification mobile codes use the provider chosen in settings (`OtpDispatch.dispatchOtp(target, code)`), the same as login, rather than always SMS.
+
+### 2026-11-13 — Growth pages back to their centred layout
+- At the user's request, Growth with USTART and every create-offer page under it are back to how they were: Create Offers, Customer Delighters, Flat Deals, Deal of the Day, Elite Exclusive, Percentage, Quick Setup, and `OfferMenuPageShell` for BOGO / item discount. That means centred `max-w-*` columns, `lg:p-10`, centred headings on the two landing pages, and Quick Setup's sticky bar bleed.
+- All eight files are identical to their last committed version. My Offers, Outlet Schedule and Outlet Info keep the full width.

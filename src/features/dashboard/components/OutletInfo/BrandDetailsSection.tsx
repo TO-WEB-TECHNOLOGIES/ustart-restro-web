@@ -6,7 +6,9 @@ import { getErrorMessage } from "@/utils/error";
 import { ImagePreviewDialog } from "@/features/onboarding/components/common/ImagePreviewDialog";
 import { useBrandDetail } from "../../hooks/useOutletInfo";
 import { BrandEditForm } from "./BrandEditForm";
+import { BankSection } from "./BankSection";
 import { CommissionSection } from "./CommissionSection";
+import { PeopleSection } from "./PeopleSection";
 import { InfoField, InfoSection } from "./InfoSection";
 import { StatusChip } from "./StatusChip";
 import { formatAddress } from "./outletInfoFormat";
@@ -118,6 +120,10 @@ export const BrandDetailsSection = () => {
       </InfoSection>
 
       <CommissionSection />
+      {/* 2026-11-12 (user request): the brand's managers, POCs and bank accounts - editable by
+          brand-level logins (a PRIMARY account change sends the brand for approval). */}
+      <PeopleSection scope={{ kind: "brand" }} />
+      <BankSection scope={{ kind: "brand" }} isActive={b.status === "ACTIVE"} canEdit={isBrandUser} />
 
       <ImagePreviewDialog url={preview?.url ?? null} title={preview?.title ?? ""} onClose={() => setPreview(null)} />
     </div>

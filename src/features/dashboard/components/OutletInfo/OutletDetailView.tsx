@@ -12,7 +12,7 @@ import { BankSection } from "./BankSection";
 import { CommissionSection } from "./CommissionSection";
 import { InfoField, InfoSection } from "./InfoSection";
 import { INFO_PATH } from "./OutletCards";
-import { PocSection } from "./PocSection";
+import { PeopleSection } from "./PeopleSection";
 import { StatusChip } from "./StatusChip";
 import { formatAddress, formatRupees, isAwaitingApproval, mapsLink } from "./outletInfoFormat";
 
@@ -204,8 +204,9 @@ export const OutletDetailView = ({ restroId, showBack = false }: OutletDetailVie
         </InfoSection>
       </div>
 
-      <PocSection restroId={outlet.restroId} />
-      <BankSection restroId={outlet.restroId} isActive={outlet.status === "ACTIVE"} />
+      {/* 2026-11-12: the outlet's own managers + POCs (brand ones are shown under All Locations). */}
+      <PeopleSection scope={{ kind: "outlet", restroId: outlet.restroId }} />
+      <BankSection scope={{ kind: "outlet", restroId: outlet.restroId }} isActive={outlet.status === "ACTIVE"} />
 
       <ImagePreviewDialog url={preview?.url ?? null} title={preview?.title ?? ""} onClose={() => setPreview(null)} />
     </div>

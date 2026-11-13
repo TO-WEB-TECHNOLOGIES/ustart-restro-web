@@ -80,45 +80,42 @@ export const MyOffers = () => {
   ];
 
   return (
-    <div className="flex-1 min-h-[calc(100vh-64px)] bg-[#fdfbf7] dark:bg-slate-950 p-4 md:p-6 lg:p-10 transition-colors duration-300">
-      <div className="max-w-6xl mx-auto space-y-8">
-        {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
-          <div>
-            <h1 className="text-2xl sm:text-[28px] font-bold text-[#1a2b4b] dark:text-white pb-1">{t(`${k}title`)}</h1>
-            <p className="text-slate-500 dark:text-slate-400 text-sm">{t(`${k}subtitle`)}</p>
-          </div>
-          <button
-            type="button"
-            onClick={() => navigate("/dashboard/growth")}
-            className="h-12 px-6 rounded-2xl bg-secondary-orange hover:bg-orange-500 text-white font-bold text-sm shadow-lg shadow-secondary-orange/20 flex items-center justify-center gap-2 transition-all active:scale-[0.98]"
-          >
-            <Plus className="w-4 h-4" />
-            {t(`${k}create`)}
-          </button>
-        </div>
-
+    <div className="flex-1 min-h-[calc(100vh-64px)] bg-[#fdfbf7] dark:bg-slate-950 p-4 md:p-6 transition-colors duration-300">
+      {/* 2026-11-12 (user request): full width like Orders / the header - was a centred max-w column. */}
+      <div className="w-full max-w-[1600px] space-y-8">
         {/* Pill tabs, same style as the Orders page */}
-        <Tabs value={tab} onValueChange={(value) => setTab(value as OffersTab)}>
-          <TabsList className="bg-slate-100/50 dark:bg-slate-800/50 p-1 h-auto inline-flex gap-1 rounded-full border border-slate-200 dark:border-slate-700">
-            {tabs.map((item) => (
-              <TabsTrigger
-                key={item.id}
-                value={item.id}
-                className="rounded-full px-6 py-2.5 font-bold text-sm transition-all data-[state=active]:bg-slate-900 data-[state=active]:text-white dark:data-[state=active]:bg-white dark:data-[state=active]:text-slate-900 data-[state=active]:shadow-md"
-              >
-                {t(`${k}tabs.${item.id}`)}
-                {item.count > 0 && (
-                  <span className={`ml-2 px-2 py-0.5 rounded-full text-xs ${tab === item.id
-                    ? "bg-white/20 text-white dark:bg-slate-900/20 dark:text-slate-900"
-                    : "bg-slate-200 text-slate-600 dark:bg-slate-700 dark:text-slate-400"}`}>
-                    {item.count}
-                  </span>
-                )}
-              </TabsTrigger>
-            ))}
-          </TabsList>
-        </Tabs>
+        {/* 2026-11-12 (user request): no "My Offers" heading here - the dashboard header shows the page
+            name - and Create Offer sits in one row with the Active / History tabs. */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <Tabs value={tab} onValueChange={(value) => setTab(value as OffersTab)}>
+            <TabsList className="bg-slate-100/50 dark:bg-slate-800/50 p-1 h-auto inline-flex gap-1 rounded-full border border-slate-200 dark:border-slate-700">
+              {tabs.map((item) => (
+                <TabsTrigger
+                  key={item.id}
+                  value={item.id}
+                  className="rounded-full px-6 py-2.5 font-bold text-sm transition-all data-[state=active]:bg-slate-900 data-[state=active]:text-white dark:data-[state=active]:bg-white dark:data-[state=active]:text-slate-900 data-[state=active]:shadow-md"
+                >
+                  {t(`${k}tabs.${item.id}`)}
+                  {item.count > 0 && (
+                    <span className={`ml-2 px-2 py-0.5 rounded-full text-xs ${tab === item.id
+                      ? "bg-white/20 text-white dark:bg-slate-900/20 dark:text-slate-900"
+                      : "bg-slate-200 text-slate-600 dark:bg-slate-700 dark:text-slate-400"}`}>
+                      {item.count}
+                    </span>
+                  )}
+                </TabsTrigger>
+              ))}
+            </TabsList>
+          </Tabs>
+            <button
+              type="button"
+              onClick={() => navigate("/dashboard/growth")}
+              className="h-12 px-6 rounded-2xl bg-secondary-orange hover:bg-orange-500 text-white font-bold text-sm shadow-lg shadow-secondary-orange/20 flex items-center justify-center gap-2 transition-all active:scale-[0.98]"
+            >
+              <Plus className="w-4 h-4" />
+              {t(`${k}create`)}
+            </button>
+        </div>
 
         {offersQuery.isLoading ? (
           <div className="py-24 flex flex-col items-center gap-3">

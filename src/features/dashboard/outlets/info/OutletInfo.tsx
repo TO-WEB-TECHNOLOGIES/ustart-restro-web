@@ -18,8 +18,9 @@ import { OutletDetailView } from "../../components/OutletInfo/OutletDetailView";
  */
 // 2026-11-12 (user report: the outlet cards sat flush on the bottom edge): the real cause was
 // DashboardLayout cutting off the bottom of the page (fixed there); this keeps clear space under the
-// last cards. pb-* is repeated per breakpoint because md:p-6 / lg:p-10 would override a bare pb-16.
-export const PAGE_CLASS = "flex-1 min-h-[calc(100vh-64px)] p-4 md:p-6 lg:p-10 pb-16 md:pb-16 lg:pb-20 bg-[#fdfbf7] dark:bg-slate-950 transition-colors duration-300";
+// last cards. pb-* is repeated per breakpoint because md:p-6 would override a bare pb-16. Side padding
+// matches Orders (p-4 md:p-6) since 2026-11-12, so content lines up with the header.
+export const PAGE_CLASS = "flex-1 min-h-[calc(100vh-64px)] p-4 md:p-6 pb-16 md:pb-16 bg-[#fdfbf7] dark:bg-slate-950 transition-colors duration-300";
 
 export const OutletInfo = () => {
   const { t } = useTranslation();
@@ -33,7 +34,8 @@ export const OutletInfo = () => {
   if (!isAll) {
     return (
       <div className={PAGE_CLASS}>
-        <div className="max-w-6xl mx-auto">
+        {/* 2026-11-12 (user request): full width like Orders / the header - was a centred max-w column. */}
+        <div className="w-full max-w-[1600px]">
           <OutletDetailView key={selectedAddressId} restroId={selectedAddressId!} />
         </div>
       </div>
@@ -43,12 +45,9 @@ export const OutletInfo = () => {
   const items = outlets.data?.pages.flatMap((page) => page.content) ?? [];
   return (
     <div className={PAGE_CLASS}>
-      <div className="max-w-6xl mx-auto space-y-6">
-        <div>
-          <h1 className="text-2xl sm:text-[28px] font-bold text-[#1a2b4b] dark:text-white pb-1">{t(`${k}title`)}</h1>
-          <p className="text-slate-500 dark:text-slate-400 text-sm">{t(`${k}subtitle`)}</p>
-        </div>
-
+      {/* 2026-11-12 (user request): full width like Orders / the header - was a centred max-w column. */}
+      <div className="w-full max-w-[1600px] space-y-6">
+        {/* 2026-11-12 (user request): no page heading above Brand Details - the dashboard header shows it. */}
         <BrandDetailsSection />
 
         <h2 className="text-lg font-bold text-[#1a2b4b] dark:text-white pt-2">{t(`${k}outletsHeading`)}</h2>

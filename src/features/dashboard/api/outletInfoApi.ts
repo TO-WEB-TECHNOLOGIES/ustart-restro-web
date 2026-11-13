@@ -93,6 +93,37 @@ export interface BankAccountRequest {
     branchName: string;
 }
 
+/** 2026-11-12: someone with partner-dashboard access - to one outlet (OUTLET) or every outlet (BRAND). */
+export interface Manager {
+    userId: string;
+    name: string;
+    mobileNumber: string;
+    email: string | null;
+    role: string;
+    scope: 'OUTLET' | 'BRAND';
+    isActive: boolean;
+    isYou: boolean;
+}
+
+export interface ManagerRequest {
+    name: string;
+    mobileNumber?: string; // add only; it's the person's login
+    email?: string; // required to add; on edit, left out keeps the current one
+    role: string;
+    isActive?: boolean;
+}
+
+/** GET /restaurants/{id}/people (outlet's own) or /brands/people (brand's). */
+export interface People {
+    managers: Manager[];
+    pocs: OutletPoc[];
+}
+
+/** Where people / bank accounts belong: one outlet, or the brand. */
+export type PeopleScope = { kind: 'outlet'; restroId: string } | { kind: 'brand' };
+
+export type ContactChannel = 'MOBILE' | 'EMAIL';
+
 export interface BankAccountSaveResponse {
     account: OutletBankAccount;
     status: RestaurantStatus;
@@ -213,6 +244,38 @@ export const outletInfoApi = {
                 .sort((x, y) => (x.minTov ?? 0) - (y.minTov ?? 0))
                 .map((t) => ({ tierId: t.tierId, tierName: t.tierName, tier: t })),
         };
+    },
+
+    // 2026-11-12: people (managers + POCs), managers, brand POCs, brand bank accounts, and the OTP
+    // check of a new contact (docs: brand-people-and-bank.md, contact-verification.md).
+    getPeople: async (scope: PeopleScope): Promise<People> =>
+        (await api.get<People>(scope.kind === 'outlet' ? `${outletBase(scope.restroId)}/people` : '/api/v1/brands/people')).data,
+    saveManager: async (scope: PeopleScope, userId: string | undefined, request: ManagerRequest): Promise<Manager> => {
+        const base = scope.kind === 'outlet' ? `${outletBase(scope.restroId)}/managers` : '/api/v1/brands/managers';
+        return userId
+            ? (await api.patch<Manager>(`${base}/${userId}`, request)).data
+            : (await api.post<Manager>(base, request)).data;
+    },
+    saveBrandPoc: async (pocId: string | undefined, request: PocRequest): Promise<OutletPoc> =>
+        pocId
+            ? (await api.patch<OutletPoc>(`/api/v1/brands/pocs/${pocId}`, request)).data
+            : (await api.post<OutletPoc>('/api/v1/brands/pocs', request)).data,
+    getBrandBankAccounts: async (): Promise<OutletBankAccount[]> =>
+        (await api.get<OutletBankAccount[]>('/api/v1/brands/bank-accounts')).data,
+    saveBrandBankAccount: async (bankDetailId: string | undefined, request: BankAccountRequest): Promise<BankAccountSaveResponse> =>
+        bankDetailId
+            ? (await api.patch<BankAccountSaveResponse>(`/api/v1/brands/bank-accounts/${bankDetailId}`, request)).data
+            : (await api.post<BankAccountSaveResponse>('/api/v1/brands/bank-accounts', request)).data,
+    /** 2026-11-13: make a SECONDARY the PRIMARY (details swapped server-side; a primary change → approval). */
+    makePrimaryBankAccount: async (scope: PeopleScope, bankDetailId: string): Promise<BankAccountSaveResponse> =>
+        (await api.post<BankAccountSaveResponse>(scope.kind === 'outlet'
+            ? `${outletBase(scope.restroId)}/bank-accounts/${bankDetailId}/make-primary`
+            : `/api/v1/brands/bank-accounts/${bankDetailId}/make-primary`)).data,
+    sendContactCode: async (channel: ContactChannel, value: string): Promise<void> => {
+        await api.post('/api/v1/contact-verification/send', { channel, value });
+    },
+    verifyContactCode: async (channel: ContactChannel, value: string, otp: string): Promise<void> => {
+        await api.post('/api/v1/contact-verification/verify', { channel, value, otp });
     },
 
     /** Active PERCENTAGE plans a partner can choose (FIXED plans are admin-assigned). */

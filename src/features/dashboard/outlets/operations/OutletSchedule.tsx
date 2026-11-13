@@ -25,8 +25,9 @@ export const OutletSchedule = () => {
 
   if (!isAll) {
     return (
-      <div className={`flex-1 min-h-[calc(100vh-64px)] p-4 md:p-6 lg:p-10 ${PAGE_CLASS}`}>
-        <div className="max-w-6xl mx-auto">
+      <div className={`flex-1 min-h-[calc(100vh-64px)] p-4 md:p-6 ${PAGE_CLASS}`}>
+        {/* 2026-11-12 (user request): full width like Orders / the header - was a centred max-w column. */}
+        <div className="w-full max-w-[1600px]">
           <OutletScheduleView key={selectedAddressId} restroId={selectedAddressId!} />
         </div>
       </div>
@@ -67,8 +68,9 @@ export const OutletSchedule = () => {
         <div className="fixed inset-0 bg-black/20 backdrop-blur-sm z-30 md:hidden animate-in fade-in duration-200" onClick={() => setIsSidebarOpen(false)} />
       )}
 
-      <div className="flex-1 min-w-0 overflow-y-auto p-4 md:p-6 lg:p-10">
-        <div className="max-w-5xl mx-auto">
+      <div className="flex-1 min-w-0 overflow-y-auto p-4 md:p-6">
+        {/* 2026-11-12 (user request): full width like Orders / the header - was a centred max-w column. */}
+        <div className="w-full max-w-[1600px]">
           {sidebarOutlet && <OutletScheduleView key={sidebarOutlet} restroId={sidebarOutlet} />}
         </div>
       </div>

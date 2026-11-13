@@ -1,22 +1,26 @@
-import { useMemo } from "react";
-import { useForm } from "react-hook-form";
+import { useMemo, useState } from "react";
+import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import type { TFunction } from "i18next";
 import { useTranslation } from "react-i18next";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogTitle } from "@/components/ui/dialog";
 import { getErrorMessage } from "@/utils/error";
-import type { OutletPoc } from "../../api/outletInfoApi";
-import { useSavePoc } from "../../hooks/useOutletInfo";
+import type { OutletPoc, PeopleScope } from "../../api/outletInfoApi";
+import { useSavePersonPoc } from "../../hooks/useOutletInfo";
 import { FormField } from "./FormField";
+import { VerifyContactField } from "./VerifyContactField";
 
 /**
- * 2026-11-12: add / edit one of the outlet's points of contact (shadcn Dialog). Saving a contact
- * never changes the outlet's status. Rules mirror the backend's PocDTO: name, designation and a
+ * 2026-11-12: add / edit a point of contact - an outlet's or (scope brand) the brand's. Saving a
+ * contact never changes any status. Rules mirror the backend's PocDTO: name, designation and a
  * 10-digit mobile required; WhatsApp 10 digits and email valid when filled. Empty optional fields
  * are left out of the request (the backend rejects "" for WhatsApp).
+ * 2026-11-12 (user request): the mobile, and the email when given, must be OTP-verified with the
+ * person before saving (VerifyContactField) - only when new or changed, so an existing contact
+ * saved unchanged needs no code. Rendered inside PersonFormDialog (which owns the Dialog and the
+ * Manager / POC tabs); `onDone` closes it.
  */
 const createPocSchema = (t: TFunction) => {
   const k = "dashboard.outletInfo.pocs.errors.";
@@ -31,22 +35,25 @@ const createPocSchema = (t: TFunction) => {
 };
 type PocValues = z.infer<ReturnType<typeof createPocSchema>>;
 
-interface PocFormDialogProps {
-  restroId: string;
+const EMAIL_RE = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
+
+interface PocFormProps {
+  scope: PeopleScope;
   /** null = add; a POC = edit it. */
   poc: OutletPoc | null;
-  open: boolean;
-  onClose: () => void;
+  onDone: () => void;
 }
 
-export const PocFormDialog = ({ restroId, poc, open, onClose }: PocFormDialogProps) => {
+export const PocForm = ({ scope, poc, onDone }: PocFormProps) => {
   const { t } = useTranslation();
   const k = "dashboard.outletInfo.pocs.";
-  const save = useSavePoc(restroId);
+  const save = useSavePersonPoc(scope);
   const schema = useMemo(() => createPocSchema(t), [t]);
-  const { register, handleSubmit, formState: { errors } } = useForm<PocValues>({
+  // Values verified in this dialog ("M:9876543210", "E:a@b.com").
+  const [verified, setVerified] = useState<Set<string>>(new Set());
+  const { register, handleSubmit, control, formState: { errors } } = useForm<PocValues>({
     resolver: zodResolver(schema),
-    // The parent mounts this dialog per open (keyed by contact), so defaults are read once.
+    // Mounted per open (keyed by contact), so defaults are read once.
     defaultValues: {
       pocName: poc?.pocName ?? "",
       designation: poc?.designation ?? "",
@@ -56,6 +63,13 @@ export const PocFormDialog = ({ restroId, poc, open, onClose }: PocFormDialogPro
       description: poc?.description ?? "",
     },
   });
+
+  // useWatch (not watch()): re-renders on these two fields only, and works with React's compiler.
+  const mobile = useWatch({ control, name: "pocMobileNumber" }) ?? "";
+  const email = (useWatch({ control, name: "pocEmailAddress" }) ?? "").trim().toLowerCase();
+  const mobileVerified = (!!poc && mobile === poc.pocMobileNumber) || verified.has(`M:${mobile}`);
+  const emailVerified = email === "" || (!!poc && email === (poc.pocEmailAddress ?? "").toLowerCase()) || verified.has(`E:${email}`);
+  const markVerified = (key: string) => setVerified((set) => new Set(set).add(key));
 
   const submit = async (values: PocValues) => {
     try {
@@ -71,51 +85,55 @@ export const PocFormDialog = ({ restroId, poc, open, onClose }: PocFormDialogPro
         },
       });
       toast.success(t(`${k}saved`));
-      onClose();
+      onDone();
     } catch (error) {
       toast.error(getErrorMessage(error, t(`${k}failed`)));
     }
   };
 
   return (
-    <Dialog open={open} onOpenChange={(next) => { if (!next && !save.isPending) onClose(); }}>
-      <DialogContent showCloseButton={!save.isPending} className="sm:max-w-lg rounded-[28px] p-6 sm:p-8 gap-6 bg-white dark:bg-slate-900 border-slate-100 dark:border-slate-800 max-h-[90vh] overflow-y-auto">
-        <div className="space-y-1">
-          <DialogTitle className="text-xl font-bold text-[#1a2b4b] dark:text-white">{t(poc ? `${k}edit` : `${k}add`)}</DialogTitle>
-          <DialogDescription className="text-sm text-slate-500 dark:text-slate-400">{t(`${k}hint`)}</DialogDescription>
+    <form onSubmit={handleSubmit(submit)} className="space-y-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <FormField id="poc-name" label={t(`${k}name`)} error={errors.pocName?.message} {...register("pocName")} />
+        <FormField id="poc-designation" label={t(`${k}designation`)} error={errors.designation?.message} {...register("designation")} />
+        <FormField id="poc-mobile" inputMode="numeric" maxLength={10} label={t(`${k}mobile`)} error={errors.pocMobileNumber?.message} {...register("pocMobileNumber")} />
+        <FormField id="poc-whatsapp" inputMode="numeric" maxLength={10} label={t(`${k}whatsapp`)} error={errors.pocWhatsappNumber?.message} {...register("pocWhatsappNumber")} />
+        <div className="sm:col-span-2">
+          <FormField id="poc-email" type="email" label={t(`${k}email`)} error={errors.pocEmailAddress?.message} {...register("pocEmailAddress")} />
         </div>
-        <form id="poc-form" onSubmit={handleSubmit(submit)} className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <FormField id="poc-name" label={t(`${k}name`)} error={errors.pocName?.message} {...register("pocName")} />
-          <FormField id="poc-designation" label={t(`${k}designation`)} error={errors.designation?.message} {...register("designation")} />
-          <FormField id="poc-mobile" inputMode="numeric" maxLength={10} label={t(`${k}mobile`)} error={errors.pocMobileNumber?.message} {...register("pocMobileNumber")} />
-          <FormField id="poc-whatsapp" inputMode="numeric" maxLength={10} label={t(`${k}whatsapp`)} error={errors.pocWhatsappNumber?.message} {...register("pocWhatsappNumber")} />
-          <div className="sm:col-span-2">
-            <FormField id="poc-email" type="email" label={t(`${k}email`)} error={errors.pocEmailAddress?.message} {...register("pocEmailAddress")} />
-          </div>
-          <div className="sm:col-span-2">
-            <FormField id="poc-description" maxLength={300} label={t(`${k}description`)} error={errors.description?.message} {...register("description")} />
-          </div>
-        </form>
-        <DialogFooter className="flex-col sm:flex-row gap-3">
-          <button
-            type="button"
-            disabled={save.isPending}
-            onClick={onClose}
-            className="flex-1 h-12 rounded-xl border border-slate-200 dark:border-slate-700 text-sm font-bold text-[#1a2b4b] dark:text-white hover:bg-slate-50 dark:hover:bg-slate-800 disabled:opacity-50"
-          >
-            {t(`${k}cancel`)}
-          </button>
-          <button
-            type="submit"
-            form="poc-form"
-            disabled={save.isPending}
-            className="flex-1 h-12 rounded-xl bg-secondary-orange hover:bg-orange-500 text-white text-sm font-bold disabled:opacity-70 flex items-center justify-center gap-2"
-          >
-            {save.isPending && <Loader2 className="w-4 h-4 animate-spin" />}
-            {t(`${k}save`)}
-          </button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+        <div className="sm:col-span-2">
+          <FormField id="poc-description" maxLength={300} label={t(`${k}description`)} error={errors.description?.message} {...register("description")} />
+        </div>
+      </div>
+      {/* 2026-11-13 (user report: the code box overflowed half-width columns): verification rows sit
+          under the inputs at full width, stacked (one block each) when both are open. */}
+      <div className="space-y-3">
+        <VerifyContactField channel="MOBILE" value={mobile} valid={/^\d{10}$/.test(mobile)} verified={mobileVerified} onVerified={(v) => markVerified(`M:${v}`)} />
+        {email !== "" && (
+          <VerifyContactField channel="EMAIL" value={email} valid={EMAIL_RE.test(email)} verified={emailVerified} onVerified={(v) => markVerified(`E:${v}`)} />
+        )}
+      </div>
+      {(!mobileVerified || !emailVerified) && (
+        <p className="text-xs text-slate-500 dark:text-slate-400">{t("dashboard.outletInfo.verify.required")}</p>
+      )}
+      <div className="flex flex-col-reverse sm:flex-row gap-3">
+        <button
+          type="button"
+          disabled={save.isPending}
+          onClick={onDone}
+          className="flex-1 h-12 rounded-xl border border-slate-200 dark:border-slate-700 text-sm font-bold text-[#1a2b4b] dark:text-white hover:bg-slate-50 dark:hover:bg-slate-800 disabled:opacity-50"
+        >
+          {t(`${k}cancel`)}
+        </button>
+        <button
+          type="submit"
+          disabled={save.isPending || !mobileVerified || !emailVerified}
+          className="flex-1 h-12 rounded-xl bg-secondary-orange hover:bg-orange-500 text-white text-sm font-bold disabled:opacity-60 flex items-center justify-center gap-2"
+        >
+          {save.isPending && <Loader2 className="w-4 h-4 animate-spin" />}
+          {t(`${k}save`)}
+        </button>
+      </div>
+    </form>
   );
 };
