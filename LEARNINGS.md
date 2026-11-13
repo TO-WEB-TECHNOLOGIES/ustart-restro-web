@@ -796,3 +796,11 @@ MenuEditor (outlet — handles edit/stock/taxes/charges/new/review paths)
 ### 2026-11-13 — Verification link back under each field
 - After user feedback, the "Send code to this number / email" link and "Verified" sit directly under each field's input again, with the original wording (no value in the text).
 - Only the code-entry box needs room: `VerifyContactField` reports `onCodeOpen(true)`, and the Manager / POC form widens that field to `sm:col-span-2`. The box never overflows a half column, and two open boxes stack.
+
+### 2026-11-13 — Code box below the fields; inputs never move
+- `useVerifyContact` (`components/OutletInfo/useVerifyContact.tsx`) returns `{ inline, box }`:
+  - `inline` is the "Send code" link, "Verified", or "Enter the code below", shown under the field's input;
+  - `box` is the code entry.
+- The Manager / POC forms render each field's `inline` in place and both boxes stacked in one full-width block under the fields. The inputs keep their exact positions; the previous `col-span` widening is gone.
+- `VerifyContactField` is now a thin wrapper rendering both pieces together, for the single-column add-outlet manager pop-up.
+- The hook has its own file because react-refresh wants component files to export components only.

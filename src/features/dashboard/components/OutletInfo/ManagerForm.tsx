@@ -11,7 +11,7 @@ import { getErrorMessage } from "@/utils/error";
 import type { Manager, PeopleScope } from "../../api/outletInfoApi";
 import { useSaveManager } from "../../hooks/useOutletInfo";
 import { FormField } from "./FormField";
-import { useVerifyContact } from "./VerifyContactField";
+import { useVerifyContact } from "./useVerifyContact";
 
 /**
  * 2026-11-12: add / edit a manager - someone who can log in to the partner dashboard for this outlet

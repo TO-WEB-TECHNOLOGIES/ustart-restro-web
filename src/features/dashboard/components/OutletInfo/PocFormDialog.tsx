@@ -10,7 +10,7 @@ import { getErrorMessage } from "@/utils/error";
 import type { OutletPoc, PeopleScope } from "../../api/outletInfoApi";
 import { useSavePersonPoc } from "../../hooks/useOutletInfo";
 import { FormField } from "./FormField";
-import { useVerifyContact } from "./VerifyContactField";
+import { useVerifyContact } from "./useVerifyContact";
 
 /**
  * 2026-11-12: add / edit a point of contact - an outlet's or (scope brand) the brand's. Saving a
