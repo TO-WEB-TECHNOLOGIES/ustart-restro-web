@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { CheckCircle2, Loader2 } from "lucide-react";
 import { toast } from "sonner";
@@ -14,10 +14,12 @@ import { outletInfoApi, type ContactChannel } from "../../api/outletInfoApi";
  *   back to a verified value - or an unchanged existing one - needs no new code).
  * - `valid`: the value passes the form's format check; until then there's nothing to send.
  * Resend is allowed after 60 s (the backend's per-number cooldown).
- * 2026-11-13: forms place it in a full-width row under the inputs (it overflowed half columns), so
- * every message names the number / email it's about. The code box is a block of its own.
+ * 2026-11-13 (user feedback): two pieces placed separately - `inline` (the "Send code" link /
+ * "Verified", right under the field's input) and `box` (the code entry, shown below the form's
+ * fields at full width, so the inputs never move or resize). useVerifyContact returns both;
+ * VerifyContactField renders them together for single-column forms (the add-outlet manager pop-up).
  */
-interface VerifyContactFieldProps {
+interface VerifyContactOptions {
   channel: ContactChannel;
   value: string;
   valid: boolean;
@@ -27,7 +29,7 @@ interface VerifyContactFieldProps {
 
 const RESEND_SECONDS = 60;
 
-export const VerifyContactField = ({ channel, value, valid, verified, onVerified }: VerifyContactFieldProps) => {
+export const useVerifyContact = ({ channel, value, valid, verified, onVerified }: VerifyContactOptions): { inline: ReactNode; box: ReactNode } => {
   const { t } = useTranslation();
   const k = "dashboard.outletInfo.verify.";
   const [sentTo, setSentTo] = useState<string | null>(null);
@@ -42,16 +44,6 @@ export const VerifyContactField = ({ channel, value, valid, verified, onVerified
     const timer = setTimeout(() => setWait((w) => w - 1), 1000);
     return () => clearTimeout(timer);
   }, [wait]);
-
-  if (verified) {
-    return (
-      <p className="flex items-center gap-1.5 text-xs font-bold text-emerald-600 dark:text-emerald-400">
-        <CheckCircle2 className="w-4 h-4" />
-        {t(`${k}verified`, { value })}
-      </p>
-    );
-  }
-  if (!valid) return null;
 
   const send = async () => {
     setBusy("send");
@@ -82,32 +74,63 @@ export const VerifyContactField = ({ channel, value, valid, verified, onVerified
   };
 
   const linkClass = "text-xs font-bold text-secondary-orange hover:underline disabled:opacity-50 disabled:no-underline inline-flex items-center gap-1.5";
-  if (!codeSent) {
-    return (
-      <button type="button" onClick={send} disabled={busy !== null} className={linkClass}>
-        {busy === "send" && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
-        {t(channel === "MOBILE" ? `${k}sendMobile` : `${k}sendEmail`, { value })}
-      </button>
-    );
+
+  if (verified) {
+    return {
+      inline: (
+        <p className="flex items-center gap-1.5 text-xs font-bold text-emerald-600 dark:text-emerald-400">
+          <CheckCircle2 className="w-4 h-4" />
+          {t(`${k}verified`)}
+        </p>
+      ),
+      box: null,
+    };
   }
-  return (
-    <div className="w-full space-y-2 rounded-xl bg-orange-50/60 dark:bg-orange-500/10 p-3">
-      <p className="text-xs text-slate-600 dark:text-slate-300">{t(`${k}enterCode`, { value })}</p>
-      <div className="flex flex-wrap items-center gap-3">
-        <OtpInput length={4} value={otp} onChange={setOtp} />
-        <button
-          type="button"
-          onClick={verify}
-          disabled={otp.length < 4 || busy !== null}
-          className="h-10 px-4 rounded-xl bg-secondary-orange hover:bg-orange-500 text-white text-xs font-bold disabled:opacity-50 flex items-center gap-1.5"
-        >
-          {busy === "verify" && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
-          {t(`${k}verify`)}
+  if (!valid) return { inline: null, box: null };
+  if (!codeSent) {
+    return {
+      inline: (
+        <button type="button" onClick={send} disabled={busy !== null} className={linkClass}>
+          {busy === "send" && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+          {t(channel === "MOBILE" ? `${k}sendMobile` : `${k}sendEmail`)}
+        </button>
+      ),
+      box: null,
+    };
+  }
+  return {
+    // While the code is out, the field only says where to enter it.
+    inline: <p className="text-xs font-medium text-slate-500 dark:text-slate-400">{t(`${k}codeBelow`)}</p>,
+    box: (
+      <div className="w-full space-y-2 rounded-xl bg-orange-50/60 dark:bg-orange-500/10 p-3">
+        <p className="text-xs text-slate-600 dark:text-slate-300">{t(`${k}enterCode`, { value })}</p>
+        <div className="flex flex-wrap items-center gap-3">
+          <OtpInput length={4} value={otp} onChange={setOtp} />
+          <button
+            type="button"
+            onClick={verify}
+            disabled={otp.length < 4 || busy !== null}
+            className="h-10 px-4 rounded-xl bg-secondary-orange hover:bg-orange-500 text-white text-xs font-bold disabled:opacity-50 flex items-center gap-1.5"
+          >
+            {busy === "verify" && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+            {t(`${k}verify`)}
+          </button>
+        </div>
+        <button type="button" onClick={send} disabled={wait > 0 || busy !== null} className={linkClass}>
+          {wait > 0 ? t(`${k}resendIn`, { seconds: wait }) : t(`${k}resend`)}
         </button>
       </div>
-      <button type="button" onClick={send} disabled={wait > 0 || busy !== null} className={linkClass}>
-        {wait > 0 ? t(`${k}resendIn`, { seconds: wait }) : t(`${k}resend`)}
-      </button>
-    </div>
+    ),
+  };
+};
+
+/** Single-column forms: the link and the code box stacked right under the field. */
+export const VerifyContactField = (props: VerifyContactOptions) => {
+  const { inline, box } = useVerifyContact(props);
+  return (
+    <>
+      {inline}
+      {box}
+    </>
   );
 };

@@ -1163,9 +1163,10 @@
     },
     "outletInfo": {
       "verify": {
-        "verified": "{{value}} सत्यापित",
-        "sendMobile": "{{value}} सत्यापित करें - कोड भेजें",
-        "sendEmail": "{{value}} सत्यापित करें - कोड भेजें",
+        "codeBelow": "नीचे कोड डालें",
+        "verified": "सत्यापित",
+        "sendMobile": "इस नंबर पर कोड भेजें",
+        "sendEmail": "इस ईमेल पर कोड भेजें",
         "sentMobile": "{{value}} पर कोड भेजा गया",
         "sentEmail": "{{value}} पर कोड भेजा गया",
         "sendFailed": "कोड नहीं भेजा जा सका",

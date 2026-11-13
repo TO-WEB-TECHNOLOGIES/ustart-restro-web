@@ -11,7 +11,7 @@ import { getErrorMessage } from "@/utils/error";
 import type { Manager, PeopleScope } from "../../api/outletInfoApi";
 import { useSaveManager } from "../../hooks/useOutletInfo";
 import { FormField } from "./FormField";
-import { VerifyContactField } from "./VerifyContactField";
+import { useVerifyContact } from "./VerifyContactField";
 
 /**
  * 2026-11-12: add / edit a manager - someone who can log in to the partner dashboard for this outlet
@@ -62,6 +62,14 @@ export const ManagerForm = ({ scope, manager, onDone }: ManagerFormProps) => {
   const mobileVerified = !!manager || verified.has(`M:${mobile}`);
   const emailVerified = (!!manager && email === (manager.email ?? "").toLowerCase()) || verified.has(`E:${email}`);
   const markVerified = (key: string) => setVerified((set) => new Set(set).add(key));
+  const mobileCheck = useVerifyContact({
+    channel: "MOBILE", value: mobile, valid: /^\d{10}$/.test(mobile), verified: mobileVerified,
+    onVerified: (v) => markVerified(`M:${v}`),
+  });
+  const emailCheck = useVerifyContact({
+    channel: "EMAIL", value: email, valid: /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email), verified: emailVerified,
+    onVerified: (v) => markVerified(`E:${v}`),
+  });
 
   const submit = async (values: ManagerValues) => {
     try {
@@ -91,17 +99,22 @@ export const ManagerForm = ({ scope, manager, onDone }: ManagerFormProps) => {
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <FormField id="mgr-name" label={t(`${k}name`)} error={errors.name?.message} {...register("name")} />
         <FormField id="mgr-role" label={t(`${k}role`)} error={errors.role?.message} {...register("role")} />
-        <FormField id="mgr-mobile" inputMode="numeric" maxLength={10} disabled={!!manager} label={t(`${k}mobile`)} error={errors.mobileNumber?.message} {...register("mobileNumber")} />
-        <FormField id="mgr-email" type="email" label={t(`${k}email`)} error={errors.email?.message} {...register("email")} />
+        <div className="space-y-2">
+          <FormField id="mgr-mobile" inputMode="numeric" maxLength={10} disabled={!!manager} label={t(`${k}mobile`)} error={errors.mobileNumber?.message} {...register("mobileNumber")} />
+          {!manager && mobileCheck.inline}
+        </div>
+        <div className="space-y-2">
+          <FormField id="mgr-email" type="email" label={t(`${k}email`)} error={errors.email?.message} {...register("email")} />
+          {emailCheck.inline}
+        </div>
       </div>
-      {/* 2026-11-13 (user report: the code box overflowed half-width columns): verification rows sit
-          under the inputs at full width, stacked (one block each) when both are open. */}
-      <div className="space-y-3">
-        {!manager && (
-          <VerifyContactField channel="MOBILE" value={mobile} valid={/^\d{10}$/.test(mobile)} verified={mobileVerified} onVerified={(v) => markVerified(`M:${v}`)} />
-        )}
-        <VerifyContactField channel="EMAIL" value={email} valid={/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)} verified={emailVerified} onVerified={(v) => markVerified(`E:${v}`)} />
-      </div>
+      {/* 2026-11-13 (user feedback): code entry below the fields at full width - inputs never move. */}
+      {(mobileCheck.box || emailCheck.box) && (
+        <div className="space-y-3">
+          {mobileCheck.box}
+          {emailCheck.box}
+        </div>
+      )}
       {manager && !manager.isYou && (
         <Controller
           control={control}

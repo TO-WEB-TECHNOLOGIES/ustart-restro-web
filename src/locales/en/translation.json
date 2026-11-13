@@ -1164,9 +1164,10 @@
     },
     "outletInfo": {
       "verify": {
-        "verified": "{{value}} verified",
-        "sendMobile": "Verify {{value}} - send a code",
-        "sendEmail": "Verify {{value}} - send a code",
+        "codeBelow": "Enter the code below",
+        "verified": "Verified",
+        "sendMobile": "Send code to this number",
+        "sendEmail": "Send code to this email",
         "sentMobile": "Code sent to {{value}}",
         "sentEmail": "Code sent to {{value}}",
         "sendFailed": "Couldn't send the code",

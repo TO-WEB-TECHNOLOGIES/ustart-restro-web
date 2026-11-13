@@ -10,7 +10,7 @@ import { getErrorMessage } from "@/utils/error";
 import type { OutletPoc, PeopleScope } from "../../api/outletInfoApi";
 import { useSavePersonPoc } from "../../hooks/useOutletInfo";
 import { FormField } from "./FormField";
-import { VerifyContactField } from "./VerifyContactField";
+import { useVerifyContact } from "./VerifyContactField";
 
 /**
  * 2026-11-12: add / edit a point of contact - an outlet's or (scope brand) the brand's. Saving a
@@ -70,6 +70,14 @@ export const PocForm = ({ scope, poc, onDone }: PocFormProps) => {
   const mobileVerified = (!!poc && mobile === poc.pocMobileNumber) || verified.has(`M:${mobile}`);
   const emailVerified = email === "" || (!!poc && email === (poc.pocEmailAddress ?? "").toLowerCase()) || verified.has(`E:${email}`);
   const markVerified = (key: string) => setVerified((set) => new Set(set).add(key));
+  const mobileCheck = useVerifyContact({
+    channel: "MOBILE", value: mobile, valid: /^\d{10}$/.test(mobile), verified: mobileVerified,
+    onVerified: (v) => markVerified(`M:${v}`),
+  });
+  const emailCheck = useVerifyContact({
+    channel: "EMAIL", value: email, valid: EMAIL_RE.test(email), verified: emailVerified,
+    onVerified: (v) => markVerified(`E:${v}`),
+  });
 
   const submit = async (values: PocValues) => {
     try {
@@ -96,23 +104,27 @@ export const PocForm = ({ scope, poc, onDone }: PocFormProps) => {
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <FormField id="poc-name" label={t(`${k}name`)} error={errors.pocName?.message} {...register("pocName")} />
         <FormField id="poc-designation" label={t(`${k}designation`)} error={errors.designation?.message} {...register("designation")} />
-        <FormField id="poc-mobile" inputMode="numeric" maxLength={10} label={t(`${k}mobile`)} error={errors.pocMobileNumber?.message} {...register("pocMobileNumber")} />
+        <div className="space-y-2">
+          <FormField id="poc-mobile" inputMode="numeric" maxLength={10} label={t(`${k}mobile`)} error={errors.pocMobileNumber?.message} {...register("pocMobileNumber")} />
+          {mobileCheck.inline}
+        </div>
         <FormField id="poc-whatsapp" inputMode="numeric" maxLength={10} label={t(`${k}whatsapp`)} error={errors.pocWhatsappNumber?.message} {...register("pocWhatsappNumber")} />
-        <div className="sm:col-span-2">
+        <div className="sm:col-span-2 space-y-2">
           <FormField id="poc-email" type="email" label={t(`${k}email`)} error={errors.pocEmailAddress?.message} {...register("pocEmailAddress")} />
+          {/* No email = nothing to verify (emailVerified is true then, but "Verified" would mislead). */}
+          {email !== "" && emailCheck.inline}
         </div>
         <div className="sm:col-span-2">
           <FormField id="poc-description" maxLength={300} label={t(`${k}description`)} error={errors.description?.message} {...register("description")} />
         </div>
       </div>
-      {/* 2026-11-13 (user report: the code box overflowed half-width columns): verification rows sit
-          under the inputs at full width, stacked (one block each) when both are open. */}
-      <div className="space-y-3">
-        <VerifyContactField channel="MOBILE" value={mobile} valid={/^\d{10}$/.test(mobile)} verified={mobileVerified} onVerified={(v) => markVerified(`M:${v}`)} />
-        {email !== "" && (
-          <VerifyContactField channel="EMAIL" value={email} valid={EMAIL_RE.test(email)} verified={emailVerified} onVerified={(v) => markVerified(`E:${v}`)} />
-        )}
-      </div>
+      {/* 2026-11-13 (user feedback): code entry below the fields at full width - inputs never move. */}
+      {(mobileCheck.box || emailCheck.box) && (
+        <div className="space-y-3">
+          {mobileCheck.box}
+          {emailCheck.box}
+        </div>
+      )}
       {(!mobileVerified || !emailVerified) && (
         <p className="text-xs text-slate-500 dark:text-slate-400">{t("dashboard.outletInfo.verify.required")}</p>
       )}

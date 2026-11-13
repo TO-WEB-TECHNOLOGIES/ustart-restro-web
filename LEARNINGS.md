@@ -792,3 +792,7 @@ MenuEditor (outlet — handles edit/stock/taxes/charges/new/review paths)
 ### 2026-11-13 — Growth pages back to their centred layout
 - At the user's request, Growth with USTART and every create-offer page under it are back to how they were: Create Offers, Customer Delighters, Flat Deals, Deal of the Day, Elite Exclusive, Percentage, Quick Setup, and `OfferMenuPageShell` for BOGO / item discount. That means centred `max-w-*` columns, `lg:p-10`, centred headings on the two landing pages, and Quick Setup's sticky bar bleed.
 - All eight files are identical to their last committed version. My Offers, Outlet Schedule and Outlet Info keep the full width.
+
+### 2026-11-13 — Verification link back under each field
+- After user feedback, the "Send code to this number / email" link and "Verified" sit directly under each field's input again, with the original wording (no value in the text).
+- Only the code-entry box needs room: `VerifyContactField` reports `onCodeOpen(true)`, and the Manager / POC form widens that field to `sm:col-span-2`. The box never overflows a half column, and two open boxes stack.
