@@ -43,7 +43,7 @@ export const createBrandSchema = (t: TFunction) => {
         description: z.string().max(500, t(`${k}description`)),
         address: z.object({
             line1: z.string().trim().min(3, t(`${k}address`)),
-            line2: z.string().trim(),
+            line2: z.string().trim().min(1, t(`${k}address`)),
             landmark: z.string().trim(),
             locality: z.string().trim().min(2, t(`${k}address`)),
             state: z.string().trim().min(2, t(`${k}address`)),

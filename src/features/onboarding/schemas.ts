@@ -110,8 +110,8 @@ export const restaurantInfoSchema = z.object({
     usesPos: z.boolean(),
     posProvider: z.string().optional(),
     registeredAddress: z.object({
-        line1: z.string().optional(),
-        line2: z.string().optional(),
+        line1: z.string().trim().min(1, 'Address line 1 is required'),
+        line2: z.string().trim().min(1, 'Address line 2 is required'),
         landmark: z.string().optional(),
         locality: z.string().min(1, 'Locality/ City is required'),
         state: z.string().min(1, 'State is required'),
@@ -178,7 +178,7 @@ const aboutRestaurantBaseSchema = z.object({
     // Always collected regardless of hasMultipleBranches - unlike Primary Address/location,
     // these are operational-profile fields the backend routes to Brand (multi-branch default)
     // or Restaurant (single-outlet), never skipped outright.
-    servingOptions: z.array(z.enum(['DELIVERY', 'DINE_IN'])).min(1, 'Select at least one option'),
+    servingOptions: z.array(z.enum(['DELIVERY', 'DINE_IN', 'BOTH'])).min(1, 'Select at least one option'),
     operatingHours: z.array(restroDaySchema).length(7),
     // "Same as operating timings" (isDiningHoursSameAsOperating) live-copies operatingHours
     // into this field while checked - same pattern "Same as Registered Address" already uses
@@ -205,6 +205,12 @@ export const getAboutRestaurantSchema = (hasMultipleBranches: boolean) =>
         }
         if (!hasMultipleBranches) {
             const ra = data.restaurantAddress;
+            if (!ra?.line1 || !ra.line1.trim()) {
+                ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Address line 1 is required', path: ['restaurantAddress', 'line1'] });
+            }
+            if (!ra?.line2 || !ra.line2.trim()) {
+                ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Address line 2 is required', path: ['restaurantAddress', 'line2'] });
+            }
             // 2026-10-19: case/space-insensitive (+ "Gurgaon"), via resolveServedCity - the
             // submit path sends the canonical city name, so lenient matching here is safe.
             if (!resolveServedCity(ra?.locality)) {
@@ -226,7 +232,7 @@ export const getAboutRestaurantSchema = (hasMultipleBranches: boolean) =>
 
         // Dining Timings only matter when Dine-In is actually offered - the whole section is
         // hidden (and irrelevant) for Delivery-only, so don't block submission on its contents.
-        if (data.servingOptions.includes('DINE_IN')) {
+        if (data.servingOptions.includes('DINE_IN') || data.servingOptions.includes('BOTH')) {
             const diningHoursError = validateScheduleDays(data.diningHours as RestroDay[]);
             if (diningHoursError) {
                 ctx.addIssue({ code: z.ZodIssueCode.custom, message: diningHoursError, path: ['diningHours'] });

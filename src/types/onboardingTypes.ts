@@ -52,7 +52,7 @@ export interface AboutRestaurant {
     dishImage?: string;
     brandLogo?: string;
     // Backend routes these to Brand (multi-branch default) or Restaurant (single-outlet).
-    servingOptions: ('DELIVERY' | 'DINE_IN')[];
+    servingOptions: ('DELIVERY' | 'DINE_IN' | 'BOTH')[];
     operatingHours: RestroDay[];
     diningHours?: RestroDay[]; // only required/sent when servingOptions includes DINE_IN
     diningMenuImages: string[];

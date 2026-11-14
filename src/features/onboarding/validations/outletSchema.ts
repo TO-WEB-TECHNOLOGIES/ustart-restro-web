@@ -14,8 +14,8 @@ export const addRestaurantSchema = z
     restaurantName: z.string().min(3, "Required"),
 
     restaurantAddress: z.object({
-      line1: z.string().min(3, "Required"),
-      line2: z.string().min(3, "Required"),
+      line1: z.string().trim().min(3, "Required"),
+      line2: z.string().trim().min(3, "Required"),
       landmark: z.string().optional(),
       locality: z.string().min(1, "Required"),
       state: z.string().min(1, "Required"),

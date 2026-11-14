@@ -146,7 +146,7 @@ export const AddCategoryModal: React.FC<AddCategoryModalProps> = ({ isOpen, onCl
                     <form onSubmit={handleSubmit} className="space-y-5">
                         {/* Category Name */}
                         <div>
-                            <label className="block text-[10px] font-black text-white uppercase tracking-widest mb-2" htmlFor="categoryName">
+                            <label className="block text-[10px] font-black text-slate-900 dark:text-white uppercase tracking-widest mb-2" htmlFor="categoryName">
                                 {t('dashboard.menuEditor.addCategoryModal.nameLabel')}<RequiredMark />
                             </label>
                             <input
@@ -168,7 +168,7 @@ export const AddCategoryModal: React.FC<AddCategoryModalProps> = ({ isOpen, onCl
 
                         {/* Category Description */}
                         <div>
-                            <label className="block text-[10px] font-black text-white uppercase tracking-widest mb-2" htmlFor="categoryDesc">
+                            <label className="block text-[10px] font-black text-slate-900 dark:text-white uppercase tracking-widest mb-2" htmlFor="categoryDesc">
                                 {t('dashboard.menuEditor.addCategoryModal.descLabel')}
                             </label>
                             <textarea
@@ -190,11 +190,12 @@ export const AddCategoryModal: React.FC<AddCategoryModalProps> = ({ isOpen, onCl
                         {/* Parent Category Dropdown */}
                         {!parentCategory && (
                             <div>
-                                <label className="block text-[10px] font-black text-white uppercase tracking-widest mb-2">
+                                <label className="block text-[10px] font-black text-slate-900 dark:text-white uppercase tracking-widest mb-2" htmlFor="parentCategory">
                                     {t('dashboard.menuEditor.addCategoryModal.parentLabel')}
                                 </label>
                                 <div className="relative">
                                     <select
+                                        id="parentCategory"
                                         className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl focus:outline-none focus:ring-4 focus:ring-[var(--color-secondary-orange)]/10 focus:border-[var(--color-secondary-orange)] text-slate-900 dark:text-white font-bold appearance-none cursor-pointer transition-all shadow-sm"
                                         value={parentCategoryId || ''}
                                         onChange={(e) => setParentCategoryId(e.target.value ? Number(e.target.value) : null)}

@@ -19,6 +19,7 @@ import { DESIGNATIONS } from '@/utils/constants';
 import { Briefcase } from 'lucide-react';
 import { getErrorMessage } from '@/utils/error';
 import { EmailOtpPanel } from './common/EmailOtpPanel';
+import { useErrorScrollObserver, scrollToFirstError } from '../utils/errorScrollObserver';
 
 // Computed once at module load - DESIGNATIONS is a static import, so there's no reason
 // to rebuild this <option> list on every PersonalInfo render.
@@ -81,6 +82,8 @@ export const PersonalInfo = () => {
     const isSameAsMobile = watch('isSameAsMobile');
     const mobileValue = watch('mobile');
     const isAuthorizedSignatory = watch('isAuthorizedSignatory');
+
+    useErrorScrollObserver();
 
     /**
      * Rehydration logic: Fetches existing onboarding data when in edit mode
@@ -219,7 +222,13 @@ export const PersonalInfo = () => {
                     </div>
                 ) : (
                     <>
-                        <form id="personal-info-form" onSubmit={handleSubmit(onSendOtp)} className="space-y-6">
+                        <form
+                            id="personal-info-form"
+                            onSubmit={handleSubmit(onSendOtp, () => {
+                                setTimeout(() => scrollToFirstError(), 50);
+                            })}
+                            className="space-y-6"
+                        >
 
                             {/* Owner Name */}
                             <div className="space-y-2">

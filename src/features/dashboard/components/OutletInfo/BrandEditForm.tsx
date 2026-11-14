@@ -137,7 +137,7 @@ export const BrandEditForm = ({ brand, onDone }: BrandEditFormProps) => {
         <legend className="text-[11px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-1.5">{t(`${k}fields.address`)}</legend>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <FormField id="brand-addr-1" label={t(`${k}address.line1`)} error={errors.address?.line1?.message} {...register("address.line1")} />
-          <FormField id="brand-addr-2" label={t(`${k}address.line2`)} {...register("address.line2")} />
+          <FormField id="brand-addr-2" label={t(`${k}address.line2`)} error={errors.address?.line2?.message} {...register("address.line2")} />
           <FormField id="brand-addr-landmark" label={t(`${k}address.landmark`)} {...register("address.landmark")} />
           <FormField id="brand-addr-city" label={t(`${k}address.city`)} error={errors.address?.locality?.message} {...register("address.locality")} />
           <FormField id="brand-addr-state" label={t(`${k}address.state`)} error={errors.address?.state?.message} {...register("address.state")} />

@@ -23,6 +23,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { RequiredMark } from "@/components/ui/required-mark";
 import { Switch } from "@/components/ui/switch";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Modal } from "@/components/ui/modal";
 import { MapPicker } from "@/components/ui/map-picker";
 import { useNavigate } from "react-router-dom";
@@ -36,6 +37,7 @@ import { CroppedImageUpload } from "./common/CroppedImageUpload";
 import { DayScheduleEditor } from "./common/DayScheduleEditor";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { createDefaultScheduleDays } from "../utils/scheduleValidation";
+import { useErrorScrollObserver, scrollToFirstError } from "../utils/errorScrollObserver";
 
 type AddressLike = { line1?: string; line2?: string; landmark?: string; locality?: string; state?: string; pincode?: string };
 
@@ -92,6 +94,8 @@ export const RestaurantInfo = () => {
   // explicitly submitted (no Enter, no clicking "Add") still gets committed on blur/focus
   // change instead of silently being discarded.
   const [posProviderInput, setPosProviderInput] = useState("");
+
+  useErrorScrollObserver();
 
   const {
     register,
@@ -454,7 +458,7 @@ export const RestaurantInfo = () => {
       // Dining Timings only matter when Dine-In is offered - store a fresh all-closed default
       // rather than whatever stale value the hidden section held, mirroring how
       // restaurantAddress/location get explicitly cleared below rather than just omitted.
-      diningHours: data.servingOptions.includes("DINE_IN") ? data.diningHours : createDefaultScheduleDays(),
+      diningHours: (data.servingOptions.includes("DINE_IN") || data.servingOptions.includes("BOTH")) ? data.diningHours : createDefaultScheduleDays(),
       diningMenuImages: data.diningMenuImages,
     });
 
@@ -504,7 +508,13 @@ export const RestaurantInfo = () => {
 
       <div className="py-8 flex-grow overflow-y-auto px-1">
         {view === "info" ? (
-        <form id="restaurant-info-form" onSubmit={handleSubmit(submitData)} className="space-y-8 max-w-full">
+        <form
+          id="restaurant-info-form"
+          onSubmit={handleSubmit(submitData, () => {
+            setTimeout(() => scrollToFirstError(), 50);
+          })}
+          className="space-y-8 max-w-full"
+        >
           {/* Section 1: Identity */}
           <div className="space-y-6">
             <div className="space-y-2">
@@ -722,16 +732,22 @@ export const RestaurantInfo = () => {
               <div className="space-y-1">
                 <Input
                   {...register("registeredAddress.line1")}
-                  placeholder={t("onboarding.restaurant.form.addressLabels.line1")}
-                  className="h-10 bg-background-white border-slate-200 rounded-lg"
+                  placeholder={`${t("onboarding.restaurant.form.addressLabels.line1")} *`}
+                  className={`h-10 bg-background-white border-slate-200 rounded-lg ${errors.registeredAddress?.line1 ? "border-red-500" : ""}`}
                 />
+                {errors.registeredAddress?.line1 && (
+                  <p className="text-red-500 text-[10px] ml-1">{errors.registeredAddress.line1.message}</p>
+                )}
               </div>
               <div className="space-y-1">
                 <Input
                   {...register("registeredAddress.line2")}
-                  placeholder={t("onboarding.restaurant.form.addressLabels.sector")}
-                  className="h-10 bg-background-white border-slate-200 rounded-lg"
+                  placeholder={`${t("onboarding.restaurant.form.addressLabels.sector")} *`}
+                  className={`h-10 bg-background-white border-slate-200 rounded-lg ${errors.registeredAddress?.line2 ? "border-red-500" : ""}`}
                 />
+                {errors.registeredAddress?.line2 && (
+                  <p className="text-red-500 text-[10px] ml-1">{errors.registeredAddress.line2.message}</p>
+                )}
               </div>
               <div className="space-y-1">
                 <Input
@@ -799,7 +815,9 @@ export const RestaurantInfo = () => {
         ) : (
         <form
           id="about-restaurant-form"
-          onSubmit={handleSubmitAbout(onAboutValidated)}
+          onSubmit={handleSubmitAbout(onAboutValidated, () => {
+            setTimeout(() => scrollToFirstError(), 50);
+          })}
           className="space-y-8 animate-in fade-in slide-in-from-right-8 duration-300"
         >
           {!hasMultipleBranches && (
@@ -827,18 +845,24 @@ export const RestaurantInfo = () => {
                   <div className="space-y-1">
                     <Input
                       {...registerAbout("restaurantAddress.line1")}
-                      placeholder={t("onboarding.restaurant.form.addressLabels.line1")}
+                      placeholder={`${t("onboarding.restaurant.form.addressLabels.line1")} *`}
                       disabled={isSameAsRegistered}
-                      className={`h-10 bg-background-white border-slate-200 rounded-lg ${isSameAsRegistered ? "bg-slate-100" : ""}`}
+                      className={`h-10 bg-background-white border-slate-200 rounded-lg ${aboutErrors.restaurantAddress?.line1 ? "border-red-500" : ""} ${isSameAsRegistered ? "bg-slate-100" : ""}`}
                     />
+                    {aboutErrors.restaurantAddress?.line1 && (
+                      <p className="text-red-500 text-[10px] ml-1">{aboutErrors.restaurantAddress.line1.message}</p>
+                    )}
                   </div>
                   <div className="space-y-1">
                     <Input
                       {...registerAbout("restaurantAddress.line2")}
-                      placeholder={t("onboarding.restaurant.form.addressLabels.sector")}
+                      placeholder={`${t("onboarding.restaurant.form.addressLabels.sector")} *`}
                       disabled={isSameAsRegistered}
-                      className={`h-10 bg-background-white border-slate-200 rounded-lg ${isSameAsRegistered ? "bg-slate-100" : ""}`}
+                      className={`h-10 bg-background-white border-slate-200 rounded-lg ${aboutErrors.restaurantAddress?.line2 ? "border-red-500" : ""} ${isSameAsRegistered ? "bg-slate-100" : ""}`}
                     />
+                    {aboutErrors.restaurantAddress?.line2 && (
+                      <p className="text-red-500 text-[10px] ml-1">{aboutErrors.restaurantAddress.line2.message}</p>
+                    )}
                   </div>
                   <div className="space-y-1">
                     <Input
@@ -923,46 +947,58 @@ export const RestaurantInfo = () => {
               <Controller
                 control={aboutControl}
                 name="servingOptions"
-                render={({ field }) => (
-                  <div className="flex gap-3 flex-wrap">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const current = field.value || [];
-                        field.onChange(
-                          current.includes("DELIVERY")
-                            ? current.filter((o) => o !== "DELIVERY")
-                            : [...current, "DELIVERY"],
-                        );
+                render={({ field }) => {
+                  const currentValues: string[] = Array.isArray(field.value)
+                    ? field.value
+                    : field.value
+                    ? [field.value]
+                    : ["DELIVERY"];
+
+                  const activeTab =
+                    currentValues.includes("BOTH") ||
+                    (currentValues.includes("DELIVERY") && currentValues.includes("DINE_IN"))
+                      ? "BOTH"
+                      : currentValues.includes("DINE_IN")
+                      ? "DINE_IN"
+                      : "DELIVERY";
+
+                  return (
+                    <Tabs
+                      value={activeTab}
+                      onValueChange={(val) => {
+                        if (val === "BOTH") {
+                          field.onChange(["DELIVERY", "DINE_IN"]);
+                        } else if (val === "DINE_IN") {
+                          field.onChange(["DINE_IN"]);
+                        } else {
+                          field.onChange(["DELIVERY"]);
+                        }
                       }}
-                      className={`px-5 py-2.5 rounded-xl text-base font-bold transition-all border ${
-                        field.value?.includes("DELIVERY")
-                          ? "bg-[#0F2441] text-white border-[#0F2441] shadow-md shadow-[#0F2441]/20"
-                          : "bg-white border-slate-200 hover:border-slate-300"
-                      }`}
+                      className="w-full sm:w-auto"
                     >
-                      {t("onboarding.restaurant.about.servingDelivery")}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const current = field.value || [];
-                        field.onChange(
-                          current.includes("DINE_IN")
-                            ? current.filter((o) => o !== "DINE_IN")
-                            : [...current, "DINE_IN"],
-                        );
-                      }}
-                      className={`px-5 py-2.5 rounded-xl text-base font-bold transition-all border ${
-                        field.value?.includes("DINE_IN")
-                          ? "bg-[#0F2441] text-white border-[#0F2441] shadow-md shadow-[#0F2441]/20"
-                          : "bg-white border-slate-200 hover:border-slate-300"
-                      }`}
-                    >
-                      {t("onboarding.restaurant.about.servingDineIn")}
-                    </button>
-                  </div>
-                )}
+                      <TabsList className="flex w-full sm:w-auto inline-flex bg-slate-100/50 p-1.5 rounded-2xl gap-1.5 h-12 border border-slate-200">
+                        <TabsTrigger
+                          value="DELIVERY"
+                          className="flex-1 sm:flex-initial px-5 rounded-xl data-[state=active]:bg-[#0F2441] data-[state=active]:text-white data-[state=active]:shadow-md font-bold text-sm transition-all"
+                        >
+                          {t("onboarding.restaurant.about.servingDelivery")}
+                        </TabsTrigger>
+                        <TabsTrigger
+                          value="DINE_IN"
+                          className="flex-1 sm:flex-initial px-5 rounded-xl data-[state=active]:bg-[#0F2441] data-[state=active]:text-white data-[state=active]:shadow-md font-bold text-sm transition-all"
+                        >
+                          {t("onboarding.restaurant.about.servingDineIn")}
+                        </TabsTrigger>
+                        <TabsTrigger
+                          value="BOTH"
+                          className="flex-1 sm:flex-initial px-5 rounded-xl data-[state=active]:bg-[#0F2441] data-[state=active]:text-white data-[state=active]:shadow-md font-bold text-sm transition-all"
+                        >
+                          {t("onboarding.restaurant.about.servingBoth", "Both")}
+                        </TabsTrigger>
+                      </TabsList>
+                    </Tabs>
+                  );
+                }}
               />
               {aboutErrors.servingOptions && (
                 <p className="text-red-500 text-xs mt-1">{aboutErrors.servingOptions.message}</p>
@@ -1047,7 +1083,7 @@ export const RestaurantInfo = () => {
           </Accordion>
 
           {/* Dining Timings - only relevant when Dine-In is actually offered */}
-          {servingOptions?.includes("DINE_IN") && (
+          {(servingOptions?.includes("DINE_IN") || servingOptions?.includes("BOTH")) && (
             <Accordion type="single" collapsible defaultValue="dining-hours" className="border border-slate-200 rounded-xl px-4">
               <AccordionItem value="dining-hours" className="border-b-0">
                 <AccordionTrigger className="hover:no-underline">

@@ -18,6 +18,7 @@ import { toast } from "sonner";
 import { getErrorMessage } from "@/utils/error";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/context/AuthContext";
+import { useErrorScrollObserver } from "../utils/errorScrollObserver";
 
 /**
  * UploadMenu component for the onboarding flow.
@@ -38,6 +39,8 @@ export const UploadMenu = () => {
   } = useMenu();
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [isCompleting, setIsCompleting] = useState(false);
+
+  useErrorScrollObserver();
 
   const isAddPage = location.pathname.endsWith("/new");
 

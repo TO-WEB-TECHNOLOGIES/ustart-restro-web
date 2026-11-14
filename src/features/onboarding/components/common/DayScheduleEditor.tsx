@@ -38,7 +38,7 @@ const DAYS_OF_WEEK = [
 ];
 
 const DEFAULT_TIME: TimeSlot = { startTime: "09:00:00", endTime: "22:00:00" };
-const MINUTE_OPTIONS = [0, 15, 30, 45];
+const MINUTE_OPTIONS = Array.from({ length: 60 }, (_, i) => i);
 const HOUR_OPTIONS = Array.from({ length: 12 }, (_, i) => i + 1); // 1-12
 
 const ensureTimeFormat = (time: string) => {
@@ -65,8 +65,8 @@ const from12Hour = (hour12: number, minute: number, period: "AM" | "PM") => {
 };
 
 // Dropdown-based (not a native <input type="time">) so hours render as a fixed 12h/AM-PM
-// format regardless of the browser/OS locale, and minutes are constrained to quarter-hour
-// marks only (0/15/30/45) - a native time input can't guarantee either of these.
+// format regardless of the browser/OS locale, and minutes are selectable in 1-minute
+// increments (00-59) - a native time input can't guarantee either of these.
 const TimePicker = ({
   value,
   onChange,

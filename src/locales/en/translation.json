@@ -302,6 +302,7 @@
         "servingOptionsLabel": "How do you serve customers?",
         "servingDelivery": "Delivery",
         "servingDineIn": "Dine-In",
+        "servingBoth": "Both",
         "operatingHoursLabel": "Restaurant Timings",
         "diningHoursLabel": "Dining Timings",
         "sameAsOperatingHours": "Same as operating timings",

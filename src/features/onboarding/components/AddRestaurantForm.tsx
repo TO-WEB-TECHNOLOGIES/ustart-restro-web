@@ -40,6 +40,7 @@ import { onboardingService } from "../api/onboardingService";
 import { restaurantService } from "@/api/restaurantService";
 import { multimediaService } from "@/api/multimediaService";
 import { useOnboardingStore } from "../store/useOnboardingStore";
+import { useErrorScrollObserver, scrollToFirstError } from "../utils/errorScrollObserver";
 import {
   Accordion,
   AccordionContent,
@@ -116,6 +117,8 @@ export const AddRestaurantForm = ({
   // photos now render straight from the form values (CroppedImageUpload / MenuImagesPicker).
   const { isSaving, setIsSaving } = useOutletStore();
   const { associatedUsers } = useOnboardingStore();
+
+  useErrorScrollObserver();
 
 
   // Fetch associated users for manager selection
@@ -583,13 +586,10 @@ export const AddRestaurantForm = ({
                 `Please fix the following errors: ${errorFields}`,
               ),
             );
-            // Optionally scroll to first error
-            const firstErrorField = Object.keys(errors)[0];
-            if (firstErrorField) {
-              const element = document.getElementsByName(firstErrorField)[0];
-              element?.scrollIntoView({ behavior: "smooth", block: "center" });
-              element?.focus();
-            }
+            // Scroll to the first validation error
+            setTimeout(() => {
+              scrollToFirstError();
+            }, 500);
           })}
           className="w-full space-y-6 pb-20"
         >

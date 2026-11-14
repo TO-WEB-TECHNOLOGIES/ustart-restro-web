@@ -13,6 +13,7 @@ import { AddRestaurantCard } from "./AddRestaurantCard";
 import { AddRestaurantForm } from "./AddRestaurantForm";
 import { useOnboardingStore } from "../store/useOnboardingStore";
 import { BulkScheduleModal } from "./common/BulkScheduleModal";
+import { useErrorScrollObserver } from "../utils/errorScrollObserver";
 import { type RestroDay } from "@/types/restaurantTypes";
 
 // --- Main Component ---
@@ -28,6 +29,8 @@ export const CompleteSetup = () => {
   const [view, setView] = useState<"list" | "add">("list");
 
   const [restaurants, setRestaurants] = useState<Restaurant[]>([]);
+
+  useErrorScrollObserver();
   const [schedules, setSchedules] = useState<Record<string, RestroDay[]>>({});
   const [isLoadingRestros, setIsLoadingRestros] = useState(false);
   const [isSaving, setIsSaving] = useState(false);

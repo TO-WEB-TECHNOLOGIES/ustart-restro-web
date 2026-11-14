@@ -48,6 +48,7 @@ import { MenuImagesPicker } from "./common/MenuImagesPicker";
 import { FoodTypeButton } from "./common/FoodTypeSelector";
 import { LocationPicker } from "./common/LocationPicker";
 import { ImageCropModal } from "./common/ImageCropModal";
+import { useErrorScrollObserver, scrollToFirstError } from "../utils/errorScrollObserver";
 import { cn } from "@/lib/utils";
 
 /**
@@ -128,6 +129,8 @@ export const EditRestaurantModal = ({
   );
 
   const [isEditingBank, setIsEditingBank] = useState(false);
+
+  useErrorScrollObserver();
 
   // Infinite Scroll for Cuisines (mirrored from AddRestaurantForm)
   const [searchQuery, setSearchQuery] = useState("");
@@ -572,7 +575,11 @@ export const EditRestaurantModal = ({
           <div className="flex-1 overflow-y-auto px-6 py-8 custom-scrollbar">
             <form
               id="edit-restaurant-form"
-              onSubmit={handleSubmit(onSubmit)}
+              onSubmit={handleSubmit(onSubmit, () => {
+                setTimeout(() => {
+                  scrollToFirstError();
+                }, 500);
+              })}
               className="space-y-8"
             >
               {isLocked && (

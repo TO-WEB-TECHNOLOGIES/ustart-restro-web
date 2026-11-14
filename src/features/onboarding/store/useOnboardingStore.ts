@@ -31,7 +31,7 @@ export interface AboutRestaurantState {
     brandLogo?: File | string;
     // Backend routes these to Brand (multi-branch default) or Restaurant (single-outlet) -
     // the frontend just collects them here alongside the rest of the "about" slice.
-    servingOptions?: ('DELIVERY' | 'DINE_IN')[];
+    servingOptions?: ('DELIVERY' | 'DINE_IN' | 'BOTH')[];
     operatingHours?: RestroDay[];
     diningHours?: RestroDay[];
     diningMenuImages?: (File | string)[];
@@ -47,7 +47,7 @@ export interface ManagerInfo {
 }
 
 export interface RestaurantSettings {
-    servingOptions: ('DELIVERY' | 'DINE_IN')[];
+    servingOptions: ('DELIVERY' | 'DINE_IN' | 'BOTH')[];
     hasDeliveryPartners: boolean;
     isDeliveryViaUSTART: boolean;
     management: ManagerInfo;

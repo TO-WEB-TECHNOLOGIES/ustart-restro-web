@@ -5,6 +5,7 @@ import { Mail, Phone, ClipboardCheck, Pencil, AlertCircle, Loader2 } from 'lucid
 import { useNavigate } from 'react-router-dom';
 import { onboardingService } from '../api/onboardingService';
 import { useOnboardingStore } from '../store/useOnboardingStore';
+import { useErrorScrollObserver } from '../utils/errorScrollObserver';
 import type { OnboardingStatusResponse } from '../../../types/onboardingTypes';
 
 import Countdown, { type CountdownRenderProps } from 'react-countdown';
@@ -57,6 +58,8 @@ export const Verification = () => {
     const [statusData, setStatusData] = useState<OnboardingStatusResponse | null>(null);
     const [isExpired, setIsExpired] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
+
+    useErrorScrollObserver();
 
     // 2026-10-20: being on this page means the partner isn't editing. "Edit Application" sets
     // isEditing, and only a completed edit submit (or logout) used to clear it, so backing out

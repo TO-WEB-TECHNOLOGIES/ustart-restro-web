@@ -23,6 +23,7 @@ import type {
 import { getErrorMessage } from "@/utils/error";
 import { FileDisplay } from "./common/FileDisplay";
 import { AgreementView } from "./common/AgreementView";
+import { useErrorScrollObserver, scrollToFirstError } from "../utils/errorScrollObserver";
 
 export const AboutRestaurant = () => {
   const { t } = useTranslation();
@@ -47,6 +48,8 @@ export const AboutRestaurant = () => {
   // no backend calls happen until the agreement is actually signed and submitted.
   const [view, setView] = useState<"documents" | "agreement">("documents");
   const [hasVerifiedDetails, setHasVerifiedDetails] = useState(false);
+
+  useErrorScrollObserver();
 
   // --- Documents (FSSAI, Bank) ---
   const {
@@ -322,7 +325,9 @@ export const AboutRestaurant = () => {
         {view === "documents" ? (
         <form
             id="documents-form"
-            onSubmit={handleSubmitDocs(onDocumentsValidated)}
+            onSubmit={handleSubmitDocs(onDocumentsValidated, () => {
+              setTimeout(() => scrollToFirstError(), 50);
+            })}
             className="space-y-8 animate-in fade-in slide-in-from-right-8 duration-300"
           >
             {/* FSSAI Section */}

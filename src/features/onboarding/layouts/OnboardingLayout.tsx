@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import { useAuth } from "@/context/AuthContext";
 import { useLanguage } from "@/hooks/useLanguage";
 import { useOnboardingStore } from "../store/useOnboardingStore";
+import { useErrorScrollObserver } from "../utils/errorScrollObserver";
 import { Outlet, useNavigate, useLocation } from "react-router-dom";
 import {
   HelpCircle,
@@ -30,6 +31,9 @@ export const OnboardingLayout = () => {
     useOnboardingStore();
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const { status } = useAuth();
+
+  // Observe submission validation errors and scroll to the first invalid field
+  useErrorScrollObserver();
 
   // Redirect to verification if status is APPROVAL_PENDING
   useEffect(() => {
